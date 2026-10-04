@@ -63,7 +63,7 @@ export default function RecetaDetalle() {
         <h2 className="flex-1 text-2xl font-bold tracking-tight leading-tight">{receta.name}</h2>
         {!oculta && (
           <button onClick={() => d.alternarFavorita(id)} aria-label={favorita ? 'Quitar de favoritas' : 'Marcar como favorita'}
-            className={`w-10 h-10 rounded-full bg-white shadow-tarjeta flex items-center justify-center ${favorita ? 'text-coral-oscuro' : 'text-gris/80'}`}>
+            className={`w-10 h-10 rounded-full bg-superficie shadow-tarjeta flex items-center justify-center ${favorita ? 'text-coral-oscuro' : 'text-gris/80'}`}>
             <Icono n="favorite" lleno={favorita} />
           </button>
         )}
@@ -111,7 +111,7 @@ export default function RecetaDetalle() {
         <ol className="space-y-2.5">
           {receta.steps.split('\n').filter(Boolean).map((paso, i) => (
             <li key={i} className="flex gap-3 text-sm">
-              <span className="w-6 h-6 shrink-0 rounded-full bg-verde-suave text-verde text-xs font-bold flex items-center justify-center">{i + 1}</span>
+              <span className="w-6 h-6 shrink-0 rounded-full bg-verde-suave text-verde-texto text-xs font-bold flex items-center justify-center">{i + 1}</span>
               <span>{paso}</span>
             </li>
           ))}
@@ -124,8 +124,8 @@ export default function RecetaDetalle() {
       </div>
       {receta.owner ? (
         <div className="flex justify-center gap-6 mt-5 text-sm">
-          <button onClick={() => nav(`/recetas/${id}/editar`)} className="font-semibold text-verde flex items-center gap-1"><Icono n="edit" size={16} /> Editar</button>
-          <button onClick={borrar} className="font-semibold text-rojo flex items-center gap-1"><Icono n="delete" size={16} /> Borrar</button>
+          <button onClick={() => nav(`/recetas/${id}/editar`)} className="font-semibold text-verde-texto flex items-center gap-1"><Icono n="edit" size={16} /> Editar</button>
+          <button onClick={borrar} className="font-semibold text-rojo-texto flex items-center gap-1"><Icono n="delete" size={16} /> Borrar</button>
         </div>
       ) : !oculta && (
         <button onClick={ocultar} className="mx-auto mt-5 text-sm font-semibold text-gris flex items-center gap-1.5"><Icono n="visibility_off" size={16} /> No me gusta: no mostrarla más</button>

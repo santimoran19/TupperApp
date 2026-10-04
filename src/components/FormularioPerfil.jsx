@@ -88,7 +88,7 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
         </div>
         <div>
           <label className="etiqueta" htmlFor="pf-nac">Fecha de nacimiento</label>
-          <input id="pf-nac" type="date" className={`campo ${ver(f.birth_date, errDatos.birth_date) ? '!border-rojo !bg-rojo-suave/40' : ''}`}
+          <input id="pf-nac" type="date" className={`campo ${ver(f.birth_date, errDatos.birth_date) ? '!border-rojo-texto !bg-rojo-suave/40' : ''}`}
             min={nac.min} max={nac.max} value={f.birth_date} onChange={(e) => set('birth_date')(e.target.value)} />
         </div>
         <div className="col-span-2 -mt-2 empty:hidden"><Err>{ver(f.birth_date, errDatos.birth_date)}</Err></div>
@@ -117,8 +117,8 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
 
       <div className="rounded-2xl bg-verde-claro p-4">
         <div className="flex items-center justify-between mb-2">
-          <p className="font-semibold text-verde">Objetivo diario</p>
-          <button type="button" className="text-xs font-semibold text-verde underline"
+          <p className="font-semibold text-verde-texto">Objetivo diario</p>
+          <button type="button" className="text-xs font-semibold text-verde-texto underline"
             onClick={() => { if (!manual) setF((s) => ({ ...s, kcal_target: sugerido?.kcal ?? '', protein_target: sugerido?.protein ?? '' })); setManual(!manual) }}>
             {manual ? 'Usar el calculado' : 'Poner el mío'}
           </button>
@@ -128,12 +128,12 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="etiqueta" htmlFor="pf-kcal">Calorías por día</label>
-              <Numero id="pf-kcal" valor={kcal} onChange={set('kcal_target')} disabled={!manual} decimales={0} largo={4} className="campo bg-white disabled:opacity-70" error={manual && !!errObjetivo.kcal} />
+              <Numero id="pf-kcal" valor={kcal} onChange={set('kcal_target')} disabled={!manual} decimales={0} largo={4} className="campo bg-superficie disabled:opacity-70" error={manual && !!errObjetivo.kcal} />
               {manual && <Err>{errObjetivo.kcal}</Err>}
             </div>
             <div>
               <label className="etiqueta" htmlFor="pf-prot">Proteína por día (g)</label>
-              <Numero id="pf-prot" valor={prot} onChange={set('protein_target')} disabled={!manual} decimales={0} largo={3} className="campo bg-white disabled:opacity-70" error={manual && !!errObjetivo.prot} />
+              <Numero id="pf-prot" valor={prot} onChange={set('protein_target')} disabled={!manual} decimales={0} largo={3} className="campo bg-superficie disabled:opacity-70" error={manual && !!errObjetivo.prot} />
               {manual && <Err>{errObjetivo.prot}</Err>}
             </div>
           </div>
@@ -146,7 +146,7 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
         )}
         <div className="mt-3">
           <label className="etiqueta" htmlFor="pf-liquido">Líquido por día (litros)</label>
-          <Numero id="pf-liquido" valor={f.liquido} onChange={set('liquido')} decimales={1} largo={3} className="campo bg-white"
+          <Numero id="pf-liquido" valor={f.liquido} onChange={set('liquido')} decimales={1} largo={3} className="campo bg-superficie"
             placeholder={`${String(liquidoAuto).replace('.', ',')} (sugerido)`} error={!!errObjetivo.liquido} />
           <Err>{errObjetivo.liquido}</Err>
           <p className="text-xs text-gris mt-1">Si lo dejás vacío se usan unos 35 ml por kilo de peso. Cuenta agua, mate, infusiones y cualquier bebida sin alcohol.</p>

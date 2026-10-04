@@ -61,7 +61,7 @@ export default function Compras() {
 
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-lg font-semibold">Para comprar</h2>
-        <button onClick={() => setAgregando(true)} className="btn-chico bg-verde-suave text-verde"><Icono n="add" size={16} /> Anotar</button>
+        <button onClick={() => setAgregando(true)} className="btn-chico bg-verde-suave text-verde-texto"><Icono n="add" size={16} /> Anotar</button>
       </div>
       {delPlan.length + manuales.length === 0 ? (
         <Vacio icono="shopping_cart" titulo="No falta nada" texto="Cuando al plan le falte un ingrediente, aparece acá solo." />

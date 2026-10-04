@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#206140" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#206140" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1512" media="(prefers-color-scheme: dark)" />
+    <!-- Tiene que correr antes de pintar: aplica el tema que eligió la persona -->
+    <script src="/tema.js"></script>
     <title>Tupper: despensa, recetas y registro de comidas</title>
     <meta name="description" content="Organizá tu despensa, mirá qué podés cocinar con lo que tenés, armá el plan de la semana y registrá lo que comés con sus calorías y proteína." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

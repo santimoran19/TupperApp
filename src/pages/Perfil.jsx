@@ -8,6 +8,7 @@ import { useDatos } from '../store/Datos'
 import { diasCortos, fechaCorta, hoy } from '../lib/fechas'
 import { COMIDAS, NOMBRE_COMIDA, litros, objetivoLiquido, redondear } from '../lib/nutricion'
 import { LIM, errFecha, errNumero } from '../lib/validar'
+import { TEMAS, elegirTema, temaGuardado } from '../lib/tema'
 
 function Grafico({ puntos, meta }) {
   if (puntos.length < 2) return <p className="text-sm text-gris">Cuando tengas dos registros aparece la curva.</p>
@@ -22,20 +23,20 @@ function Grafico({ puntos, meta }) {
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
       {[min + 1, (min + max) / 2, max - 1].map((v) => (
         <g key={v}>
-          <line x1={m.i} x2={W - m.d} y1={y(v)} y2={y(v)} stroke="#e2e8f0" />
-          <text x={m.i - 6} y={y(v) + 4} textAnchor="end" fontSize="10" fill="#5b6b82">{redondear(v, 1)}</text>
+          <line x1={m.i} x2={W - m.d} y1={y(v)} y2={y(v)} className="stroke-linea" />
+          <text x={m.i - 6} y={y(v) + 4} textAnchor="end" fontSize="10" className="fill-gris">{redondear(v, 1)}</text>
         </g>
       ))}
       {meta && (
         <g>
-          <line x1={m.i} x2={W - m.d} y1={y(meta)} y2={y(meta)} stroke="#e67e22" strokeDasharray="5 4" />
-          <text x={W - m.d} y={y(meta) - 4} textAnchor="end" fontSize="10" fill="#944a00">meta {meta} kg</text>
+          <line x1={m.i} x2={W - m.d} y1={y(meta)} y2={y(meta)} className="stroke-naranja" strokeDasharray="5 4" />
+          <text x={W - m.d} y={y(meta) - 4} textAnchor="end" fontSize="10" className="fill-naranja-oscuro">meta {meta} kg</text>
         </g>
       )}
-      <path d={linea} fill="none" stroke="#206140" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      {puntos.map((p, i) => <circle key={p.f} cx={x(i)} cy={y(p.v)} r="3.5" fill="#206140" />)}
-      <text x={x(0)} y={H - 6} fontSize="10" fill="#5b6b82">{fechaCorta(puntos[0].f)}</text>
-      <text x={x(puntos.length - 1)} y={H - 6} textAnchor="end" fontSize="10" fill="#5b6b82">{fechaCorta(puntos[puntos.length - 1].f)}</text>
+      <path d={linea} fill="none" className="stroke-verde-texto" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+      {puntos.map((p, i) => <circle key={p.f} cx={x(i)} cy={y(p.v)} r="3.5" className="fill-verde-texto" />)}
+      <text x={x(0)} y={H - 6} fontSize="10" className="fill-gris">{fechaCorta(puntos[0].f)}</text>
+      <text x={x(puntos.length - 1)} y={H - 6} textAnchor="end" fontSize="10" className="fill-gris">{fechaCorta(puntos[puntos.length - 1].f)}</text>
     </svg>
   )
 }
@@ -66,6 +67,7 @@ export default function Perfil() {
   }
   const nav = useNavigate()
   const [editando, setEditando] = useState(false)
+  const [tema, setTema] = useState(temaGuardado)
   const [nueva, setNueva] = useState(null)
 
   const ordenadas = useMemo(() => [...medidas].sort((a, b) => a.date.localeCompare(b.date)), [medidas])
@@ -104,19 +106,19 @@ export default function Perfil() {
     <Marco titulo="Perfil" atras>
       <section className="tarjeta p-5 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-verde-medio text-white text-xl font-semibold flex items-center justify-center">
+          <div className="w-14 h-14 rounded-full bg-verde text-white text-xl font-semibold flex items-center justify-center">
             {perfil.name.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-lg truncate">{perfil.name}</p>
             <p className="text-sm text-gris truncate">{usuario.email}</p>
           </div>
-          <button onClick={() => setEditando(true)} className="btn-chico bg-verde-suave text-verde"><Icono n="edit" size={16} /> Editar</button>
+          <button onClick={() => setEditando(true)} className="btn-chico bg-verde-suave text-verde-texto"><Icono n="edit" size={16} /> Editar</button>
         </div>
         <div className="grid grid-cols-3 gap-2 mt-4">
           <div className="rounded-xl bg-verde-claro p-3">
             <p className="text-xs text-gris font-semibold">Calorías</p>
-            <p className="text-xl font-bold text-verde">{perfil.kcal_target}</p>
+            <p className="text-xl font-bold text-verde-texto">{perfil.kcal_target}</p>
           </div>
           <div className="rounded-xl bg-coral-suave p-3">
             <p className="text-xs text-gris font-semibold">Proteína</p>
@@ -137,7 +139,7 @@ export default function Perfil() {
         </div>
         <div className="grid grid-cols-3 gap-2 mb-4 text-center">
           <div><p className="text-xs text-gris">Actual</p><p className="font-bold">{actual ? `${actual} kg` : '—'}</p></div>
-          <div><p className="text-xs text-gris">{bajado >= 0 ? 'Bajaste' : 'Subiste'}</p><p className="font-bold text-verde">{Math.abs(bajado)} kg</p></div>
+          <div><p className="text-xs text-gris">{bajado >= 0 ? 'Bajaste' : 'Subiste'}</p><p className="font-bold text-verde-texto">{Math.abs(bajado)} kg</p></div>
           <div><p className="text-xs text-gris">Falta</p><p className="font-bold">{falta === null ? '—' : falta <= 0 ? '¡Llegaste!' : `${falta} kg`}</p></div>
         </div>
         <Grafico puntos={pesos} meta={Number(perfil.goal_weight_kg) || null} />
@@ -180,14 +182,27 @@ export default function Perfil() {
         </div>
       </section>
 
+      <section className="tarjeta p-5 mb-4">
+        <h2 className="font-semibold">Apariencia</h2>
+        <p className="text-sm text-gris mt-1 mb-3">En automático la app sigue el modo claro u oscuro de tu teléfono.</p>
+        <div className="grid grid-cols-3 gap-1 bg-campo rounded-full p-1" role="radiogroup" aria-label="Tema de la app">
+          {TEMAS.map(([valor, nombre]) => (
+            <button key={valor} role="radio" aria-checked={tema === valor} onClick={() => { elegirTema(valor); setTema(valor) }}
+              className={`h-9 rounded-full text-[13px] font-semibold transition ${tema === valor ? 'bg-superficie text-verde-texto shadow-tarjeta' : 'text-gris'}`}>
+              {nombre}
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section className="tarjeta px-4 mb-4 divide-y divide-linea">
         {[['/resumen', 'bar_chart', 'Resumen de la semana'], ['/alimentos', 'eco', 'Mis alimentos']].map(([a, icono, texto]) => (
           <Link key={a} to={a} className="flex items-center gap-3 py-3.5">
-            <Icono n={icono} className="text-verde" size={20} /> <span className="flex-1 font-medium">{texto}</span> <Icono n="chevron_right" className="text-gris" size={20} />
+            <Icono n={icono} className="text-verde-texto" size={20} /> <span className="flex-1 font-medium">{texto}</span> <Icono n="chevron_right" className="text-gris" size={20} />
           </Link>
         ))}
         <button onClick={descargar} disabled={trabajando} className="w-full flex items-center gap-3 py-3.5 text-left">
-          <Icono n="download" className="text-verde" size={20} /> <span className="flex-1 font-medium">Descargar mis datos</span>
+          <Icono n="download" className="text-verde-texto" size={20} /> <span className="flex-1 font-medium">Descargar mis datos</span>
         </button>
         {[['/terminos', 'Términos de uso'], ['/privacidad', 'Política de privacidad']].map(([a, texto]) => (
           <Link key={a} to={a} className="flex items-center gap-3 py-3.5">
@@ -196,7 +211,7 @@ export default function Perfil() {
         ))}
       </section>
 
-      <button onClick={() => { nav('/', { replace: true }); salir() }} className="btn w-full bg-white border border-linea text-rojo"><Icono n="logout" size={20} /> Cerrar sesión</button>
+      <button onClick={() => { nav('/', { replace: true }); salir() }} className="btn w-full bg-superficie border border-linea text-rojo-texto"><Icono n="logout" size={20} /> Cerrar sesión</button>
       <button onClick={() => setBorrando('')} className="mx-auto mt-5 text-sm text-gris underline flex items-center gap-1.5"><Icono n="person_remove" size={16} /> Borrar mi cuenta</button>
 
       {editando && (
@@ -218,7 +233,7 @@ export default function Perfil() {
           <div className="space-y-3">
             <div>
               <label className="etiqueta" htmlFor="md-fecha">Fecha</label>
-              <input id="md-fecha" type="date" className={`campo ${errMedida.date ? '!border-rojo !bg-rojo-suave/40' : ''}`} value={nueva.date} min="2000-01-01" max={hoy()} onChange={(e) => setNueva({ ...nueva, date: e.target.value })} />
+              <input id="md-fecha" type="date" className={`campo ${errMedida.date ? '!border-rojo-texto !bg-rojo-suave/40' : ''}`} value={nueva.date} min="2000-01-01" max={hoy()} onChange={(e) => setNueva({ ...nueva, date: e.target.value })} />
               <Err>{errMedida.date}</Err>
             </div>
             <div className="grid grid-cols-2 gap-3">

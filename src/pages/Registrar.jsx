@@ -155,7 +155,7 @@ export default function Registrar() {
 
       <div className="grid grid-cols-3 gap-2 mb-4">
         <button onClick={() => setBuscando('alimento')} className="tarjeta p-3 text-left">
-          <div className="w-10 h-10 rounded-full bg-verde-claro text-verde flex items-center justify-center mb-2"><Icono n="search" /></div>
+          <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2"><Icono n="search" /></div>
           <p className="font-semibold">Alimento</p>
           <p className="text-xs text-gris">Buscá o creá uno</p>
         </button>
@@ -165,7 +165,7 @@ export default function Registrar() {
           <p className="text-xs text-gris">Agua, mate, café, alcohol</p>
         </button>
         <button onClick={() => setBuscando('receta')} className="tarjeta p-3 text-left">
-          <div className="w-10 h-10 rounded-full bg-verde-claro text-verde flex items-center justify-center mb-2"><Icono n="menu_book" /></div>
+          <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2"><Icono n="menu_book" /></div>
           <p className="font-semibold">Receta</p>
           <p className="text-xs text-gris">Una porción armada</p>
         </button>
@@ -183,13 +183,13 @@ export default function Registrar() {
 
       {chipsFrecuentes.length > 0 && (
         <>
-          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5"><Icono n="history" size={18} className="text-verde" /> Lo que más registrás</p>
+          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5"><Icono n="history" size={18} className="text-verde-texto" /> Lo que más registrás</p>
           <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-4">
             {chipsFrecuentes.map((g) => {
               const nombre = (g.food_id ? d.alimentosPorId.get(g.food_id) : d.recetasPorId.get(g.recipe_id)).name
               return (
-                <button key={g.clave} onClick={() => agregarFrecuente(g)} className="shrink-0 max-w-[220px] rounded-full bg-white shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium">
-                  <span className="truncate">{nombre.split(' (')[0]}</span> <span className="w-6 h-6 shrink-0 rounded-full bg-verde-suave text-verde flex items-center justify-center"><Icono n="add" size={16} /></span>
+                <button key={g.clave} onClick={() => agregarFrecuente(g)} className="shrink-0 max-w-[220px] rounded-full bg-superficie shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium">
+                  <span className="truncate">{nombre.split(' (')[0]}</span> <span className="w-6 h-6 shrink-0 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center"><Icono n="add" size={16} /></span>
                 </button>
               )
             })}
@@ -199,11 +199,11 @@ export default function Registrar() {
 
       {enDespensa.length > 0 && (
         <>
-          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5"><Icono n="kitchen" size={18} className="text-verde" /> Desde tu despensa</p>
+          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5"><Icono n="kitchen" size={18} className="text-verde-texto" /> Desde tu despensa</p>
           <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-5">
             {enDespensa.map((a) => (
-              <button key={a.id} onClick={() => agregarAlimento(a)} className="shrink-0 rounded-full bg-white shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium">
-                {a.name.split(' (')[0]} <span className="w-6 h-6 rounded-full bg-verde-suave text-verde flex items-center justify-center"><Icono n="add" size={16} /></span>
+              <button key={a.id} onClick={() => agregarAlimento(a)} className="shrink-0 rounded-full bg-superficie shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium">
+                {a.name.split(' (')[0]} <span className="w-6 h-6 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center"><Icono n="add" size={16} /></span>
               </button>
             ))}
           </div>
@@ -230,7 +230,7 @@ export default function Registrar() {
             <div key={p.food_id || p.recipe_id} className="tarjeta p-4">
               <div className="flex items-start gap-2">
                 <p className="flex-1 font-medium">{a ? a.name : r.name}</p>
-                <span className="font-bold text-verde whitespace-nowrap">{redondear(m.kcal)} kcal</span>
+                <span className="font-bold text-verde-texto whitespace-nowrap">{redondear(m.kcal)} kcal</span>
                 <button onClick={() => quitar(i)} className="w-7 h-7 -mr-1 text-gris" aria-label="Quitar"><Icono n="close" size={20} /></button>
               </div>
               <div className="flex items-center gap-2 mt-2">
@@ -245,7 +245,7 @@ export default function Registrar() {
                 <div className="flex gap-1.5 overflow-x-auto sin-scroll mt-2.5">
                   {medidas.map(([nombre, cantidad]) => (
                     <button key={nombre} onClick={() => cambiar(i, { qty: String(cantidad) })}
-                      className={`shrink-0 rounded-full px-3 h-8 text-xs font-semibold ${Number(p.qty) === cantidad ? 'bg-teal-oscuro text-white' : 'bg-teal-suave text-teal-oscuro'}`}>
+                      className={`shrink-0 rounded-full px-3 h-8 text-xs font-semibold ${Number(p.qty) === cantidad ? 'bg-teal-fuerte text-white' : 'bg-teal-suave text-teal-oscuro'}`}>
                       {nombre} · {textoMedida(a, cantidad)}
                     </button>
                   ))}
@@ -293,7 +293,7 @@ export default function Registrar() {
           <div className="flex items-end justify-between mb-4">
             <div>
               <p className="text-xs font-bold tracking-wider text-gris">TOTAL</p>
-              <p className="text-3xl font-bold text-verde leading-none mt-1">{redondear(total.kcal)} <span className="text-sm">kcal</span></p>
+              <p className="text-3xl font-bold text-verde-texto leading-none mt-1">{redondear(total.kcal)} <span className="text-sm">kcal</span></p>
             </div>
             <p className="text-sm text-gris text-right">Con esto llevás<br /><b className="text-tinta">{redondear(yaComido.kcal + total.kcal)} de {d.perfil.kcal_target} kcal</b></p>
           </div>
@@ -333,10 +333,10 @@ export default function Registrar() {
                     <p className="font-medium truncate">{d.favoritas.has(r.id) && <Icono n="favorite" lleno size={14} className="text-coral-oscuro mr-1 align-[-2px]" />}{r.name}</p>
                     <p className="text-xs text-gris">
                       {redondear(m.kcal)} kcal y {redondear(m.protein)} g prot. por porción
-                      {listas > 0 && <span className="text-verde font-semibold"> · {redondear(listas, 1)} ya cocinadas</span>}
+                      {listas > 0 && <span className="text-verde-texto font-semibold"> · {redondear(listas, 1)} ya cocinadas</span>}
                     </p>
                   </div>
-                  <Icono n="add_circle" className="text-verde" />
+                  <Icono n="add_circle" className="text-verde-texto" />
                 </button>
               )
             })}

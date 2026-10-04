@@ -109,7 +109,7 @@ export default function Legal({ tipo }) {
             {parrafos.map((p) => <p key={p} className="text-sm leading-relaxed text-tinta/90 mb-2">{p}</p>)}
           </section>
         ))}
-        <Link to={`/${otro[0]}`} replace className="text-sm font-semibold text-verde underline">Ver {otro[1]}</Link>
+        <Link to={`/${otro[0]}`} replace className="text-sm font-semibold text-verde-texto underline">Ver {otro[1]}</Link>
       </main>
     </div>
   )

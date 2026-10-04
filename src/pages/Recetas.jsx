@@ -59,7 +59,7 @@ export default function Recetas() {
 
       <div className="relative mb-3">
         <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
-        <input className="campo pl-11 bg-white shadow-tarjeta" maxLength={60} placeholder="Buscar receta o ingrediente..." value={texto} onChange={(e) => setTexto(e.target.value)} />
+        <input className="campo pl-11 bg-superficie shadow-tarjeta" maxLength={60} placeholder="Buscar receta o ingrediente..." value={texto} onChange={(e) => setTexto(e.target.value)} />
       </div>
       <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-4">
         {filtros.map(([k, t]) => <Chip key={k} activo={filtro === k} onClick={() => setFiltro(k)}>{t}</Chip>)}
@@ -71,7 +71,7 @@ export default function Recetas() {
             <div className="flex flex-wrap gap-1.5 mb-2">
               {cocinadas > 0 && <span className="pill bg-teal-suave text-teal-oscuro"><Icono n="takeout_dining" size={14} lleno /> {redondear(cocinadas, 1)} ya cocinadas</span>}
               {disp.ok
-                ? <span className="pill bg-verde-suave text-verde"><Icono n="check" size={14} /> Tenés todo{posibles > 1 ? ` · alcanza para ${posibles}` : ''}</span>
+                ? <span className="pill bg-verde-suave text-verde-texto"><Icono n="check" size={14} /> Tenés todo{posibles > 1 ? ` · alcanza para ${posibles}` : ''}</span>
                 : <span className="pill bg-naranja-suave text-naranja-oscuro"><Icono n="shopping_basket" size={14} /> {disp.faltan.length === 1 ? `Falta: ${d.alimentosPorId.get(disp.faltan[0].food_id)?.name.split(' (')[0]}` : `Faltan ${disp.faltan.length} de ${total} ingredientes`}</span>}
             </div>
             <div className="flex items-start gap-2">
@@ -85,7 +85,7 @@ export default function Recetas() {
               {r.minutes} min · {listaComidas(r.meal_types)}{r.servings > 1 ? ` · rinde ${r.servings}` : ''}
             </p>
             <div className="flex flex-wrap gap-1.5 mt-3">
-              <span className="pill bg-verde-suave text-verde">{redondear(m.kcal)} kcal</span>
+              <span className="pill bg-verde-suave text-verde-texto">{redondear(m.kcal)} kcal</span>
               <span className="pill bg-coral-suave text-coral-oscuro">{redondear(m.protein)} g prot.</span>
               {r.portable && <span className="pill bg-campo text-gris">Se puede llevar</span>}
             </div>
@@ -100,7 +100,7 @@ export default function Recetas() {
                   <p className="font-semibold truncate">{r.name}</p>
                   <p className="text-xs text-gris">{listaComidas(r.meal_types)}</p>
                 </Link>
-                <button onClick={() => d.mostrarReceta(r.id)} className="btn-chico bg-verde-suave text-verde whitespace-nowrap"><Icono n="visibility" size={16} /> Mostrar</button>
+                <button onClick={() => d.mostrarReceta(r.id)} className="btn-chico bg-verde-suave text-verde-texto whitespace-nowrap"><Icono n="visibility" size={16} /> Mostrar</button>
               </div>
             ))}
             {ocultas.length === 0 && <p className="text-sm text-gris text-center py-6">No tenés recetas ocultas.</p>}

@@ -74,6 +74,7 @@ Los alimentos guardan calorías y macros cada 100 g (o 100 ml). Si se miden por 
 - Encabezados de seguridad en `vercel.json`, incluida una política de contenido (CSP) que solo deja conectar con Supabase y Open Food Facts. Si sumás otro servicio externo, agregalo ahí en `connect-src`. El HTTPS lo fuerza Vercel.
 - Las pantallas se bajan de a una (carga por partes) y los íconos están comprimidos.
 - Confirmación propia antes de borrar, página para direcciones que no existen y colores de texto con contraste AA.
+- Modo oscuro: sigue al teléfono y se puede forzar desde Perfil > Apariencia. Los colores de los dos temas son variables en `src/index.css`; `public/tema.js` aplica la elección antes de pintar.
 
 ## Carpetas
 

@@ -49,7 +49,7 @@ function Requisitos({ clave, email }) {
   return (
     <ul className="space-y-1" aria-label="Requisitos de la contraseña">
       {requisitosClave(clave, email).map((r) => (
-        <li key={r.texto} className={`flex items-start gap-1.5 text-xs ${r.ok ? 'text-verde' : 'text-gris'}`}>
+        <li key={r.texto} className={`flex items-start gap-1.5 text-xs ${r.ok ? 'text-verde-texto' : 'text-gris'}`}>
           <Icono n={r.ok ? 'check_circle' : 'cancel'} lleno={r.ok} size={15} className="mt-px" /> {r.texto}
         </li>
       ))}
@@ -187,21 +187,21 @@ export default function Acceso() {
             <div className="relative grid grid-cols-2 bg-campo rounded-full p-1 mb-5">
               {/* La pastilla blanca se desliza de un lado al otro */}
               <span
-                className={`absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-tarjeta transition-transform duration-300 ease-out ${modo === 'crear' ? 'translate-x-full' : 'translate-x-0'}`}
+                className={`absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-full bg-superficie shadow-tarjeta transition-transform duration-300 ease-out ${modo === 'crear' ? 'translate-x-full' : 'translate-x-0'}`}
                 aria-hidden="true"
               />
               {[['entrar', 'Iniciar sesión'], ['crear', 'Crear cuenta']].map(([m, t]) => (
                 <button key={m} type="button" onClick={() => ir(m)}
-                  className={`relative z-10 h-10 rounded-full text-sm font-semibold transition-colors duration-300 ${modo === m ? 'text-verde' : 'text-gris'}`}>
+                  className={`relative z-10 h-10 rounded-full text-sm font-semibold transition-colors duration-300 ${modo === m ? 'text-verde-texto' : 'text-gris'}`}>
                   {t}
                 </button>
               ))}
             </div>
           ) : (
             <div className="mb-4">
-              <button type="button" onClick={() => ir('entrar')} className="text-sm font-semibold text-verde flex items-center gap-1 mb-3"><Icono n="arrow_back" size={18} /> Volver</button>
+              <button type="button" onClick={() => ir('entrar')} className="text-sm font-semibold text-verde-texto flex items-center gap-1 mb-3"><Icono n="arrow_back" size={18} /> Volver</button>
               <div className="flex items-center gap-3">
-                <span className="w-11 h-11 rounded-full bg-verde-claro text-verde flex items-center justify-center shrink-0"><Icono n={modo === 'codigo' ? 'mark_email_read' : 'lock_reset'} /></span>
+                <span className="w-11 h-11 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center shrink-0"><Icono n={modo === 'codigo' ? 'mark_email_read' : 'lock_reset'} /></span>
                 <div className="min-w-0">
                   <h2 className="font-semibold text-lg leading-tight">{modo === 'codigo' ? 'Confirmá tu email' : 'Recuperar contraseña'}</h2>
                   <p className="text-sm text-gris break-words">
@@ -233,24 +233,24 @@ export default function Acceso() {
                 <Clave id="clave" etiqueta={modo === 'nueva' ? 'Contraseña nueva' : 'Contraseña'} valor={clave} onChange={setClave} autoComplete="new-password" />
                 <Requisitos clave={clave} email={email} />
                 <Clave id="clave2" etiqueta="Repetí la contraseña" valor={clave2} onChange={setClave2} autoComplete="new-password" />
-                {clave2 && clave !== clave2 && <p className="text-xs text-rojo -mt-1.5">Todavía no coinciden.</p>}
+                {clave2 && clave !== clave2 && <p className="text-xs text-rojo-texto -mt-1.5">Todavía no coinciden.</p>}
               </>
             )}
 
-            {error && <p className="text-sm text-rojo" role="alert">{error}</p>}
-            {mensaje && <p className="text-sm text-verde font-medium">{mensaje}</p>}
+            {error && <p className="text-sm text-rojo-texto" role="alert">{error}</p>}
+            {mensaje && <p className="text-sm text-verde-texto font-medium">{mensaje}</p>}
 
             <button type="submit" disabled={enviando} className="btn-primario w-full">
               {{ entrar: 'Entrar', crear: 'Crear cuenta', codigo: 'Confirmar', olvide: 'Mandarme el código', nueva: 'Guardar y entrar' }[modo]}
             </button>
 
             {modo === 'entrar' && (
-              <button type="button" onClick={() => ir('olvide')} className="block mx-auto text-sm font-semibold text-verde">Olvidé mi contraseña</button>
+              <button type="button" onClick={() => ir('olvide')} className="block mx-auto text-sm font-semibold text-verde-texto">Olvidé mi contraseña</button>
             )}
             {(modo === 'codigo' || (modo === 'nueva' && !verificado)) && (
               <div className="text-center text-sm text-gris">
                 <p>¿No llegó? Fijate en spam o correo no deseado.</p>
-                <button type="button" onClick={reenviar} disabled={espera > 0 || enviando} className="font-semibold text-verde disabled:text-gris mt-1">
+                <button type="button" onClick={reenviar} disabled={espera > 0 || enviando} className="font-semibold text-verde-texto disabled:text-gris mt-1">
                   {espera > 0 ? `Podés pedir otro en ${espera} s` : 'Mandarme otro código'}
                 </button>
               </div>

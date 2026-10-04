@@ -10,8 +10,8 @@ import { disponibilidad } from '../lib/planificador'
 import { rangoDiario } from '../lib/validar'
 
 const TONOS = {
-  info: { caja: 'bg-verde-claro', titulo: 'text-verde', icono: 'eco', rotulo: 'TU DÍA' },
-  bien: { caja: 'bg-verde-claro', titulo: 'text-verde', icono: 'check_circle', rotulo: 'EN OBJETIVO' },
+  info: { caja: 'bg-verde-claro', titulo: 'text-verde-texto', icono: 'eco', rotulo: 'TU DÍA' },
+  bien: { caja: 'bg-verde-claro', titulo: 'text-verde-texto', icono: 'check_circle', rotulo: 'EN OBJETIVO' },
   arriba: { caja: 'bg-naranja-suave', titulo: 'text-naranja-oscuro', icono: 'trending_up', rotulo: 'VENÍS ARRIBA' },
   abajo: { caja: 'bg-teal-suave', titulo: 'text-teal-oscuro', icono: 'trending_down', rotulo: 'VENÍS ABAJO' },
 }
@@ -115,10 +115,10 @@ export default function Diario() {
             const tiene = d.registros.some((r) => r.date === f)
             return (
               <button key={f} onClick={() => setFecha(f)} disabled={f < rango.min || f > rango.max}
-                className={`flex flex-col items-center py-2 rounded-2xl disabled:opacity-40 ${activo ? 'bg-verde text-white shadow-tarjeta' : 'bg-white shadow-tarjeta'}`}>
+                className={`flex flex-col items-center py-2 rounded-2xl disabled:opacity-40 ${activo ? 'bg-verde text-white shadow-tarjeta' : 'bg-superficie shadow-tarjeta'}`}>
                 <span className={`text-[11px] font-medium ${activo ? 'opacity-90' : 'text-gris'}`}>{diaCorto(f)}</span>
                 <span className="text-sm font-bold">{numeroDia(f)}</span>
-                <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${tiene ? (activo ? 'bg-white' : 'bg-verde-medio') : 'bg-transparent'}`} />
+                <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${tiene ? (activo ? 'bg-superficie' : 'bg-verde-medio') : 'bg-transparent'}`} />
               </button>
             )
           })}
@@ -135,7 +135,7 @@ export default function Diario() {
           <div className="flex-1 space-y-2">
             <div className={`rounded-2xl p-3 ${restante < 0 ? 'bg-naranja-suave' : 'bg-verde-claro'}`}>
               <p className="text-xs font-semibold text-gris">{restante < 0 ? 'Te pasaste' : 'Restante'}</p>
-              <p className={`text-lg font-bold ${restante < 0 ? 'text-naranja-oscuro' : 'text-verde'}`}>{Math.abs(restante).toLocaleString('es-AR')} kcal</p>
+              <p className={`text-lg font-bold ${restante < 0 ? 'text-naranja-oscuro' : 'text-verde-texto'}`}>{Math.abs(restante).toLocaleString('es-AR')} kcal</p>
             </div>
             <div className="rounded-2xl p-3 bg-campo">
               <p className="text-xs font-semibold text-gris">Comidas</p>
@@ -157,7 +157,7 @@ export default function Diario() {
               <span className="font-medium">Líquido</span>
               <span className="text-gris"><b className="text-tinta">{litros(liquido)} L</b> / {litros(metaLiquido)} L</span>
             </div>
-            <div className="h-2 rounded-full bg-[#e7efe8] overflow-hidden">
+            <div className="h-2 rounded-full bg-pista overflow-hidden">
               <div className="h-full rounded-full bg-teal" style={{ width: `${Math.min((liquido / metaLiquido) * 100, 100)}%`, transition: 'width .4s' }} />
             </div>
             <div className="flex items-center justify-between gap-2 mt-2">
@@ -170,7 +170,7 @@ export default function Diario() {
         </div>
       </section>
 
-      <Link to={`/resumen?fecha=${fecha}`} className="flex items-center gap-2 text-sm font-semibold text-verde mb-4 px-1">
+      <Link to={`/resumen?fecha=${fecha}`} className="flex items-center gap-2 text-sm font-semibold text-verde-texto mb-4 px-1">
         <Icono n="bar_chart" size={18} /> Ver el resumen de la semana <Icono n="chevron_right" size={18} className="ml-auto text-gris" />
       </Link>
 
@@ -183,7 +183,7 @@ export default function Diario() {
           {ideas.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {ideas.map((r) => (
-                <Link key={r.id} to={`/recetas/${r.id}`} className="pill bg-white text-tinta shadow-tarjeta py-1.5">
+                <Link key={r.id} to={`/recetas/${r.id}`} className="pill bg-superficie text-tinta shadow-tarjeta py-1.5">
                   {r.name} · {redondear(d.macrosPorReceta.get(r.id).kcal)} kcal
                 </Link>
               ))}
@@ -235,11 +235,11 @@ export default function Diario() {
           const subtotal = sumar(entradas)
           const irARegistrar = () => nav(`/registrar?fecha=${fecha}&comida=${comida}`)
           return (
-            <section key={comida} className={`tarjeta p-4 ${entradas.length === 0 ? 'border-dashed border-linea shadow-none bg-white/60' : ''}`}>
+            <section key={comida} className={`tarjeta p-4 ${entradas.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-verde-claro text-verde flex items-center justify-center"><Icono n={ICONO_COMIDA[comida]} /></div>
+                <div className="w-10 h-10 rounded-xl bg-verde-claro text-verde-texto flex items-center justify-center"><Icono n={ICONO_COMIDA[comida]} /></div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold tracking-wider text-verde">{NOMBRE_COMIDA[comida].toUpperCase()}</p>
+                  <p className="text-xs font-bold tracking-wider text-verde-texto">{NOMBRE_COMIDA[comida].toUpperCase()}</p>
                   {entradas.length > 0
                     ? <p className="text-sm text-gris">{redondear(subtotal.protein)} g de proteína</p>
                     : salteada
@@ -259,14 +259,14 @@ export default function Diario() {
                       <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}><Icono n="close" size={18} /></button>
                     </div>
                   ))}
-                  <button onClick={irARegistrar} className="pt-2.5 text-sm font-semibold text-verde flex items-center gap-1"><Icono n="add" size={18} /> Agregar algo más</button>
+                  <button onClick={irARegistrar} className="pt-2.5 text-sm font-semibold text-verde-texto flex items-center gap-1"><Icono n="add" size={18} /> Agregar algo más</button>
                 </div>
               )}
 
               {entradas.length === 0 && salteada && (
                 <div className="mt-3 flex items-center gap-2">
                   <button onClick={() => d.borrarRegistro(salteada.id)} className="btn-chico bg-campo text-tinta flex-1"><Icono n="undo" size={16} /> Deshacer</button>
-                  <button onClick={irARegistrar} className="btn-chico bg-verde-suave text-verde flex-1"><Icono n="add" size={16} /> Al final comí</button>
+                  <button onClick={irARegistrar} className="btn-chico bg-verde-suave text-verde-texto flex-1"><Icono n="add" size={16} /> Al final comí</button>
                 </div>
               )}
 
@@ -277,7 +277,7 @@ export default function Diario() {
                       <Icono n="check" size={16} /> Comí esto · {redondear(m.kcal)} kcal
                     </button>
                   )}
-                  <button onClick={irARegistrar} className={`btn-chico bg-verde-suave text-verde whitespace-nowrap ${receta ? '' : 'flex-1'}`}>
+                  <button onClick={irARegistrar} className={`btn-chico bg-verde-suave text-verde-texto whitespace-nowrap ${receta ? '' : 'flex-1'}`}>
                     <Icono n={receta ? 'swap_horiz' : 'add'} size={16} /> {receta ? 'Otra cosa' : 'Registrar'}
                   </button>
                   {fecha <= hoy() && (
@@ -291,7 +291,7 @@ export default function Diario() {
           )
         })}
 
-        <section className={`tarjeta p-4 ${extras.length === 0 ? 'border-dashed border-linea shadow-none bg-white/60' : ''}`}>
+        <section className={`tarjeta p-4 ${extras.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-teal-suave text-teal-oscuro flex items-center justify-center"><Icono n={ICONO_COMIDA[EXTRA]} /></div>
             <div className="flex-1 min-w-0">
@@ -316,7 +316,7 @@ export default function Diario() {
           )}
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}&abrir=bebida`)} className="btn-chico bg-teal-suave text-teal-oscuro flex-1 whitespace-nowrap"><Icono n="local_bar" size={16} /> Bebida</button>
-            <button onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}`)} className="btn-chico bg-verde-suave text-verde flex-1 whitespace-nowrap"><Icono n="add" size={16} /> Otra cosa</button>
+            <button onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}`)} className="btn-chico bg-verde-suave text-verde-texto flex-1 whitespace-nowrap"><Icono n="add" size={16} /> Otra cosa</button>
           </div>
         </section>
       </div>

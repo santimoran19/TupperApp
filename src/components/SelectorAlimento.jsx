@@ -83,10 +83,10 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
                 <p className="font-medium truncate">{a.name}</p>
                 <p className="text-xs text-gris">
                   {cada100(a)}
-                  {hay > 0 && <span className="text-verde font-semibold"> · tenés {cantidadTexto(a, hay)}</span>}
+                  {hay > 0 && <span className="text-verde-texto font-semibold"> · tenés {cantidadTexto(a, hay)}</span>}
                 </p>
               </div>
-              <Icono n="add_circle" className="text-verde" />
+              <Icono n="add_circle" className="text-verde-texto" />
             </button>
           )
         })}
@@ -112,7 +112,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
           {off.estado === 'listo' && off.productos.length === 0 && <p className="text-sm py-2">No apareció nada con ese nombre. Podés crearlo a mano con los datos de la etiqueta.</p>}
           {off.estado === 'listo' && off.productos.length > 0 && (
             <>
-              <div className="divide-y divide-white">
+              <div className="divide-y divide-superficie">
                 {off.productos.map((p) => (
                   <button key={p.codigo} onClick={() => elegirProducto(p)} disabled={agregando} className="w-full flex items-center gap-3 py-2.5 text-left">
                     <div className="min-w-0 flex-1">

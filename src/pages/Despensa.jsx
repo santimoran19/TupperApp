@@ -40,13 +40,13 @@ export default function Despensa() {
   return (
     <Marco titulo="Despensa">
       <div className="grid grid-cols-3 gap-2 mb-4">
-        <div className="tarjeta p-3"><Icono n="inventory_2" className="text-verde" size={20} /><p className="text-2xl font-bold leading-tight">{activos}</p><p className="text-xs text-gris">En stock</p></div>
+        <div className="tarjeta p-3"><Icono n="inventory_2" className="text-verde-texto" size={20} /><p className="text-2xl font-bold leading-tight">{activos}</p><p className="text-xs text-gris">En stock</p></div>
         <div className="tarjeta p-3"><Icono n="hourglass_empty" className="text-naranja-oscuro" size={20} /><p className="text-2xl font-bold leading-tight text-naranja-oscuro">{agotados}</p><p className="text-xs text-gris">Agotados</p></div>
         <div className="tarjeta p-3"><Icono n="takeout_dining" className="text-teal-oscuro" size={20} /><p className="text-2xl font-bold leading-tight text-teal-oscuro">{redondear(cocinado.reduce((s, p) => s + Number(p.portions), 0), 1)}</p><p className="text-xs text-gris">Porciones listas</p></div>
       </div>
 
       <Link to="/compras" className="tarjeta p-4 mb-4 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-verde-suave text-verde flex items-center justify-center"><Icono n="shopping_cart" /></div>
+        <div className="w-10 h-10 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center"><Icono n="shopping_cart" /></div>
         <div className="flex-1">
           <p className="font-semibold">Lista de compras</p>
           <p className="text-xs text-gris">
@@ -63,9 +63,9 @@ export default function Despensa() {
             {cocinado.map((p) => (
               <div key={p.recipe_id} className="flex items-center gap-2 text-sm">
                 <Link to={`/recetas/${p.recipe_id}`} className="flex-1 font-medium">{d.recetasPorId.get(p.recipe_id).name}</Link>
-                <button onClick={() => d.fijarPreparado(p.recipe_id, Number(p.portions) - 1)} className="w-8 h-8 rounded-full bg-white flex items-center justify-center" aria-label="Restar porción"><Icono n="remove" size={18} /></button>
+                <button onClick={() => d.fijarPreparado(p.recipe_id, Number(p.portions) - 1)} className="w-8 h-8 rounded-full bg-superficie flex items-center justify-center" aria-label="Restar porción"><Icono n="remove" size={18} /></button>
                 <span className="w-20 text-center font-semibold">{redondear(p.portions, 1)} {Number(p.portions) === 1 ? 'porción' : 'porciones'}</span>
-                <button onClick={() => d.fijarPreparado(p.recipe_id, Number(p.portions) + 1)} disabled={Number(p.portions) >= 50} className="w-8 h-8 rounded-full bg-white flex items-center justify-center disabled:opacity-30" aria-label="Sumar porción"><Icono n="add" size={18} /></button>
+                <button onClick={() => d.fijarPreparado(p.recipe_id, Number(p.portions) + 1)} disabled={Number(p.portions) >= 50} className="w-8 h-8 rounded-full bg-superficie flex items-center justify-center disabled:opacity-30" aria-label="Sumar porción"><Icono n="add" size={18} /></button>
               </div>
             ))}
           </div>
@@ -80,7 +80,7 @@ export default function Despensa() {
         <>
           <div className="relative mb-3">
             <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
-            <input className="campo pl-11 bg-white shadow-tarjeta" maxLength={60} placeholder="Buscar en tu despensa..." value={texto} onChange={(e) => setTexto(e.target.value)} />
+            <input className="campo pl-11 bg-superficie shadow-tarjeta" maxLength={60} placeholder="Buscar en tu despensa..." value={texto} onChange={(e) => setTexto(e.target.value)} />
           </div>
           <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-4">
             {categorias.map((c) => <Chip key={c} activo={c === categoria} onClick={() => setCategoria(c)}>{c}</Chip>)}
@@ -101,7 +101,7 @@ export default function Despensa() {
                     <button onClick={() => setEditar({ alimento: a, qty: String(qty) })} className="min-w-[92px] px-1 text-sm font-semibold">{cantidadTexto(a, qty)}</button>
                     <button onClick={() => d.fijarStock(a.id, qty + pasoDe(a))} disabled={qty + pasoDe(a) > maxEnStock(a)} className="w-10 h-10 flex items-center justify-center disabled:opacity-30" aria-label={`Sumar ${a.name}`}><Icono n="add" size={20} /></button>
                   </div>
-                  <button onClick={() => d.agregarALista(a.id, pasoDe(a)).then((ok) => ok && d.avisar('Anotado en la lista de compras'))} className="ml-auto btn-chico bg-verde-suave text-verde"><Icono n="add_shopping_cart" size={16} /> Comprar</button>
+                  <button onClick={() => d.agregarALista(a.id, pasoDe(a)).then((ok) => ok && d.avisar('Anotado en la lista de compras'))} className="ml-auto btn-chico bg-verde-suave text-verde-texto"><Icono n="add_shopping_cart" size={16} /> Comprar</button>
                 </div>
               </div>
             ))}
@@ -125,7 +125,7 @@ export default function Despensa() {
           {editar.alimento.unit !== 'u' && <p className="text-xs text-gris mt-1.5">1 kg son 1000 g y 1 litro son 1000 ml.</p>}
           <div className="flex gap-2 mt-4">
             {!editar.nuevo && (
-              <button onClick={async () => { if (await d.confirmar({ titulo: `¿Quitar ${editar.alimento.name} de tu despensa?`, boton: 'Quitar' }) && await d.quitarDeDespensa(editar.alimento.id)) setEditar(null) }} className="btn bg-rojo-suave text-rojo"><Icono n="delete" size={20} /> Quitar</button>
+              <button onClick={async () => { if (await d.confirmar({ titulo: `¿Quitar ${editar.alimento.name} de tu despensa?`, boton: 'Quitar' }) && await d.quitarDeDespensa(editar.alimento.id)) setEditar(null) }} className="btn bg-rojo-suave text-rojo-texto"><Icono n="delete" size={20} /> Quitar</button>
             )}
             <button onClick={guardarCantidad} disabled={!!errorEditar} className="btn-primario flex-1">Guardar</button>
           </div>

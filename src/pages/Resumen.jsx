@@ -21,7 +21,7 @@ function Barras({ dias, objetivo, elegido, onElegir }) {
   const base = H - abajo
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Calorías por día de la semana contra el objetivo">
-      <line x1={izq} x2={W - der} y1={base} y2={base} stroke="#e2e8f0" />
+      <line x1={izq} x2={W - der} y1={base} y2={base} className="stroke-linea" />
       {dias.map((x, i) => {
         const cx = izq + paso * i + paso / 2
         const alto = Math.max(base - y(x.kcal), 0)
@@ -32,14 +32,14 @@ function Barras({ dias, objetivo, elegido, onElegir }) {
             {/* zona de toque más grande que la barra */}
             <rect x={cx - paso / 2} y={0} width={paso} height={H} fill="transparent" />
             {x.kcal > 0
-              ? <path d={`M${cx - ancho / 2},${base} v${-(alto - r)} q0,${-r} ${r},${-r} h${ancho - 2 * r} q${r},0 ${r},${r} v${alto - r} z`} fill={activo ? '#206140' : '#6a9d80'} />
-              : <rect x={cx - ancho / 2} y={base - 2} width={ancho} height={2} fill="#cbd5e1" />}
-            <text x={cx} y={H - 7} textAnchor="middle" fontSize="11" fontWeight={activo ? 700 : 500} fill={activo ? '#1e293b' : '#5b6b82'}>{diaCorto(x.f)}</text>
+              ? <path d={`M${cx - ancho / 2},${base} v${-(alto - r)} q0,${-r} ${r},${-r} h${ancho - 2 * r} q${r},0 ${r},${r} v${alto - r} z`} className={activo ? 'fill-verde-texto' : 'fill-verde-tenue'} />
+              : <rect x={cx - ancho / 2} y={base - 2} width={ancho} height={2} className="fill-linea" />}
+            <text x={cx} y={H - 7} textAnchor="middle" fontSize="11" fontWeight={activo ? 700 : 500} className={activo ? 'fill-tinta' : 'fill-gris'}>{diaCorto(x.f)}</text>
           </g>
         )
       })}
-      <line x1={izq} x2={W - der} y1={y(objetivo)} y2={y(objetivo)} stroke="#944a00" strokeWidth="1.5" strokeDasharray="5 4" />
-      <text x={izq} y={y(objetivo) - 5} fontSize="10" fontWeight="600" fill="#944a00">objetivo {miles(objetivo)}</text>
+      <line x1={izq} x2={W - der} y1={y(objetivo)} y2={y(objetivo)} className="stroke-naranja-oscuro" strokeWidth="1.5" strokeDasharray="5 4" />
+      <text x={izq} y={y(objetivo) - 5} fontSize="10" fontWeight="600" className="fill-naranja-oscuro">objetivo {miles(objetivo)}</text>
     </svg>
   )
 }
@@ -120,7 +120,7 @@ function AnalisisIA({ lunes, diasRegistrados }) {
         </p>
       )}
 
-      {error && <p className="text-sm text-rojo mt-3" role="alert">{error}</p>}
+      {error && <p className="text-sm text-rojo-texto mt-3" role="alert">{error}</p>}
       <button onClick={pedir} disabled={pidiendo || pocos} className={`${c ? 'btn-suave' : 'btn-primario'} w-full mt-3`}>
         <Icono n="wand_stars" size={20} /> {pidiendo ? 'Analizando tu semana...' : c ? 'Actualizar el análisis' : 'Analizar mi semana'}
       </button>
@@ -189,17 +189,17 @@ export default function Resumen() {
     <Marco titulo="Resumen semanal" atras>
       <div className="flex items-center justify-between mb-4">
         <button onClick={() => { setLunes(sumarDias(lunes, -7)); setElegido(sumarDias(lunes, -1)) }} disabled={sumarDias(lunes, -1) < rango.min}
-          className="w-10 h-10 rounded-full bg-white shadow-tarjeta flex items-center justify-center disabled:opacity-30" aria-label="Semana anterior"><Icono n="chevron_left" /></button>
+          className="w-10 h-10 rounded-full bg-superficie shadow-tarjeta flex items-center justify-center disabled:opacity-30" aria-label="Semana anterior"><Icono n="chevron_left" /></button>
         <div className="text-center">
           <p className="font-semibold">{lunes === lunesActual ? 'Esta semana' : lunes === sumarDias(lunesActual, -7) ? 'Semana pasada' : 'Semana'}</p>
           <p className="text-xs text-gris">{fechaCorta(dias[0].f)} al {fechaCorta(dias[6].f)}</p>
         </div>
         <button onClick={() => { setLunes(sumarDias(lunes, 7)); setElegido(sumarDias(lunes, 7)) }} disabled={lunes >= lunesActual}
-          className="w-10 h-10 rounded-full bg-white shadow-tarjeta flex items-center justify-center disabled:opacity-30" aria-label="Semana siguiente"><Icono n="chevron_right" /></button>
+          className="w-10 h-10 rounded-full bg-superficie shadow-tarjeta flex items-center justify-center disabled:opacity-30" aria-label="Semana siguiente"><Icono n="chevron_right" /></button>
       </div>
 
       <section className="rounded-2xl bg-verde-claro p-4 mb-4">
-        <p className="text-[11px] font-bold tracking-wider text-verde flex items-center gap-1.5"><Icono n="bar_chart" size={16} /> CÓMO VENÍS</p>
+        <p className="text-[11px] font-bold tracking-wider text-verde-texto flex items-center gap-1.5"><Icono n="bar_chart" size={16} /> CÓMO VENÍS</p>
         <p className="text-sm mt-1.5">{lectura}</p>
       </section>
 

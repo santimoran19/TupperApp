@@ -42,8 +42,8 @@ function Confirmacion({ pregunta, onResponder }) {
   }, [onResponder])
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center p-6">
-      <div className="absolute inset-0 bg-tinta/50" onClick={() => onResponder(false)} />
-      <div role="alertdialog" aria-modal="true" aria-labelledby="conf-titulo" aria-describedby="conf-texto" className="relative w-full max-w-[340px] bg-white rounded-3xl shadow-flotante p-5">
+      <div className="absolute inset-0 bg-black/50" onClick={() => onResponder(false)} />
+      <div role="alertdialog" aria-modal="true" aria-labelledby="conf-titulo" aria-describedby="conf-texto" className="relative w-full max-w-[340px] bg-superficie rounded-3xl shadow-flotante p-5">
         <h2 id="conf-titulo" className="text-lg font-semibold leading-snug">{pregunta.titulo}</h2>
         {pregunta.texto && <p id="conf-texto" className="text-sm text-gris mt-1.5">{pregunta.texto}</p>}
         <div className="flex gap-2 mt-5">
@@ -75,13 +75,13 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
             <Logo />
           )}
           <div className="min-w-0 flex-1">
-            {!atras && <p className="text-[11px] font-bold tracking-wider text-verde leading-none mb-0.5">TUPPER</p>}
+            {!atras && <p className="text-[11px] font-bold tracking-wider text-verde-texto leading-none mb-0.5">TUPPER</p>}
             <h1 className="text-lg font-semibold leading-tight truncate">{titulo}</h1>
           </div>
-          <span className="pill bg-verde-suave text-verde h-8 px-3">
+          <span className="pill bg-verde-suave text-verde-texto h-8 px-3">
             <Icono n="local_fire_department" size={16} /> {kcalHoy.toLocaleString('es-AR')} kcal
           </span>
-          <Link to="/perfil" className="w-10 h-10 rounded-full bg-verde-medio text-white font-semibold flex items-center justify-center" aria-label="Perfil">
+          <Link to="/perfil" className="w-10 h-10 rounded-full bg-verde text-white font-semibold flex items-center justify-center" aria-label="Perfil">
             {inicial}
           </Link>
         </div>
@@ -93,20 +93,20 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
 
       {aviso && (
         <div className="fixed left-0 right-0 bottom-28 z-[60] flex justify-center px-4 pointer-events-none">
-          <div className={`rounded-full px-4 py-2.5 text-sm font-medium text-white shadow-flotante ${aviso.tipo === 'error' ? 'bg-rojo' : 'bg-tinta'}`}>
+          <div className={`rounded-full px-4 py-2.5 text-sm font-medium shadow-flotante ${aviso.tipo === 'error' ? 'bg-rojo text-white' : 'bg-tinta text-fondo'}`}>
             {aviso.texto}
           </div>
         </div>
       )}
 
       {!sinNav && (
-        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-linea pb-seguro">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 bg-superficie border-t border-linea pb-seguro">
           <div className="max-w-[440px] mx-auto h-[68px] grid grid-cols-5 items-center">
             {PESTANAS.map((p, i) =>
               p ? (
                 <NavLink
                   key={p.a} to={p.a} end={p.a === '/'}
-                  className={({ isActive }) => `flex flex-col items-center gap-0.5 text-[11px] font-semibold ${isActive ? 'text-verde' : 'text-gris'}`}
+                  className={({ isActive }) => `flex flex-col items-center gap-0.5 text-[11px] font-semibold ${isActive ? 'text-verde-texto' : 'text-gris'}`}
                 >
                   {({ isActive }) => (<><Icono n={p.icono} lleno={isActive} /> {p.texto}</>)}
                 </NavLink>

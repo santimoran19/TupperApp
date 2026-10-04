@@ -10,7 +10,7 @@ import { armarPlan, disponibilidad } from '../lib/planificador'
 
 const ESTADOS = {
   preparado: { texto: 'Ya cocinado', clase: 'bg-teal-suave text-teal-oscuro', icono: 'takeout_dining' },
-  listo: { texto: 'Tenés todo', clase: 'bg-verde-suave text-verde', icono: 'check' },
+  listo: { texto: 'Tenés todo', clase: 'bg-verde-suave text-verde-texto', icono: 'check' },
   falta: { texto: 'Falta comprar', clase: 'bg-naranja-suave text-naranja-oscuro', icono: 'shopping_basket' },
 }
 
@@ -81,12 +81,12 @@ export default function Plan() {
   return (
     <Marco titulo="Plan semanal">
       <div className="flex items-center justify-between mb-3">
-        <button onClick={() => setLunes(sumarDias(lunes, -7))} disabled={lunes <= primerLunes} className="w-10 h-10 rounded-full bg-white shadow-tarjeta flex items-center justify-center disabled:opacity-30" aria-label="Semana anterior"><Icono n="chevron_left" /></button>
+        <button onClick={() => setLunes(sumarDias(lunes, -7))} disabled={lunes <= primerLunes} className="w-10 h-10 rounded-full bg-superficie shadow-tarjeta flex items-center justify-center disabled:opacity-30" aria-label="Semana anterior"><Icono n="chevron_left" /></button>
         <div className="text-center">
           <p className="font-semibold">{lunes === lunesDe(h) ? 'Esta semana' : lunes === sumarDias(lunesDe(h), 7) ? 'Semana que viene' : 'Semana'}</p>
           <p className="text-xs text-gris">{fechaCorta(dias[0])} al {fechaCorta(dias[6])}</p>
         </div>
-        <button onClick={() => setLunes(sumarDias(lunes, 7))} disabled={lunes >= ultimoLunes} className="w-10 h-10 rounded-full bg-white shadow-tarjeta flex items-center justify-center disabled:opacity-30" aria-label="Semana siguiente"><Icono n="chevron_right" /></button>
+        <button onClick={() => setLunes(sumarDias(lunes, 7))} disabled={lunes >= ultimoLunes} className="w-10 h-10 rounded-full bg-superficie shadow-tarjeta flex items-center justify-center disabled:opacity-30" aria-label="Semana siguiente"><Icono n="chevron_right" /></button>
       </div>
 
       {dias[6] >= h && (
@@ -126,9 +126,9 @@ export default function Plan() {
                   return (
                     <div key={c} className="flex items-center gap-2 py-2.5">
                       <button onClick={() => !pasado && setEligiendo({ date: f, meal: c })} className="flex-1 min-w-0 text-left" disabled={pasado}>
-                        <p className="text-[11px] font-bold tracking-wider text-verde">{NOMBRE_COMIDA[c].toUpperCase()}</p>
+                        <p className="text-[11px] font-bold tracking-wider text-verde-texto">{NOMBRE_COMIDA[c].toUpperCase()}</p>
                         <p className={`text-sm truncate ${receta ? 'font-medium' : 'text-gris'}`}>{receta ? receta.name : 'Elegir'}</p>
-                        {afuera && receta && !receta.portable && <span className="pill mt-1 mr-1 bg-rojo-suave text-rojo">No es para llevar</span>}
+                        {afuera && receta && !receta.portable && <span className="pill mt-1 mr-1 bg-rojo-suave text-rojo-texto">No es para llevar</span>}
                         {est && (
                           <span className={`pill mt-1 ${ESTADOS[est.estado].clase}`}>
                             <Icono n={ESTADOS[est.estado].icono} size={13} />
@@ -164,8 +164,8 @@ export default function Plan() {
                     <p className="font-medium truncate">{d.favoritas.has(r.id) && <Icono n="favorite" lleno size={14} className="text-coral-oscuro mr-1 align-[-2px]" />}{r.name}</p>
                     <p className="text-xs text-gris">
                       {redondear(m.kcal)} kcal · {redondear(m.protein)} g prot.
-                      {cocinadas > 0 ? <span className="text-teal-oscuro font-semibold"> · ya cocinado</span> : ok ? <span className="text-verde font-semibold"> · tenés todo</span> : <span className="text-naranja-oscuro font-semibold"> · falta comprar</span>}
-                      {eligiendoAfuera && !r.portable && <span className="text-rojo font-semibold"> · no es para llevar</span>}
+                      {cocinadas > 0 ? <span className="text-teal-oscuro font-semibold"> · ya cocinado</span> : ok ? <span className="text-verde-texto font-semibold"> · tenés todo</span> : <span className="text-naranja-oscuro font-semibold"> · falta comprar</span>}
+                      {eligiendoAfuera && !r.portable && <span className="text-rojo-texto font-semibold"> · no es para llevar</span>}
                     </p>
                   </div>
                   <Icono n="chevron_right" className="text-gris" />
@@ -174,7 +174,7 @@ export default function Plan() {
             })}
           </div>
           {filas.get(`${eligiendo.date}|${eligiendo.meal}`)?.recipe_id && (
-            <button onClick={() => elegir(null)} className="btn bg-rojo-suave text-rojo w-full mt-3">Dejar vacío</button>
+            <button onClick={() => elegir(null)} className="btn bg-rojo-suave text-rojo-texto w-full mt-3">Dejar vacío</button>
           )}
         </Hoja>
       )}

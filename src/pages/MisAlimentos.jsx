@@ -36,7 +36,7 @@ export default function MisAlimentos() {
                     {redondear(a.kcal)} kcal y {redondear(a.protein, 1)} g prot. cada 100 {a.unit === 'ml' ? 'ml' : 'g'} · {a.category}
                   </p>
                 </div>
-                <button onClick={() => setEditando(a)} className="w-9 h-9 text-verde" aria-label={`Editar ${a.name}`}><Icono n="edit" size={20} /></button>
+                <button onClick={() => setEditando(a)} className="w-9 h-9 text-verde-texto" aria-label={`Editar ${a.name}`}><Icono n="edit" size={20} /></button>
                 <button onClick={() => borrar(a)} className="w-9 h-9 text-gris" aria-label={`Borrar ${a.name}`}><Icono n="delete" size={20} /></button>
               </div>
             ))}

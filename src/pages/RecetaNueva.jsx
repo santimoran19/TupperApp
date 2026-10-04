@@ -60,18 +60,18 @@ export default function RecetaNueva() {
       <div className="space-y-3">
         <div>
           <label className="etiqueta" htmlFor="rn-nombre">Nombre</label>
-          <input id="rn-nombre" className="campo bg-white shadow-tarjeta" maxLength={LIM.nombre} value={f.name} onChange={(e) => set('name')(e.target.value)} placeholder="Ej.: Pollo con arroz" />
+          <input id="rn-nombre" className="campo bg-superficie shadow-tarjeta" maxLength={LIM.nombre} value={f.name} onChange={(e) => set('name')(e.target.value)} placeholder="Ej.: Pollo con arroz" />
           <Err>{intento && errores.name}</Err>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="etiqueta" htmlFor="rn-min">Minutos</label>
-            <Numero id="rn-min" valor={f.minutes} onChange={set('minutes')} decimales={0} largo={3} className="campo bg-white shadow-tarjeta" error={!!errores.minutes && (intento || f.minutes !== '')} />
+            <Numero id="rn-min" valor={f.minutes} onChange={set('minutes')} decimales={0} largo={3} className="campo bg-superficie shadow-tarjeta" error={!!errores.minutes && (intento || f.minutes !== '')} />
             <Err>{(intento || f.minutes !== '') && errores.minutes}</Err>
           </div>
           <div>
             <label className="etiqueta" htmlFor="rn-rinde">Porciones que rinde</label>
-            <Numero id="rn-rinde" valor={f.servings} onChange={set('servings')} decimales={0} largo={2} className="campo bg-white shadow-tarjeta" error={!!errores.servings && (intento || f.servings !== '')} />
+            <Numero id="rn-rinde" valor={f.servings} onChange={set('servings')} decimales={0} largo={2} className="campo bg-superficie shadow-tarjeta" error={!!errores.servings && (intento || f.servings !== '')} />
             <Err>{(intento || f.servings !== '') && errores.servings}</Err>
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function RecetaNueva() {
           <label className="etiqueta">Sirve para</label>
           <div className="flex flex-wrap gap-2">
             {COMIDAS.map((c) => (
-              <button key={c} onClick={() => alternarComida(c)} className={`rounded-full px-4 h-9 text-[13px] font-semibold ${f.meal_types.includes(c) ? 'bg-verde text-white' : 'bg-white border border-linea'}`}>{NOMBRE_COMIDA[c]}</button>
+              <button key={c} onClick={() => alternarComida(c)} className={`rounded-full px-4 h-9 text-[13px] font-semibold ${f.meal_types.includes(c) ? 'bg-verde text-white' : 'bg-superficie border border-linea'}`}>{NOMBRE_COMIDA[c]}</button>
             ))}
           </div>
           <Err>{intento && errores.meal_types}</Err>
@@ -91,7 +91,7 @@ export default function RecetaNueva() {
 
         <div className="flex items-center justify-between pt-2">
           <h2 className="font-semibold">Ingredientes {porciones > 1 ? `(para las ${porciones} porciones)` : ''}</h2>
-          <button onClick={() => setBuscando(true)} disabled={ingredientes.length >= MAX_INGREDIENTES} className="btn-chico bg-verde-suave text-verde"><Icono n="add" size={16} /> Agregar</button>
+          <button onClick={() => setBuscando(true)} disabled={ingredientes.length >= MAX_INGREDIENTES} className="btn-chico bg-verde-suave text-verde-texto"><Icono n="add" size={16} /> Agregar</button>
         </div>
         <Err>{intento && errores.ingredientes}</Err>
         {ingredientes.length === 0 && <p className="text-sm text-gris">Agregá los ingredientes con su cantidad y las calorías se calculan solas.</p>}
@@ -119,7 +119,7 @@ export default function RecetaNueva() {
 
         <div>
           <label className="etiqueta">Pasos (uno por renglón)</label>
-          <textarea className="campo bg-white shadow-tarjeta h-32 py-3" maxLength={LIM.pasos} value={f.steps} onChange={(e) => set('steps')(e.target.value)} placeholder={'Hervir el arroz.\nSaltear el pollo.'} />
+          <textarea className="campo bg-superficie shadow-tarjeta h-32 py-3" maxLength={LIM.pasos} value={f.steps} onChange={(e) => set('steps')(e.target.value)} placeholder={'Hervir el arroz.\nSaltear el pollo.'} />
           <Err>{errores.steps}</Err>
         </div>
         <button onClick={guardar} disabled={guardando} className="btn-primario w-full">{original ? 'Guardar cambios' : 'Guardar receta'}</button>
