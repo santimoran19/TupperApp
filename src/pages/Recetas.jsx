@@ -57,9 +57,12 @@ export default function Recetas() {
         <p className="text-sm opacity-85 mt-1">Se actualiza sola cada vez que cambia tu stock.</p>
       </section>
 
-      <div className="relative mb-3">
-        <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
-        <input className="campo pl-11 bg-superficie shadow-tarjeta" maxLength={60} placeholder="Buscar receta o ingrediente..." value={texto} onChange={(e) => setTexto(e.target.value)} />
+      <div className="flex gap-2 mb-3">
+        <div className="relative flex-1 min-w-0">
+          <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
+          <input className="campo pl-11 bg-superficie shadow-tarjeta" maxLength={60} placeholder="Buscar receta o ingrediente..." value={texto} onChange={(e) => setTexto(e.target.value)} />
+        </div>
+        <Link to="/recetas/nueva" className="btn-primario px-4 shrink-0"><Icono n="add" size={20} /> Nueva</Link>
       </div>
       <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-4">
         {filtros.map(([k, t]) => <Chip key={k} activo={filtro === k} onClick={() => setFiltro(k)}>{t}</Chip>)}
@@ -108,10 +111,9 @@ export default function Recetas() {
         )}
         {filtro === 'favoritas' && visibles.length === 0 && <p className="text-sm text-gris text-center py-6">Tocá el corazón de una receta para marcarla como favorita: el plan las elige primero.</p>}
         {!['ocultas', 'favoritas'].includes(filtro) && visibles.length === 0 && <p className="text-sm text-gris text-center py-6">No hay recetas con ese filtro.</p>}
-        {visibles.length > 0 && <p className="text-xs text-gris text-center pt-1 pb-10">{visibles.length} {visibles.length === 1 ? 'receta' : 'recetas'}</p>}
+        {visibles.length > 0 && <p className="text-xs text-gris text-center pt-1">{visibles.length} {visibles.length === 1 ? 'receta' : 'recetas'}</p>}
       </div>
 
-      <Link to="/recetas/nueva" className="fixed bottom-24 right-4 z-30 btn-primario shadow-flotante"><Icono n="add" /> Nueva receta</Link>
     </Marco>
   )
 }

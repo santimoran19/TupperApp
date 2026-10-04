@@ -87,12 +87,12 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
         </div>
       </header>
 
-      <main className={`max-w-[440px] mx-auto px-4 pt-4 ${sinNav ? 'pb-10' : 'pb-32'}`}>{children}</main>
+      <main className={`max-w-[440px] mx-auto px-4 pt-4 ${sinNav ? 'fin-sin-barra' : 'fin-con-barra'}`}>{children}</main>
 
       {pregunta && <Confirmacion pregunta={pregunta} onResponder={responder} />}
 
       {aviso && (
-        <div className="fixed left-0 right-0 bottom-28 z-[60] flex justify-center px-4 pointer-events-none">
+        <div className="fixed left-0 right-0 aviso-barra z-[60] flex justify-center px-4 pointer-events-none">
           <div className={`rounded-full px-4 py-2.5 text-sm font-medium shadow-flotante ${aviso.tipo === 'error' ? 'bg-rojo text-white' : 'bg-tinta text-fondo'}`}>
             {aviso.texto}
           </div>

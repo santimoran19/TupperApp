@@ -31,6 +31,12 @@ export default function Despensa() {
   const cocinado = d.preparado.filter((p) => Number(p.portions) > 0 && d.recetasPorId.has(p.recipe_id))
 
   const errorEditar = editar ? errCantidad(editar.alimento, editar.qty, maxEnStock(editar.alimento), { permitirCero: true }) : null
+  async function quitar(a) {
+    if (!(await d.confirmar({ titulo: `¿Quitar ${a.name} de tu despensa?`, texto: 'Si lo tenías en el plan, va a aparecer como faltante en la lista de compras.', boton: 'Quitar' }))) return false
+    const listo = await d.quitarDeDespensa(a.id)
+    if (listo) d.avisar('Quitado de la despensa')
+    return listo
+  }
   async function guardarCantidad() {
     if (errorEditar) return
     const listo = await d.fijarStock(editar.alimento.id, Number(editar.qty) || 0)
@@ -78,9 +84,12 @@ export default function Despensa() {
         </Vacio>
       ) : (
         <>
-          <div className="relative mb-3">
-            <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
-            <input className="campo pl-11 bg-superficie shadow-tarjeta" maxLength={60} placeholder="Buscar en tu despensa..." value={texto} onChange={(e) => setTexto(e.target.value)} />
+          <div className="flex gap-2 mb-3">
+            <div className="relative flex-1 min-w-0">
+              <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
+              <input className="campo pl-11 bg-superficie shadow-tarjeta" maxLength={60} placeholder="Buscar en tu despensa..." value={texto} onChange={(e) => setTexto(e.target.value)} />
+            </div>
+            <button onClick={() => setAgregando(true)} className="btn-primario px-4 shrink-0"><Icono n="add" size={20} /> Agregar</button>
           </div>
           <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-4">
             {categorias.map((c) => <Chip key={c} activo={c === categoria} onClick={() => setCategoria(c)}>{c}</Chip>)}
@@ -94,6 +103,7 @@ export default function Despensa() {
                     <p className="text-xs text-gris">{a.category}</p>
                   </div>
                   {qty <= 0 && <span className="pill bg-naranja-suave text-naranja-oscuro">Agotado</span>}
+                  <button onClick={() => quitar(a)} className="w-8 h-8 -mt-1 -mr-1.5 flex items-center justify-center text-gris" aria-label={`Quitar ${a.name} de la despensa`}><Icono n="delete" size={19} /></button>
                 </div>
                 <div className="flex items-center gap-2 mt-3">
                   <div className="flex items-center rounded-full bg-campo">
@@ -107,7 +117,6 @@ export default function Despensa() {
             ))}
             {visibles.length === 0 && <p className="text-sm text-gris text-center py-6">Nada con ese filtro.</p>}
           </div>
-          <button onClick={() => setAgregando(true)} className="fixed bottom-24 right-4 z-30 btn-primario shadow-flotante"><Icono n="add" /> Agregar</button>
         </>
       )}
 
@@ -125,7 +134,7 @@ export default function Despensa() {
           {editar.alimento.unit !== 'u' && <p className="text-xs text-gris mt-1.5">1 kg son 1000 g y 1 litro son 1000 ml.</p>}
           <div className="flex gap-2 mt-4">
             {!editar.nuevo && (
-              <button onClick={async () => { if (await d.confirmar({ titulo: `¿Quitar ${editar.alimento.name} de tu despensa?`, boton: 'Quitar' }) && await d.quitarDeDespensa(editar.alimento.id)) setEditar(null) }} className="btn bg-rojo-suave text-rojo-texto"><Icono n="delete" size={20} /> Quitar</button>
+              <button onClick={async () => { if (await quitar(editar.alimento)) setEditar(null) }} className="btn bg-rojo-suave text-rojo-texto"><Icono n="delete" size={20} /> Quitar</button>
             )}
             <button onClick={guardarCantidad} disabled={!!errorEditar} className="btn-primario flex-1">Guardar</button>
           </div>

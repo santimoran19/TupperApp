@@ -22,7 +22,7 @@ export function Hoja({ titulo, onCerrar, children }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onCerrar} />
-      <div className="relative w-full max-w-[440px] max-h-[88vh] overflow-y-auto bg-superficie rounded-t-3xl shadow-flotante p-5 pb-8">
+      <div className="relative w-full max-w-[440px] max-h-[88dvh] overflow-y-auto bg-superficie rounded-t-3xl shadow-flotante p-5 fin-hoja">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{titulo}</h2>
           <button onClick={onCerrar} className="w-9 h-9 rounded-full bg-campo flex items-center justify-center" aria-label="Cerrar">
