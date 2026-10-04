@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body { background-color: #f9fbf8; }
+  body {
+    @apply font-sans text-tinta antialiased;
+    font-variant-numeric: tabular-nums;
+    word-spacing: 0.12em;
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button, input, select, textarea { word-spacing: inherit; font-variant-numeric: inherit; }
+  input, select, textarea { font-size: 16px; }
+}
+
+@layer components {
+  .tarjeta { @apply bg-white rounded-2xl shadow-tarjeta border border-verde-suave/60; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-full px-5 h-12 font-semibold text-sm transition active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100; }
+  .btn-primario { @apply btn bg-verde text-white; }
+  .btn-suave { @apply btn bg-verde-suave text-verde; }
+  .btn-chico { @apply inline-flex items-center justify-center gap-1 rounded-full px-3.5 h-9 font-semibold text-[13px] transition active:scale-[0.98] disabled:opacity-50; }
+  .campo { @apply w-full h-12 rounded-xl bg-campo px-4 outline-none border-[1.5px] border-transparent focus:bg-white focus:border-verde-medio placeholder:text-gris/70; }
+  .etiqueta { @apply block text-xs font-semibold text-gris mb-1.5; }
+  .pill { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold; }
+}
+
+.sin-scroll::-webkit-scrollbar { display: none; }
+.sin-scroll { scrollbar-width: none; }
+.pb-seguro { padding-bottom: env(safe-area-inset-bottom, 0px); }
