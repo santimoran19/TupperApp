@@ -38,13 +38,36 @@ export default function RecetaDetalle() {
     d.avisar('Anotado en la lista de compras')
   }
   async function borrar() {
-    if (!window.confirm('¿Borrar esta receta?')) return
+    if (!(await d.confirmar({ titulo: '¿Borrar esta receta?', texto: 'Se saca también del plan. No se puede deshacer.' }))) return
     if (await d.borrarReceta(id)) nav('/recetas', { replace: true })
+  }
+  const oculta = d.ocultas.has(id)
+  const favorita = d.favoritas.has(id)
+  async function ocultar() {
+    const r = await d.ocultarReceta(id)
+    if (!r) return
+    d.avisar(r.vaciadas ? `Receta oculta. ${r.vaciadas === 1 ? 'Quedó 1 comida del plan vacía' : `Quedaron ${r.vaciadas} comidas del plan vacías`}` : 'Receta oculta: no te la muestro más')
+    nav('/recetas', { replace: true })
   }
 
   return (
     <Marco titulo="Receta" atras>
-      <h2 className="text-2xl font-bold tracking-tight leading-tight">{receta.name}</h2>
+      {oculta && (
+        <div className="rounded-2xl bg-campo p-4 mb-4 flex items-center gap-3">
+          <Icono n="visibility_off" className="text-gris" />
+          <p className="text-sm flex-1">Esta receta está oculta.</p>
+          <button onClick={() => d.mostrarReceta(id)} className="btn-chico bg-verde text-white">Mostrar de nuevo</button>
+        </div>
+      )}
+      <div className="flex items-start gap-2">
+        <h2 className="flex-1 text-2xl font-bold tracking-tight leading-tight">{receta.name}</h2>
+        {!oculta && (
+          <button onClick={() => d.alternarFavorita(id)} aria-label={favorita ? 'Quitar de favoritas' : 'Marcar como favorita'}
+            className={`w-10 h-10 rounded-full bg-white shadow-tarjeta flex items-center justify-center ${favorita ? 'text-coral-oscuro' : 'text-gris/80'}`}>
+            <Icono n="favorite" lleno={favorita} />
+          </button>
+        )}
+      </div>
       <p className="text-sm text-gris mt-1 mb-3">
         {receta.minutes} min · {listaComidas(receta.meal_types)} · {receta.servings === 1 ? '1 porción' : `rinde ${receta.servings} porciones`} · {receta.portable ? 'se puede llevar' : 'para comer en casa'}
       </p>
@@ -53,7 +76,7 @@ export default function RecetaDetalle() {
 
       {cocinadas > 0 && (
         <div className="rounded-2xl bg-teal-suave p-4 mb-4 flex items-center gap-3">
-          <Icono n="takeout_dining" className="text-teal" lleno />
+          <Icono n="takeout_dining" className="text-teal-oscuro" lleno />
           <p className="text-sm flex-1">Tenés <b>{redondear(cocinadas, 1)} {cocinadas === 1 ? 'porción cocinada' : 'porciones cocinadas'}</b> de esta receta.</p>
         </div>
       )}
@@ -68,7 +91,7 @@ export default function RecetaDetalle() {
             const alcanza = hay + 0.001 >= it.qty / receta.servings
             return (
               <div key={a.id} className="flex items-center gap-3 py-2.5">
-                <Icono n={alcanza ? 'check_circle' : 'cancel'} lleno className={alcanza ? 'text-verde-medio' : 'text-naranja'} size={20} />
+                <Icono n={alcanza ? 'check_circle' : 'cancel'} lleno className={alcanza ? 'text-verde-medio' : 'text-naranja-oscuro'} size={20} />
                 <span className="flex-1 text-sm">{a.name.split(' (')[0]}</span>
                 <span className="text-sm text-right">
                   <b>{cantidadTexto(a, it.qty)}</b>
@@ -99,7 +122,14 @@ export default function RecetaDetalle() {
         <button onClick={() => setCocinando(String(receta.servings))} className="btn-primario flex-1"><Icono n="skillet" /> Cocinar</button>
         <button onClick={() => nav(`/registrar?receta=${id}`)} className="btn-suave flex-1"><Icono n="restaurant" /> La comí</button>
       </div>
-      {receta.owner && <button onClick={borrar} className="block mx-auto mt-5 text-sm text-rojo underline">Borrar receta</button>}
+      {receta.owner ? (
+        <div className="flex justify-center gap-6 mt-5 text-sm">
+          <button onClick={() => nav(`/recetas/${id}/editar`)} className="font-semibold text-verde flex items-center gap-1"><Icono n="edit" size={16} /> Editar</button>
+          <button onClick={borrar} className="font-semibold text-rojo flex items-center gap-1"><Icono n="delete" size={16} /> Borrar</button>
+        </div>
+      ) : !oculta && (
+        <button onClick={ocultar} className="mx-auto mt-5 text-sm font-semibold text-gris flex items-center gap-1.5"><Icono n="visibility_off" size={16} /> No me gusta: no mostrarla más</button>
+      )}
 
       {cocinando !== null && (
         <Hoja titulo="Cocinar" onCerrar={() => setCocinando(null)}>

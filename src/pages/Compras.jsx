@@ -83,7 +83,7 @@ export default function Compras() {
                   <span className="w-11 text-gris">{fechaCorta(c.date)}</span>
                   <span className="flex-1 min-w-0 truncate">{c.name}{a ? ` · ${cantidadTexto(a, Number(c.qty))}` : ''}</span>
                   <span className="font-semibold">{pesos(c.price)}</span>
-                  <button onClick={() => d.borrarCompra(c.id)} className="w-7 h-7 text-gris" aria-label="Borrar compra"><Icono n="delete" size={18} /></button>
+                  <button onClick={async () => { if (await d.confirmar({ titulo: `¿Borrar la compra de ${c.name}?`, texto: 'Se descuenta del gasto del mes. Lo que se sumó a la despensa queda como está.' })) d.borrarCompra(c.id) }} className="w-7 h-7 text-gris" aria-label="Borrar compra"><Icono n="delete" size={18} /></button>
                 </div>
               )
             })}
@@ -100,13 +100,13 @@ export default function Compras() {
         <Hoja titulo={comprando.alimento.name} onCerrar={() => setComprando(null)}>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="etiqueta">Cantidad ({comprando.alimento.unit === 'u' ? unidadDe(comprando.alimento) : comprando.alimento.unit})</label>
-              <Numero valor={comprando.qty} onChange={(v) => setComprando({ ...comprando, qty: v })} decimales={comprando.alimento.unit === 'u' ? 1 : 0} largo={6} error={!!errCompra.qty} />
+              <label className="etiqueta" htmlFor="cp-cantidad">Cantidad ({comprando.alimento.unit === 'u' ? unidadDe(comprando.alimento) : comprando.alimento.unit})</label>
+              <Numero id="cp-cantidad" valor={comprando.qty} onChange={(v) => setComprando({ ...comprando, qty: v })} decimales={comprando.alimento.unit === 'u' ? 1 : 0} largo={6} error={!!errCompra.qty} />
               <Err>{errCompra.qty}</Err>
             </div>
             <div>
-              <label className="etiqueta">Precio total ($)</label>
-              <Numero valor={comprando.price} onChange={(v) => setComprando({ ...comprando, price: v })} decimales={2} largo={11} placeholder="Opcional" autoFocus error={!!errCompra.price} />
+              <label className="etiqueta" htmlFor="cp-precio">Precio total ($)</label>
+              <Numero id="cp-precio" valor={comprando.price} onChange={(v) => setComprando({ ...comprando, price: v })} decimales={2} largo={11} placeholder="Opcional" autoFocus error={!!errCompra.price} />
               <Err>{errCompra.price}</Err>
             </div>
           </div>

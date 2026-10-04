@@ -76,9 +76,9 @@ export function Macros({ m, className = '' }) {
   return (
     <div className={`flex flex-wrap gap-1.5 ${className}`}>
       <span className="pill bg-verde-suave text-verde">{redondear(m.kcal)} kcal</span>
-      <span className="pill bg-coral-suave text-coral">{redondear(m.protein)} g prot.</span>
+      <span className="pill bg-coral-suave text-coral-oscuro">{redondear(m.protein)} g prot.</span>
       {m.carbs !== undefined && <span className="pill bg-naranja-suave text-naranja-oscuro">{redondear(m.carbs)} g carb.</span>}
-      {m.fat !== undefined && <span className="pill bg-teal-suave text-teal">{redondear(m.fat)} g grasa</span>}
+      {m.fat !== undefined && <span className="pill bg-teal-suave text-teal-oscuro">{redondear(m.fat)} g grasa</span>}
     </div>
   )
 }

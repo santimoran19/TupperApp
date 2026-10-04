@@ -21,7 +21,7 @@
   .btn-primario { @apply btn bg-verde text-white; }
   .btn-suave { @apply btn bg-verde-suave text-verde; }
   .btn-chico { @apply inline-flex items-center justify-center gap-1 rounded-full px-3.5 h-9 font-semibold text-[13px] transition active:scale-[0.98] disabled:opacity-50; }
-  .campo { @apply w-full h-12 rounded-xl bg-campo px-4 outline-none border-[1.5px] border-transparent focus:bg-white focus:border-verde-medio placeholder:text-gris/70; }
+  .campo { @apply w-full h-12 rounded-xl bg-campo px-4 outline-none border-[1.5px] border-transparent focus:bg-white focus:border-verde-medio placeholder:text-gris; }
   .etiqueta { @apply block text-xs font-semibold text-gris mb-1.5; }
   .pill { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold; }
 }

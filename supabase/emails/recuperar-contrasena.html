@@ -1,0 +1,15 @@
+<div style="margin:0;padding:32px 16px;background-color:#f9fbf8;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1e293b;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="max-width:440px;margin:0 auto;background-color:#ffffff;border:1px solid #e0eedf;border-radius:20px;">
+    <tr>
+      <td style="padding:32px 28px 28px;text-align:center;">
+        <img src="{{ .SiteURL }}/icon-192.png" width="72" height="72" alt="Tupper" style="display:block;margin:0 auto 14px;border-radius:16px;">
+        <p style="margin:0 0 20px;font-size:13px;font-weight:700;letter-spacing:2px;color:#206140;">TUPPER</p>
+        <h1 style="margin:0 0 10px;font-size:22px;line-height:1.25;color:#1e293b;">Cambiá tu contraseña</h1>
+        <p style="margin:0 0 22px;font-size:15px;line-height:1.5;color:#64748b;">Escribí este código en la app para poner una contraseña nueva.</p>
+        <p style="margin:0 0 22px;padding:16px 8px;background-color:#eef6ee;border-radius:14px;font-size:34px;line-height:1;font-weight:700;letter-spacing:8px;color:#206140;font-family:'Courier New',Courier,monospace;">{{ .Token }}</p>
+        <p style="margin:0;font-size:13px;line-height:1.5;color:#64748b;">El código vence en una hora. Si no pediste cambiar la contraseña, ignorá este mail: tu cuenta sigue igual.</p>
+      </td>
+    </tr>
+  </table>
+  <p style="max-width:440px;margin:16px auto 0;text-align:center;font-size:12px;line-height:1.5;color:#94a3b8;">Este mail se manda solo, no hace falta responderlo.</p>
+</div>

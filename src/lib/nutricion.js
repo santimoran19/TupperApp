@@ -11,13 +11,55 @@ export const CATEGORIAS = ['Proteínas', 'Carbohidratos', 'Verduras', 'Frutas', 
 
 export const CON_ARTICULO = { desayuno: 'el desayuno', almuerzo: 'el almuerzo', merienda: 'la merienda', cena: 'la cena' }
 
-// Medidas rápidas para cargar bebidas
-export const MEDIDAS_BEBIDA = [['Vaso', 250], ['Lata', 354], ['Botella', 500], ['Copa', 150], ['Medida', 50], ['1 litro', 1000]]
 export const esBebida = (alimento) => alimento?.category === 'Bebidas'
-// Bebidas de la base que tienen alcohol (para filtrarlas en el buscador)
-const CON_ALCOHOL = new Set(['cerveza', 'cerveza-negra', 'cerveza-ipa', 'vino', 'vino-blanco', 'espumante', 'sidra', 'fernet', 'fernet-coca',
-  'bebida-blanca', 'gin-tonic', 'ron-cola', 'campari', 'aperol-spritz', 'vermut', 'trago-dulce', 'licor'])
-export const tieneAlcohol = (alimento) => CON_ALCOHOL.has(alimento?.slug)
+export const tieneAlcohol = (alimento) => !!alimento?.alcohol
+
+// ---------- Medidas rápidas: cada cosa se carga como se toma o se sirve ----------
+// Los alimentos base se agrupan por su slug; lo que crea el usuario usa las medidas generales.
+const GRUPOS = {
+  mate: ['mate', 'terere', 'terere-jugo'],
+  infusion: ['cafe', 'cortado', 'capuchino', 'cafe-con-leche', 'te', 'te-leche', 'mate-cocido', 'mate-cocido-leche', 'chocolatada'],
+  cerveza: ['cerveza', 'cerveza-negra', 'cerveza-ipa', 'cerveza-sin-alcohol', 'sidra'],
+  vino: ['vino', 'vino-blanco', 'espumante'],
+  medida: ['fernet', 'bebida-blanca', 'campari', 'vermut', 'licor'],
+  trago: ['fernet-coca', 'gin-tonic', 'ron-cola', 'aperol-spritz', 'trago-dulce'],
+  cuchara: ['azucar', 'miel', 'mermelada', 'mermelada-light', 'cacao', 'aceite', 'queso-untable', 'crema', 'ketchup', 'salsa-soja'],
+  punado: ['mani-cascara', 'mani', 'nueces', 'almendras', 'aceitunas'],
+}
+const GRUPO_DE = new Map(Object.entries(GRUPOS).flatMap(([g, slugs]) => slugs.map((s) => [s, g])))
+export const grupoDe = (alimento) => GRUPO_DE.get(alimento?.slug) || null
+
+// Lista de [nombre, cantidad] para el alimento. `termo` es el tamaño del termo del usuario, en ml.
+export function medidasDe(alimento, termo = 1000) {
+  switch (grupoDe(alimento)) {
+    case 'mate': return [['Un mate', 40], ['Medio termo', Math.round(termo / 2)], ['Un termo', termo]]
+    case 'infusion': return [['Pocillo', 80], ['Taza', 200], ['Jarro', 300]]
+    case 'cerveza': return [['Vaso', 250], ['Porrón', 330], ['Lata', 473], ['Botella', 1000]]
+    case 'vino': return [['Copa', 150], ['Vaso', 200], ['Botella', 750]]
+    case 'medida': return [['Medida', 50], ['Doble', 100]]
+    case 'trago': return [['Vaso', 250], ['Vaso grande', 400]]
+    case 'cuchara': return [['Cucharadita', 5], ['Cucharada', 15]]
+    case 'punado': return [['Un puñado', 30], ['Dos puñados', 60]]
+    default: return alimento?.unit === 'ml' ? [['Vaso', 250], ['Lata', 354], ['Botella', 500], ['1 litro', 1000]] : []
+  }
+}
+export const textoMedida = (alimento, cantidad) => (cantidad >= 1000 ? `${String(cantidad / 1000).replace('.', ',')} ${alimento.unit === 'ml' ? 'L' : 'kg'}` : `${cantidad} ${alimento.unit}`)
+
+// Infusiones: se les puede sumar azúcar o edulcorante al registrarlas
+export const seEndulza = (alimento) => ['mate', 'infusion'].includes(grupoDe(alimento))
+export const GRAMOS_CUCHARADITA = 5
+
+// ---------- Líquido ----------
+// Cuenta para el objetivo todo lo que se mide en ml y no tiene alcohol: agua, mate, infusiones, gaseosas, leche.
+export const cuentaComoLiquido = (alimento) => alimento?.unit === 'ml' && ['Bebidas', 'Lácteos'].includes(alimento.category) && !alimento.alcohol
+// Referencia habitual: unos 35 ml por kilo de peso, entre 1,5 y 4 litros
+export function liquidoSugerido(peso) {
+  const p = Number(peso)
+  if (!p || p < 30 || p > 300) return 2000
+  return Math.min(4000, Math.max(1500, Math.round((p * 35) / 100) * 100))
+}
+export const objetivoLiquido = (perfil) => perfil?.water_target_ml || liquidoSugerido(perfil?.weight_kg)
+export const litros = (ml) => (Number(ml) / 1000).toLocaleString('es-AR', { maximumFractionDigits: 2 })
 
 export const CERO = { kcal: 0, protein: 0, carbs: 0, fat: 0 }
 
@@ -91,7 +133,18 @@ export function cantidadTexto(alimento, qty) {
 // Paso cómodo para sumar o restar del stock
 export const pasoDe = (alimento) => (alimento.unit === 'u' ? 1 : 50)
 // Cantidad que se propone al agregar un alimento a un plato
-export const porcionSugerida = (alimento) => (alimento.unit === 'u' ? 1 : alimento.unit === 'ml' ? 250 : 100)
+export function porcionSugerida(alimento, termo = 1000) {
+  if (alimento.unit === 'u') return 1
+  const g = grupoDe(alimento)
+  if (g === 'mate') return Math.round(termo / 2)
+  if (g === 'infusion') return 200
+  if (g === 'cerveza') return 473
+  if (g === 'vino') return 150
+  if (g === 'medida') return 50
+  if (g === 'cuchara') return 15
+  if (g === 'punado') return 30
+  return alimento.unit === 'ml' ? 250 : 100
+}
 
 export const ACTIVIDADES = [
   { valor: 1.2, texto: 'Sedentario (casi sin ejercicio)' },
@@ -104,16 +157,19 @@ export const ACTIVIDADES = [
 export function objetivoSugerido({ sexo, edad, altura, peso, pesoMeta, actividad }) {
   if (!edad || !altura || !peso) return null
   // Con datos fuera de rango no se calcula nada (una edad o altura absurda daba objetivos de decenas de miles de kcal)
-  if (edad < 10 || edad > 100 || altura < 100 || altura > 250 || peso < 30 || peso > 300) return null
+  if (edad < 13 || edad > 100 || altura < 100 || altura > 250 || peso < 30 || peso > 300) return null
   const basal = 10 * peso + 6.25 * altura - 5 * edad + (sexo === 'f' ? -161 : 5)
   const gasto = basal * (actividad || 1.375)
   let kcal = gasto
-  if (pesoMeta && pesoMeta < peso - 1) kcal = gasto * 0.78
+  // A menores de 18 no se les calcula un recorte: bajar de peso a esa edad es tema de un profesional
+  const menor = edad < 18
+  if (menor) kcal = gasto
+  else if (pesoMeta && pesoMeta < peso - 1) kcal = gasto * 0.78
   else if (pesoMeta && pesoMeta > peso + 1) kcal = gasto * 1.1
   const minimo = sexo === 'f' ? 1300 : 1500
   kcal = Math.min(4500, Math.max(minimo, Math.round(kcal / 50) * 50))
   const protein = Math.round((1.7 * (pesoMeta || peso)) / 5) * 5
-  return { kcal, protein, gasto: Math.round(gasto) }
+  return { kcal, protein, gasto: Math.round(gasto), menor }
 }
 
 // Arma el consejo del día comparando lo comido con el objetivo.

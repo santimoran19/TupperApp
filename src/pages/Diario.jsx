@@ -5,7 +5,7 @@ import Marco from '../components/Marco'
 import { Anillo, Barra, Icono } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { diaCorto, diaSemana, fechaLarga, hoy, numeroDia, semanaDe, sumarDias } from '../lib/fechas'
-import { COMIDAS, EXTRA, ICONO_COMIDA, NOMBRE_COMIDA, consejoDelDia, redondear, sumar } from '../lib/nutricion'
+import { COMIDAS, EXTRA, ICONO_COMIDA, NOMBRE_COMIDA, consejoDelDia, cuentaComoLiquido, litros, objetivoLiquido, redondear, sumar } from '../lib/nutricion'
 import { disponibilidad } from '../lib/planificador'
 import { rangoDiario } from '../lib/validar'
 
@@ -13,7 +13,7 @@ const TONOS = {
   info: { caja: 'bg-verde-claro', titulo: 'text-verde', icono: 'eco', rotulo: 'TU DÍA' },
   bien: { caja: 'bg-verde-claro', titulo: 'text-verde', icono: 'check_circle', rotulo: 'EN OBJETIVO' },
   arriba: { caja: 'bg-naranja-suave', titulo: 'text-naranja-oscuro', icono: 'trending_up', rotulo: 'VENÍS ARRIBA' },
-  abajo: { caja: 'bg-teal-suave', titulo: 'text-teal', icono: 'trending_down', rotulo: 'VENÍS ABAJO' },
+  abajo: { caja: 'bg-teal-suave', titulo: 'text-teal-oscuro', icono: 'trending_down', rotulo: 'VENÍS ABAJO' },
 }
 
 export default function Diario() {
@@ -31,8 +31,9 @@ export default function Diario() {
   const registradas = new Set(delDia.filter((r) => r.meal !== EXTRA).map((r) => r.meal))
   const salteadas = new Set(delDia.filter((r) => r.skipped).map((r) => r.meal))
   const extras = delDia.filter((r) => r.meal === EXTRA)
-  // Líquido del día: todo lo registrado que se mide en ml
-  const liquido = delDia.reduce((t, r) => t + (d.alimentosPorId.get(r.food_id)?.unit === 'ml' ? Number(r.qty) : 0), 0)
+  // Líquido del día contra el objetivo: lo registrado en ml que no tiene alcohol
+  const liquido = delDia.reduce((t, r) => t + (cuentaComoLiquido(d.alimentosPorId.get(r.food_id)) ? Number(r.qty) : 0), 0)
+  const metaLiquido = objetivoLiquido(d.perfil)
   const agua = d.alimentos.find((a) => a.slug === 'agua')
   const reglas = useMemo(() => new Set(d.reglas.map((r) => `${r.weekday}|${r.meal}`)), [d.reglas])
   // Una comida es "afuera" si así está en el plan o, cuando no hay nada planificado, si lo dice la regla semanal
@@ -93,6 +94,9 @@ export default function Diario() {
     const listo = await d.registrar({ date: fecha, meal: comida, platos: [{ recipe_id: fila.recipe_id, porciones: 1 }] })
     if (listo) d.avisar('Registrado')
   }
+  const quitarRegistro = async (r) => {
+    if (await d.confirmar({ titulo: `¿Borrar ${r.name}?`, texto: 'Se saca de lo registrado ese día. Lo que se descontó de la despensa no vuelve solo.' })) d.borrarRegistro(r.id)
+  }
   const tomeAgua = async () => {
     const listo = await d.registrar({ date: fecha, meal: EXTRA, platos: [{ food_id: agua.id, qty: 250 }], descontar: false })
     if (listo) d.avisar('Un vaso de agua anotado')
@@ -146,11 +150,29 @@ export default function Diario() {
           <Barra nombre="Proteína" valor={total.protein} total={d.perfil.protein_target} color="bg-coral" />
           <div className="flex gap-2">
             <span className="pill bg-naranja-suave text-naranja-oscuro">{redondear(total.carbs)} g carbohidratos</span>
-            <span className="pill bg-teal-suave text-teal">{redondear(total.fat)} g grasas</span>
-            {liquido > 0 && <span className="pill bg-campo text-gris"><Icono n="water_drop" size={13} /> {(liquido / 1000).toLocaleString('es-AR', { maximumFractionDigits: 2 })} L</span>}
+            <span className="pill bg-teal-suave text-teal-oscuro">{redondear(total.fat)} g grasas</span>
+          </div>
+          <div>
+            <div className="flex items-center justify-between text-sm mb-1.5">
+              <span className="font-medium">Líquido</span>
+              <span className="text-gris"><b className="text-tinta">{litros(liquido)} L</b> / {litros(metaLiquido)} L</span>
+            </div>
+            <div className="h-2 rounded-full bg-[#e7efe8] overflow-hidden">
+              <div className="h-full rounded-full bg-teal" style={{ width: `${Math.min((liquido / metaLiquido) * 100, 100)}%`, transition: 'width .4s' }} />
+            </div>
+            <div className="flex items-center justify-between gap-2 mt-2">
+              <p className="text-xs text-gris">{liquido >= metaLiquido ? 'Llegaste al objetivo de líquido.' : `Te ${metaLiquido - liquido === 1000 ? 'falta' : 'faltan'} ${litros(metaLiquido - liquido)} L para llegar.`}</p>
+              {agua && fecha <= hoy() && (
+                <button onClick={tomeAgua} className="btn-chico h-8 bg-teal-suave text-teal-oscuro whitespace-nowrap"><Icono n="water_drop" size={15} /> Vaso de agua</button>
+              )}
+            </div>
           </div>
         </div>
       </section>
+
+      <Link to={`/resumen?fecha=${fecha}`} className="flex items-center gap-2 text-sm font-semibold text-verde mb-4 px-1">
+        <Icono n="bar_chart" size={18} /> Ver el resumen de la semana <Icono n="chevron_right" size={18} className="ml-auto text-gris" />
+      </Link>
 
       {esHoy && (
         <section className={`rounded-2xl p-4 mb-4 ${tono.caja}`}>
@@ -234,7 +256,7 @@ export default function Diario() {
                     <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
                       <span className="flex-1 min-w-0 truncate">{r.name}</span>
                       <span className="text-gris">{redondear(r.kcal)} kcal</span>
-                      <button onClick={() => d.borrarRegistro(r.id)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}><Icono n="close" size={18} /></button>
+                      <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}><Icono n="close" size={18} /></button>
                     </div>
                   ))}
                   <button onClick={irARegistrar} className="pt-2.5 text-sm font-semibold text-verde flex items-center gap-1"><Icono n="add" size={18} /> Agregar algo más</button>
@@ -271,10 +293,10 @@ export default function Diario() {
 
         <section className={`tarjeta p-4 ${extras.length === 0 ? 'border-dashed border-linea shadow-none bg-white/60' : ''}`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-suave text-teal flex items-center justify-center"><Icono n={ICONO_COMIDA[EXTRA]} /></div>
+            <div className="w-10 h-10 rounded-xl bg-teal-suave text-teal-oscuro flex items-center justify-center"><Icono n={ICONO_COMIDA[EXTRA]} /></div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold tracking-wider text-teal">BEBIDAS Y ENTRE COMIDAS</p>
-              <p className="text-sm text-gris">{extras.length > 0 ? `${redondear(sumar(extras).protein)} g de proteína` : 'Agua, gaseosa, alcohol, algo que picaste'}</p>
+              <p className="text-xs font-bold tracking-wider text-teal-oscuro">BEBIDAS Y ENTRE COMIDAS</p>
+              <p className="text-sm text-gris">{extras.length > 0 ? `${redondear(sumar(extras).protein)} g de proteína` : 'Agua, mate, café, alcohol, algo que picaste'}</p>
             </div>
             {extras.length > 0 && <p className="font-bold">{redondear(sumar(extras).kcal)} <span className="text-xs font-medium text-gris">kcal</span></p>}
           </div>
@@ -286,16 +308,15 @@ export default function Diario() {
                   <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
                     <span className="flex-1 min-w-0 truncate">{r.name}{a?.unit === 'ml' ? ` · ${redondear(r.qty)} ml` : ''}</span>
                     <span className="text-gris">{redondear(r.kcal)} kcal</span>
-                    <button onClick={() => d.borrarRegistro(r.id)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}><Icono n="close" size={18} /></button>
+                    <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}><Icono n="close" size={18} /></button>
                   </div>
                 )
               })}
             </div>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}&abrir=bebida`)} className="btn-chico bg-teal-suave text-teal flex-1 whitespace-nowrap"><Icono n="local_bar" size={16} /> Bebida</button>
+            <button onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}&abrir=bebida`)} className="btn-chico bg-teal-suave text-teal-oscuro flex-1 whitespace-nowrap"><Icono n="local_bar" size={16} /> Bebida</button>
             <button onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}`)} className="btn-chico bg-verde-suave text-verde flex-1 whitespace-nowrap"><Icono n="add" size={16} /> Otra cosa</button>
-            {agua && fecha <= hoy() && <button onClick={tomeAgua} className="btn-chico bg-campo text-tinta whitespace-nowrap"><Icono n="water_drop" size={16} /> Vaso de agua</button>}
           </div>
         </section>
       </div>

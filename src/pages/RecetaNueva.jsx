@@ -1,6 +1,6 @@
-// Crear una receta propia a partir de los alimentos cargados.
+// Crear una receta propia a partir de los alimentos cargados, o editar una que ya es del usuario.
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import Marco from '../components/Marco'
 import SelectorAlimento from '../components/SelectorAlimento'
 import { Err, Hoja, Icono, Macros, Numero } from '../components/ui'
@@ -13,8 +13,14 @@ const MAX_INGREDIENTES = 30
 export default function RecetaNueva() {
   const d = useDatos()
   const nav = useNavigate()
-  const [f, setF] = useState({ name: '', minutes: '15', servings: '1', meal_types: ['almuerzo', 'cena'], portable: true, steps: '' })
-  const [ingredientes, setIngredientes] = useState([])
+  const { id } = useParams() // viene solo al editar
+  const original = id ? d.recetasPorId.get(id) : null
+  const [f, setF] = useState(original
+    ? { name: original.name, minutes: String(original.minutes), servings: String(original.servings), meal_types: original.meal_types, portable: original.portable, steps: original.steps || '' }
+    : { name: '', minutes: '15', servings: '1', meal_types: ['almuerzo', 'cena'], portable: true, steps: '' })
+  const [ingredientes, setIngredientes] = useState(() => (original
+    ? d.itemsDe(id).filter((i) => d.alimentosPorId.has(i.food_id)).map((i) => ({ food_id: i.food_id, qty: String(i.qty) }))
+    : []))
   const [buscando, setBuscando] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }))
@@ -33,22 +39,24 @@ export default function RecetaNueva() {
     steps: f.steps.length > LIM.pasos ? `Como mucho ${LIM.pasos} caracteres.` : null,
   }
 
+  // Solo se pueden editar las recetas propias
+  if (id && !original?.owner) return <Navigate to="/recetas" replace />
+
   const alternarComida = (c) => set('meal_types')(f.meal_types.includes(c) ? f.meal_types.filter((x) => x !== c) : [...f.meal_types, c])
 
   async function guardar() {
     setIntento(true)
     if (hayErrores(errores)) return
     setGuardando(true)
-    const r = await d.crearReceta(
-      { name: f.name.trim(), minutes: Number(f.minutes), servings: porciones, meal_types: COMIDAS.filter((c) => f.meal_types.includes(c)), portable: f.portable, steps: f.steps.trim() },
-      ingredientes.map((i) => ({ food_id: i.food_id, qty: Number(i.qty) })),
-    )
+    const datos = { name: f.name.trim(), minutes: Number(f.minutes), servings: porciones, meal_types: COMIDAS.filter((c) => f.meal_types.includes(c)), portable: f.portable, steps: f.steps.trim() }
+    const items = ingredientes.map((i) => ({ food_id: i.food_id, qty: Number(i.qty) }))
+    const r = original ? await d.actualizarReceta(id, datos, items) : await d.crearReceta(datos, items)
     setGuardando(false)
     if (r) nav(`/recetas/${r.id}`, { replace: true })
   }
 
   return (
-    <Marco titulo="Nueva receta" atras sinNav>
+    <Marco titulo={original ? 'Editar receta' : 'Nueva receta'} atras sinNav>
       <div className="space-y-3">
         <div>
           <label className="etiqueta" htmlFor="rn-nombre">Nombre</label>
@@ -114,7 +122,7 @@ export default function RecetaNueva() {
           <textarea className="campo bg-white shadow-tarjeta h-32 py-3" maxLength={LIM.pasos} value={f.steps} onChange={(e) => set('steps')(e.target.value)} placeholder={'Hervir el arroz.\nSaltear el pollo.'} />
           <Err>{errores.steps}</Err>
         </div>
-        <button onClick={guardar} disabled={guardando} className="btn-primario w-full">Guardar receta</button>
+        <button onClick={guardar} disabled={guardando} className="btn-primario w-full">{original ? 'Guardar cambios' : 'Guardar receta'}</button>
       </div>
 
       {buscando && (

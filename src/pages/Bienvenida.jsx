@@ -1,4 +1,5 @@
 // Primera vez que entra el usuario: carga sus datos y queda calculado el objetivo.
+import { useEffect } from 'react'
 import FormularioPerfil from '../components/FormularioPerfil'
 import { Logo } from '../components/Marco'
 import { useDatos } from '../store/Datos'
@@ -6,6 +7,7 @@ import { hoy } from '../lib/fechas'
 
 export default function Bienvenida() {
   const { guardarPerfil, guardarMedida, salir } = useDatos()
+  useEffect(() => { document.title = 'Tu perfil · Tupper' }, [])
 
   async function guardar(datos) {
     const listo = await guardarPerfil(datos)

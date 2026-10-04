@@ -1,0 +1,5 @@
+# Tupper: todo lo que no sea el acceso y los textos legales pide iniciar sesión.
+User-agent: *
+Allow: /
+
+Sitemap: https://tupperapp.vercel.app/sitemap.xml

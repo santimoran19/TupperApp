@@ -74,7 +74,7 @@ const alimentosBase = [
   ['pizza', 'Pizza muzzarella', 'u', 125, 'porción', 260, 11, 30, 10, 'Comidas hechas'],
   ['empanada', 'Empanada de carne', 'u', 80, 'unidad', 280, 11, 27, 14, 'Comidas hechas'],
 
-  ['mate', 'Mate o café sin azúcar', 'u', 100, 'taza', 0, 0, 0, 0, 'Bebidas'],
+  ['mate', 'Mate', 'ml', null, null, 0, 0, 0, 0, 'Bebidas'],
   ['gaseosa', 'Gaseosa común', 'ml', null, null, 42, 0, 10.5, 0, 'Bebidas'],
   ['gaseosa-zero', 'Gaseosa zero', 'ml', null, null, 0, 0, 0, 0, 'Bebidas'],
   ['jugo-naranja', 'Jugo de naranja', 'ml', null, null, 45, 0.7, 10, 0.2, 'Bebidas'],
@@ -414,5 +414,24 @@ export const recetasNuevas = [
     [['milanesa-soja', 2], ['arroz', 60], ['lechuga', 80], ['tomate', 1], ['aceite', 5]]),
 ]
 
-export const foods = [...alimentosBase, ...alimentosNuevos]
+// ---------------------------------------------------------------------------
+// Tercera tanda: infusiones (valores cada 100 ml, sin endulzar: el azúcar se carga aparte)
+// ---------------------------------------------------------------------------
+export const infusiones = [
+  ['terere', 'Tereré con agua', 'ml', null, null, 0, 0, 0, 0, 'Bebidas'],
+  ['terere-jugo', 'Tereré con jugo', 'ml', null, null, 10, 0, 2.3, 0, 'Bebidas'],
+  ['mate-cocido', 'Mate cocido', 'ml', null, null, 0, 0, 0, 0, 'Bebidas'],
+  ['mate-cocido-leche', 'Mate cocido con leche', 'ml', null, null, 22, 1.5, 2.3, 0.7, 'Bebidas'],
+  ['cafe', 'Café negro', 'ml', null, null, 1, 0.1, 0, 0, 'Bebidas'],
+  ['cortado', 'Café cortado', 'ml', null, null, 10, 0.6, 0.9, 0.3, 'Bebidas'],
+  ['capuchino', 'Capuchino', 'ml', null, null, 40, 2, 4.5, 1.5, 'Bebidas'],
+  ['te', 'Té', 'ml', null, null, 0, 0, 0, 0, 'Bebidas'],
+  ['te-leche', 'Té con leche', 'ml', null, null, 12, 0.8, 1.2, 0.4, 'Bebidas'],
+]
+
+// Bebidas con alcohol: no cuentan para el objetivo de líquido
+export const conAlcohol = ['cerveza', 'cerveza-negra', 'cerveza-ipa', 'vino', 'vino-blanco', 'espumante', 'sidra', 'fernet', 'fernet-coca',
+  'bebida-blanca', 'gin-tonic', 'ron-cola', 'campari', 'aperol-spritz', 'vermut', 'trago-dulce', 'licor']
+
+export const foods = [...alimentosBase, ...alimentosNuevos, ...infusiones]
 export const recipes = [...recetasBase, ...recetasNuevas]

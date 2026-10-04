@@ -4,12 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#206140" />
+    <title>Tupper: despensa, recetas y registro de comidas</title>
+    <meta name="description" content="Organizá tu despensa, mirá qué podés cocinar con lo que tenés, armá el plan de la semana y registrá lo que comés con sus calorías y proteína." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <title>Tupper</title>
+    <!-- Vista previa al compartir el enlace (WhatsApp, redes) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Tupper" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:title" content="Tupper: despensa, recetas y registro de comidas" />
+    <meta property="og:description" content="Organizá tu despensa, mirá qué podés cocinar con lo que tenés, armá el plan de la semana y registrá lo que comés." />
+    <meta property="og:url" content="https://tupperapp.vercel.app/" />
+    <meta property="og:image" content="https://tupperapp.vercel.app/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Tupper: tu despensa, tus recetas y lo que comés, en un solo lugar" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <!-- La base de datos está en otro dominio: se abre la conexión antes para ganar tiempo -->
+    <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
   </head>
   <body>
     <div id="root"></div>
+    <noscript>Tupper necesita JavaScript para funcionar. Activalo en tu navegador y volvé a cargar la página.</noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -1,12 +1,12 @@
 // Perfil: objetivo, progreso de peso y cintura, y comidas que se hacen fuera de casa.
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Marco from '../components/Marco'
 import FormularioPerfil from '../components/FormularioPerfil'
 import { Err, Hoja, Icono, Numero } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { diasCortos, fechaCorta, hoy } from '../lib/fechas'
-import { COMIDAS, NOMBRE_COMIDA, redondear } from '../lib/nutricion'
+import { COMIDAS, NOMBRE_COMIDA, litros, objetivoLiquido, redondear } from '../lib/nutricion'
 import { LIM, errFecha, errNumero } from '../lib/validar'
 
 function Grafico({ puntos, meta }) {
@@ -23,7 +23,7 @@ function Grafico({ puntos, meta }) {
       {[min + 1, (min + max) / 2, max - 1].map((v) => (
         <g key={v}>
           <line x1={m.i} x2={W - m.d} y1={y(v)} y2={y(v)} stroke="#e2e8f0" />
-          <text x={m.i - 6} y={y(v) + 4} textAnchor="end" fontSize="10" fill="#64748b">{redondear(v, 1)}</text>
+          <text x={m.i - 6} y={y(v) + 4} textAnchor="end" fontSize="10" fill="#5b6b82">{redondear(v, 1)}</text>
         </g>
       ))}
       {meta && (
@@ -34,14 +34,36 @@ function Grafico({ puntos, meta }) {
       )}
       <path d={linea} fill="none" stroke="#206140" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       {puntos.map((p, i) => <circle key={p.f} cx={x(i)} cy={y(p.v)} r="3.5" fill="#206140" />)}
-      <text x={x(0)} y={H - 6} fontSize="10" fill="#64748b">{fechaCorta(puntos[0].f)}</text>
-      <text x={x(puntos.length - 1)} y={H - 6} textAnchor="end" fontSize="10" fill="#64748b">{fechaCorta(puntos[puntos.length - 1].f)}</text>
+      <text x={x(0)} y={H - 6} fontSize="10" fill="#5b6b82">{fechaCorta(puntos[0].f)}</text>
+      <text x={x(puntos.length - 1)} y={H - 6} textAnchor="end" fontSize="10" fill="#5b6b82">{fechaCorta(puntos[puntos.length - 1].f)}</text>
     </svg>
   )
 }
 
 export default function Perfil() {
-  const { perfil, usuario, medidas, reglas, guardarPerfil, guardarMedida, borrarMedida, alternarRegla, salir, avisar } = useDatos()
+  const { perfil, usuario, medidas, reglas, guardarPerfil, guardarMedida, borrarMedida, alternarRegla, salir, avisar, exportar, borrarCuenta, confirmar } = useDatos()
+  const [borrando, setBorrando] = useState(null) // texto de confirmación para borrar la cuenta
+  const [trabajando, setTrabajando] = useState(false)
+
+  // Arma un archivo con todo lo del usuario y lo descarga
+  async function descargar() {
+    setTrabajando(true)
+    const datos = await exportar()
+    setTrabajando(false)
+    if (!datos) return
+    const enlace = document.createElement('a')
+    enlace.href = URL.createObjectURL(new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' }))
+    enlace.download = `tupper-mis-datos-${hoy()}.json`
+    enlace.click()
+    URL.revokeObjectURL(enlace.href)
+    avisar('Archivo descargado')
+  }
+  async function borrarTodo() {
+    setTrabajando(true)
+    const listo = await borrarCuenta()
+    if (!listo) setTrabajando(false)
+    else nav('/', { replace: true })
+  }
   const nav = useNavigate()
   const [editando, setEditando] = useState(false)
   const [nueva, setNueva] = useState(null)
@@ -91,16 +113,21 @@ export default function Perfil() {
           </div>
           <button onClick={() => setEditando(true)} className="btn-chico bg-verde-suave text-verde"><Icono n="edit" size={16} /> Editar</button>
         </div>
-        <div className="grid grid-cols-2 gap-3 mt-4">
+        <div className="grid grid-cols-3 gap-2 mt-4">
           <div className="rounded-xl bg-verde-claro p-3">
-            <p className="text-xs text-gris font-semibold">Calorías por día</p>
+            <p className="text-xs text-gris font-semibold">Calorías</p>
             <p className="text-xl font-bold text-verde">{perfil.kcal_target}</p>
           </div>
           <div className="rounded-xl bg-coral-suave p-3">
-            <p className="text-xs text-gris font-semibold">Proteína por día</p>
-            <p className="text-xl font-bold text-coral">{perfil.protein_target} g</p>
+            <p className="text-xs text-gris font-semibold">Proteína</p>
+            <p className="text-xl font-bold text-coral-oscuro">{perfil.protein_target} g</p>
+          </div>
+          <div className="rounded-xl bg-teal-suave p-3">
+            <p className="text-xs text-gris font-semibold">Líquido</p>
+            <p className="text-xl font-bold text-teal-oscuro">{litros(objetivoLiquido(perfil))} L</p>
           </div>
         </div>
+        <p className="text-xs text-gris mt-2">Objetivos por día.</p>
       </section>
 
       <section className="tarjeta p-5 mb-4">
@@ -121,7 +148,7 @@ export default function Perfil() {
                 <span className="w-14 text-gris">{fechaCorta(m.date)}</span>
                 <span className="flex-1 font-medium">{m.weight_kg ? `${Number(m.weight_kg)} kg` : '—'}</span>
                 <span className="w-24 text-gris">{m.waist_cm ? `${Number(m.waist_cm)} cm cintura` : ''}</span>
-                <button onClick={() => borrarMedida(m.date)} className="w-8 h-8 text-gris" aria-label="Borrar"><Icono n="delete" size={18} /></button>
+                <button onClick={async () => { if (await confirmar({ titulo: `¿Borrar la medida del ${fechaCorta(m.date)}?` })) borrarMedida(m.date) }} className="w-8 h-8 text-gris" aria-label={`Borrar la medida del ${fechaCorta(m.date)}`}><Icono n="delete" size={18} /></button>
               </div>
             ))}
           </div>
@@ -143,7 +170,7 @@ export default function Perfil() {
                 const activo = reglas.some((r) => r.weekday === i && r.meal === c)
                 return (
                   <button key={i} onClick={() => cambiarRegla(i, c)} aria-label={`${NOMBRE_COMIDA[c]} ${diasCortos[i]}`}
-                    className={`h-9 rounded-lg flex items-center justify-center ${activo ? 'bg-naranja text-white' : 'bg-campo text-gris/50'}`}>
+                    className={`h-9 rounded-lg flex items-center justify-center ${activo ? 'bg-naranja-fuerte text-white' : 'bg-campo text-gris/80'}`}>
                     <Icono n="takeout_dining" size={18} lleno={activo} />
                   </button>
                 )
@@ -153,11 +180,37 @@ export default function Perfil() {
         </div>
       </section>
 
+      <section className="tarjeta px-4 mb-4 divide-y divide-linea">
+        {[['/resumen', 'bar_chart', 'Resumen de la semana'], ['/alimentos', 'eco', 'Mis alimentos']].map(([a, icono, texto]) => (
+          <Link key={a} to={a} className="flex items-center gap-3 py-3.5">
+            <Icono n={icono} className="text-verde" size={20} /> <span className="flex-1 font-medium">{texto}</span> <Icono n="chevron_right" className="text-gris" size={20} />
+          </Link>
+        ))}
+        <button onClick={descargar} disabled={trabajando} className="w-full flex items-center gap-3 py-3.5 text-left">
+          <Icono n="download" className="text-verde" size={20} /> <span className="flex-1 font-medium">Descargar mis datos</span>
+        </button>
+        {[['/terminos', 'Términos de uso'], ['/privacidad', 'Política de privacidad']].map(([a, texto]) => (
+          <Link key={a} to={a} className="flex items-center gap-3 py-3.5">
+            <Icono n="description" className="text-gris" size={20} /> <span className="flex-1 font-medium">{texto}</span> <Icono n="chevron_right" className="text-gris" size={20} />
+          </Link>
+        ))}
+      </section>
+
       <button onClick={() => { nav('/', { replace: true }); salir() }} className="btn w-full bg-white border border-linea text-rojo"><Icono n="logout" size={20} /> Cerrar sesión</button>
+      <button onClick={() => setBorrando('')} className="mx-auto mt-5 text-sm text-gris underline flex items-center gap-1.5"><Icono n="person_remove" size={16} /> Borrar mi cuenta</button>
 
       {editando && (
         <Hoja titulo="Editar perfil" onCerrar={() => setEditando(false)}>
           <FormularioPerfil inicial={perfil} textoBoton="Guardar" onGuardar={async (d) => { if (await guardarPerfil(d)) { setEditando(false); avisar('Perfil guardado') } }} />
+        </Hoja>
+      )}
+      {borrando !== null && (
+        <Hoja titulo="Borrar mi cuenta" onCerrar={() => !trabajando && setBorrando(null)}>
+          <p className="text-sm">Se borran tu perfil, tus registros, tu despensa, tus recetas y tu plan. <b>No se puede deshacer.</b></p>
+          <p className="text-sm text-gris mt-2">Si querés quedarte con una copia, cerrá esto y tocá "Descargar mis datos" antes.</p>
+          <label className="etiqueta mt-4" htmlFor="bc-confirmar">Para confirmar, escribí BORRAR</label>
+          <input id="bc-confirmar" className="campo" maxLength={10} autoCapitalize="characters" autoComplete="off" value={borrando} onChange={(e) => setBorrando(e.target.value)} />
+          <button onClick={borrarTodo} disabled={borrando.trim().toUpperCase() !== 'BORRAR' || trabajando} className="btn w-full mt-4 bg-rojo text-white">Borrar todo para siempre</button>
         </Hoja>
       )}
       {nueva && (

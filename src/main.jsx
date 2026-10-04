@@ -4,6 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import App from './App'
 import '@fontsource-variable/plus-jakarta-sans'
 import './index.css'
+import { inject } from '@vercel/analytics'
+
+// Visitas anónimas por pantalla, sin cookies. Solo cuenta en el sitio publicado y si está activado en Vercel.
+if (import.meta.env.PROD) inject()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

@@ -9,7 +9,7 @@ import { COMIDAS, NOMBRE_COMIDA, redondear, sumar } from '../lib/nutricion'
 import { armarPlan, disponibilidad } from '../lib/planificador'
 
 const ESTADOS = {
-  preparado: { texto: 'Ya cocinado', clase: 'bg-teal-suave text-teal', icono: 'takeout_dining' },
+  preparado: { texto: 'Ya cocinado', clase: 'bg-teal-suave text-teal-oscuro', icono: 'takeout_dining' },
   listo: { texto: 'Tenés todo', clase: 'bg-verde-suave text-verde', icono: 'check' },
   falta: { texto: 'Falta comprar', clase: 'bg-naranja-suave text-naranja-oscuro', icono: 'shopping_basket' },
 }
@@ -35,19 +35,19 @@ export default function Plan() {
     const fechas = dias.filter((f) => f >= h)
     // Lo planificado antes de esta semana (de hoy en adelante) ya tiene reservado su stock
     const existentes = new Map(d.plan.filter((p) => p.date >= h).map((p) => [`${p.date}|${p.meal}`, p]))
-    const nuevas = armarPlan({ fechas, recetas: d.recetasPorId, itemsDe: d.itemsDe, stock: d.stockMap, preparado: d.preparadoMap, reglas, existentes })
+    const nuevas = armarPlan({ fechas, recetas: d.recetasPorId, itemsDe: d.itemsDe, stock: d.stockMap, preparado: d.preparadoMap, reglas, existentes, ocultas: d.ocultas, favoritas: d.favoritas })
     const listo = await d.guardarPlan(nuevas)
     setTrabajando(false)
     if (listo) d.avisar(nuevas.length ? 'Plan armado con lo que tenés' : 'La semana ya estaba completa')
   }
   async function rehacer() {
-    if (!window.confirm('Se borra lo planificado de hoy en adelante en esta semana y se arma de nuevo.')) return
+    if (!(await d.confirmar({ titulo: '¿Rehacer la semana?', texto: 'Se borra lo planificado de hoy en adelante en esta semana y se arma de nuevo con lo que tenés.', boton: 'Rehacer' }))) return
     setTrabajando(true)
     const desde = dias[0] < h ? h : dias[0]
     await d.vaciarPlan(desde, dias[6])
     const fechas = dias.filter((f) => f >= h)
     const existentes = new Map(d.plan.filter((p) => p.date >= h && (p.date < desde || p.date > dias[6])).map((p) => [`${p.date}|${p.meal}`, p]))
-    const nuevas = armarPlan({ fechas, recetas: d.recetasPorId, itemsDe: d.itemsDe, stock: d.stockMap, preparado: d.preparadoMap, reglas, existentes })
+    const nuevas = armarPlan({ fechas, recetas: d.recetasPorId, itemsDe: d.itemsDe, stock: d.stockMap, preparado: d.preparadoMap, reglas, existentes, ocultas: d.ocultas, favoritas: d.favoritas })
     await d.guardarPlan(nuevas)
     setTrabajando(false)
   }
@@ -75,7 +75,7 @@ export default function Plan() {
     ? d.recetas
         .filter((r) => r.meal_types.includes(eligiendo.meal))
         .map((r) => ({ r, cocinadas: d.preparadoMap.get(r.id) || 0, ok: disponibilidad(r, d.itemsDe(r.id), d.stockMap).ok }))
-        .sort((a, b) => (eligiendoAfuera ? Number(b.r.portable) - Number(a.r.portable) : 0) || Number(b.cocinadas > 0) - Number(a.cocinadas > 0) || Number(b.ok) - Number(a.ok) || a.r.name.localeCompare(b.r.name, 'es'))
+        .sort((a, b) => (eligiendoAfuera ? Number(b.r.portable) - Number(a.r.portable) : 0) || Number(d.favoritas.has(b.r.id)) - Number(d.favoritas.has(a.r.id)) || Number(b.cocinadas > 0) - Number(a.cocinadas > 0) || Number(b.ok) - Number(a.ok) || a.r.name.localeCompare(b.r.name, 'es'))
     : []
 
   return (
@@ -138,7 +138,7 @@ export default function Plan() {
                       </button>
                       {!pasado && (
                         <button onClick={() => alternarAfuera(f, c)} aria-label={afuera ? 'Marcar en casa' : 'Marcar fuera de casa'}
-                          className={`w-9 h-9 rounded-full flex items-center justify-center ${afuera ? 'bg-naranja text-white' : 'bg-campo text-gris/60'}`}>
+                          className={`w-9 h-9 rounded-full flex items-center justify-center ${afuera ? 'bg-naranja-fuerte text-white' : 'bg-campo text-gris/80'}`}>
                           <Icono n="takeout_dining" size={18} lleno={afuera} />
                         </button>
                       )}
@@ -161,10 +161,10 @@ export default function Plan() {
               return (
                 <button key={r.id} onClick={() => elegir(r.id)} className="w-full flex items-center gap-3 py-3 text-left">
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium truncate">{r.name}</p>
+                    <p className="font-medium truncate">{d.favoritas.has(r.id) && <Icono n="favorite" lleno size={14} className="text-coral-oscuro mr-1 align-[-2px]" />}{r.name}</p>
                     <p className="text-xs text-gris">
                       {redondear(m.kcal)} kcal · {redondear(m.protein)} g prot.
-                      {cocinadas > 0 ? <span className="text-teal font-semibold"> · ya cocinado</span> : ok ? <span className="text-verde font-semibold"> · tenés todo</span> : <span className="text-naranja-oscuro font-semibold"> · falta comprar</span>}
+                      {cocinadas > 0 ? <span className="text-teal-oscuro font-semibold"> · ya cocinado</span> : ok ? <span className="text-verde font-semibold"> · tenés todo</span> : <span className="text-naranja-oscuro font-semibold"> · falta comprar</span>}
                       {eligiendoAfuera && !r.portable && <span className="text-rojo font-semibold"> · no es para llevar</span>}
                     </p>
                   </div>

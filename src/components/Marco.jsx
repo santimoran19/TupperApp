@@ -1,4 +1,5 @@
 // Marco común: encabezado, contenido y barra de navegación inferior.
+import { useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Icono } from './ui'
 import { useDatos } from '../store/Datos'
@@ -13,17 +14,52 @@ const PESTANAS = [
   { a: '/recetas', icono: 'menu_book', texto: 'Recetas' },
 ]
 
+// Logo: en tamaños chicos va la versión simple (un tupper plano que se lee bien);
+// en grande, la ilustración completa, que es la misma del ícono de la app.
 export function Logo({ size = 36 }) {
+  if (size >= 56) return <img src="/icon-192.png" alt="Tupper" width={size} height={size} className="shrink-0" />
   return (
-    <div className="rounded-xl bg-verde text-white flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-      <Icono n="takeout_dining" lleno size={size * 0.6} />
+    <svg viewBox="0 0 64 64" width={size} height={size} className="shrink-0" role="img" aria-label="Tupper">
+      <rect width="64" height="64" rx="15" fill="#cdeee0" />
+      <path d="M12.5 29h39l-2.3 17.6a5.5 5.5 0 0 1-5.5 4.9H20.3a5.5 5.5 0 0 1-5.5-4.9z" fill="#f4fcff" stroke="#1b5e63" strokeWidth="3.2" strokeLinejoin="round" />
+      <ellipse cx="42" cy="42.5" rx="6.5" ry="4.8" fill="#efb16c" />
+      <circle cx="22.5" cy="42" r="5.2" fill="#e5482f" />
+      <ellipse cx="32" cy="42" rx="6.4" ry="4" transform="rotate(-38 32 42)" fill="#2f9e44" />
+      <rect x="7.5" y="16.5" width="49" height="13.5" rx="5.5" fill="#86cf45" stroke="#2c7a34" strokeWidth="3.2" />
+      <path d="M15 22.5h18" stroke="#c9efa6" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+// Diálogo para confirmar las acciones que no se pueden deshacer
+function Confirmacion({ pregunta, onResponder }) {
+  const cancelar = useRef(null)
+  useEffect(() => {
+    cancelar.current?.focus()
+    const tecla = (ev) => { if (ev.key === 'Escape') onResponder(false) }
+    document.addEventListener('keydown', tecla)
+    return () => document.removeEventListener('keydown', tecla)
+  }, [onResponder])
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center p-6">
+      <div className="absolute inset-0 bg-tinta/50" onClick={() => onResponder(false)} />
+      <div role="alertdialog" aria-modal="true" aria-labelledby="conf-titulo" aria-describedby="conf-texto" className="relative w-full max-w-[340px] bg-white rounded-3xl shadow-flotante p-5">
+        <h2 id="conf-titulo" className="text-lg font-semibold leading-snug">{pregunta.titulo}</h2>
+        {pregunta.texto && <p id="conf-texto" className="text-sm text-gris mt-1.5">{pregunta.texto}</p>}
+        <div className="flex gap-2 mt-5">
+          <button ref={cancelar} onClick={() => onResponder(false)} className="btn flex-1 bg-campo text-tinta">Cancelar</button>
+          <button onClick={() => onResponder(true)} className={`btn flex-1 text-white ${pregunta.peligro === false ? 'bg-verde' : 'bg-rojo'}`}>{pregunta.boton || 'Borrar'}</button>
+        </div>
+      </div>
     </div>
   )
 }
 
 export default function Marco({ titulo, atras = false, children, sinNav = false }) {
-  const { registros, perfil, aviso } = useDatos()
+  const { registros, perfil, aviso, pregunta, responder } = useDatos()
   const nav = useNavigate()
+  // Cada pantalla le pone su nombre a la pestaña del navegador
+  useEffect(() => { document.title = `${titulo} · Tupper` }, [titulo])
   const kcalHoy = redondear(sumar(registros.filter((r) => r.date === hoy())).kcal)
   const inicial = (perfil?.name || '?').trim().charAt(0).toUpperCase()
 
@@ -52,6 +88,8 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
       </header>
 
       <main className={`max-w-[440px] mx-auto px-4 pt-4 ${sinNav ? 'pb-10' : 'pb-32'}`}>{children}</main>
+
+      {pregunta && <Confirmacion pregunta={pregunta} onResponder={responder} />}
 
       {aviso && (
         <div className="fixed left-0 right-0 bottom-28 z-[60] flex justify-center px-4 pointer-events-none">

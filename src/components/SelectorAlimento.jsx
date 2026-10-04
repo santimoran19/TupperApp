@@ -53,7 +53,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
     setAgregando(true)
     const a = await crearAlimento({
       name: p.name, unit: bebidas ? 'ml' : p.unit, category: bebidas ? 'Bebidas' : p.category,
-      unit_grams: null, unit_label: null, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat,
+      unit_grams: null, unit_label: null, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, alcohol: false,
     })
     setAgregando(false)
     if (a) onElegir(a)
@@ -95,7 +95,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
 
       {!soloConStock && texto.trim().length >= 3 && !off && (
         <button onClick={buscarAfuera} className="w-full mt-3 rounded-2xl border border-linea p-3 flex items-center gap-3 text-left">
-          <span className="w-10 h-10 rounded-full bg-teal-suave text-teal flex items-center justify-center"><Icono n="travel_explore" /></span>
+          <span className="w-10 h-10 rounded-full bg-teal-suave text-teal-oscuro flex items-center justify-center"><Icono n="travel_explore" /></span>
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-semibold truncate">Buscar “{texto.trim()}” en Open Food Facts</span>
             <span className="block text-xs text-gris">Productos de marca con los valores de su etiqueta</span>
@@ -104,10 +104,10 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
       )}
       {off && (
         <div className="mt-3 rounded-2xl bg-teal-suave p-3">
-          <p className="text-[11px] font-bold tracking-wider text-teal flex items-center gap-1.5"><Icono n="travel_explore" size={16} /> OPEN FOOD FACTS</p>
+          <p className="text-[11px] font-bold tracking-wider text-teal-oscuro flex items-center gap-1.5"><Icono n="travel_explore" size={16} /> OPEN FOOD FACTS</p>
           {off.estado === 'cargando' && <p className="text-sm text-gris py-2">Buscando...</p>}
           {off.estado === 'error' && (
-            <p className="text-sm py-2">No se pudo consultar. Probá de nuevo en un rato o cargalo a mano. <button onClick={buscarAfuera} className="font-semibold text-teal underline">Reintentar</button></p>
+            <p className="text-sm py-2">No se pudo consultar. Probá de nuevo en un rato o cargalo a mano. <button onClick={buscarAfuera} className="font-semibold text-teal-oscuro underline">Reintentar</button></p>
           )}
           {off.estado === 'listo' && off.productos.length === 0 && <p className="text-sm py-2">No apareció nada con ese nombre. Podés crearlo a mano con los datos de la etiqueta.</p>}
           {off.estado === 'listo' && off.productos.length > 0 && (
@@ -119,7 +119,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
                       <p className="text-sm font-medium truncate">{p.name}</p>
                       <p className="text-xs text-gris">{cada100(p)}{p.detalle ? ` · ${p.detalle}` : ''}</p>
                     </div>
-                    <Icono n="add_circle" className="text-teal" />
+                    <Icono n="add_circle" className="text-teal-oscuro" />
                   </button>
                 ))}
               </div>
@@ -136,12 +136,19 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
   )
 }
 
-export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, onListo, onCancelar }) {
-  const { crearAlimento } = useDatos()
-  const [f, setF] = useState({
-    name: nombreInicial, unit: categoriaInicial === 'Bebidas' ? 'ml' : 'g', unit_grams: '', unit_label: 'unidad',
-    kcal: '', protein: '', carbs: '', fat: '', category: categoriaInicial || 'Otros',
-  })
+// Crear un alimento propio o, si viene `inicial`, editarlo.
+export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, inicial = null, onListo, onCancelar }) {
+  const { crearAlimento, actualizarAlimento } = useDatos()
+  const [f, setF] = useState(inicial
+    ? {
+        name: inicial.name, unit: inicial.unit, unit_grams: inicial.unit_grams ?? '', unit_label: inicial.unit_label || 'unidad',
+        kcal: String(Number(inicial.kcal)), protein: String(Number(inicial.protein)), carbs: String(Number(inicial.carbs)), fat: String(Number(inicial.fat)),
+        category: inicial.category, alcohol: !!inicial.alcohol,
+      }
+    : {
+        name: nombreInicial, unit: categoriaInicial === 'Bebidas' ? 'ml' : 'g', unit_grams: '', unit_label: 'unidad',
+        kcal: '', protein: '', carbs: '', fat: '', category: categoriaInicial || 'Otros', alcohol: false,
+      })
   const [guardando, setGuardando] = useState(false)
   const [intento, setIntento] = useState(false)
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }))
@@ -155,6 +162,8 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, onL
     unit_grams: f.unit === 'u' ? errNumero(f.unit_grams, LIM.gramosUnidad) : null,
     unit_label: f.unit === 'u' ? errTexto(f.unit_label, { max: 20 }) : null,
   }
+  // Cada gramo de proteína aporta 4 kcal: no puede haber más proteína que la que entra en esas calorías
+  if (!errores.kcal && !errores.protein && Number(f.protein) * 4 > Number(f.kcal) + 10) errores.protein = 'Es mucha proteína para esas calorías: revisá la etiqueta.'
   // 100 g de algo no pueden tener más de 100 g entre proteína, carbohidratos y grasa
   const suma = (Number(f.protein) || 0) + (Number(f.carbs) || 0) + (Number(f.fat) || 0)
   if (!errores.protein && !errores.carbs && !errores.fat && suma > 100.5) errores.fat = 'Proteína, carbohidratos y grasas no pueden sumar más de 100.'
@@ -164,19 +173,23 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, onL
     setIntento(true)
     if (hayErrores(errores)) return
     setGuardando(true)
-    const a = await crearAlimento({
+    const datos = {
       name: f.name.trim(), unit: f.unit, category: f.category,
       unit_grams: f.unit === 'u' ? Number(f.unit_grams) : null,
       unit_label: f.unit === 'u' ? f.unit_label.trim() : null,
       kcal: Number(f.kcal), protein: Number(f.protein) || 0, carbs: Number(f.carbs) || 0, fat: Number(f.fat) || 0,
-    })
+      alcohol: f.category === 'Bebidas' && f.alcohol,
+    }
+    const a = inicial ? await actualizarAlimento(inicial.id, datos) : await crearAlimento(datos)
     setGuardando(false)
     if (a) onListo(a)
   }
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-gris">Copiá los valores de la etiqueta del producto, cada 100 g o 100 ml. Queda guardado para siempre.</p>
+      <p className="text-sm text-gris">
+        {inicial ? 'Los cambios valen de acá en adelante: lo que ya registraste queda como estaba.' : 'Copiá los valores de la etiqueta del producto, cada 100 g o 100 ml. Queda guardado para siempre.'}
+      </p>
       <div>
         <label className="etiqueta" htmlFor="na-nombre">Nombre</label>
         <input id="na-nombre" className="campo" maxLength={LIM.nombre} value={f.name} onChange={(e) => set('name')(e.target.value)} placeholder="Ej.: Galletitas de avena" />
@@ -234,6 +247,12 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, onL
           <Err>{ver('fat')}</Err>
         </div>
       </div>
+      {f.category === 'Bebidas' && (
+        <label className="flex items-center gap-3 text-sm">
+          <input type="checkbox" checked={f.alcohol} onChange={(e) => set('alcohol')(e.target.checked)} className="w-5 h-5 accent-verde" />
+          Tiene alcohol (no cuenta para el líquido del día)
+        </label>
+      )}
       <div className="flex gap-2 pt-2">
         <button onClick={onCancelar} className="btn-suave flex-1">Volver</button>
         <button onClick={guardar} disabled={guardando} className="btn-primario flex-1">Guardar</button>

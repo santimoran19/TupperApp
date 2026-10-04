@@ -60,7 +60,8 @@ export function estadoDelPlan(filas, { recetas, itemsDe, stock, preparado }) {
 // Completa los huecos del plan para las fechas dadas, priorizando lo ya cocinado y lo que hay en stock.
 // `existentes`: Map 'fecha|comida' -> fila ya guardada. `reglas`: Set 'diaSemana|comida' de comidas fuera de casa.
 // `soloClaves`: si viene, solo se eligen recetas para esas 'fecha|comida' (sirve para cambiar una comida puntual).
-export function armarPlan({ fechas, recetas, itemsDe, stock, preparado, reglas, existentes, soloClaves = null }) {
+// `ocultas`: recetas que el usuario no quiere ver; `favoritas`: tienen prioridad.
+export function armarPlan({ fechas, recetas, itemsDe, stock, preparado, reglas, existentes, soloClaves = null, ocultas = new Set(), favoritas = new Set() }) {
   const sim = new Map(stock)
   const prep = new Map(preparado)
   const usos = new Map()
@@ -86,7 +87,7 @@ export function armarPlan({ fechas, recetas, itemsDe, stock, preparado, reglas, 
         continue
       }
       if (soloClaves && !soloClaves.has(clave)) continue
-      let candidatas = [...recetas.values()].filter((r) => r.meal_types.includes(comida) && itemsDe(r.id).length > 0)
+      let candidatas = [...recetas.values()].filter((r) => !ocultas.has(r.id) && r.meal_types.includes(comida) && itemsDe(r.id).length > 0)
       if (afuera && candidatas.some((r) => r.portable)) candidatas = candidatas.filter((r) => r.portable)
       if (candidatas.length === 0) continue
 
@@ -101,6 +102,7 @@ export function armarPlan({ fechas, recetas, itemsDe, stock, preparado, reglas, 
           const d = disponibilidad(r, itemsDe(r.id), sim)
           puntos = d.ok ? 50 : 10 - d.faltan.length * 3
         }
+        if (favoritas.has(r.id)) puntos += 12
         puntos -= (usos.get(r.id) || 0) * 8
         if (r.id === otraPrincipal) puntos -= 60
         if (r.id === ayer || r.id === manana) puntos -= 6

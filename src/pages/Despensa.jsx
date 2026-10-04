@@ -41,8 +41,8 @@ export default function Despensa() {
     <Marco titulo="Despensa">
       <div className="grid grid-cols-3 gap-2 mb-4">
         <div className="tarjeta p-3"><Icono n="inventory_2" className="text-verde" size={20} /><p className="text-2xl font-bold leading-tight">{activos}</p><p className="text-xs text-gris">En stock</p></div>
-        <div className="tarjeta p-3"><Icono n="hourglass_empty" className="text-naranja" size={20} /><p className="text-2xl font-bold leading-tight text-naranja-oscuro">{agotados}</p><p className="text-xs text-gris">Agotados</p></div>
-        <div className="tarjeta p-3"><Icono n="takeout_dining" className="text-teal" size={20} /><p className="text-2xl font-bold leading-tight text-teal">{redondear(cocinado.reduce((s, p) => s + Number(p.portions), 0), 1)}</p><p className="text-xs text-gris">Porciones listas</p></div>
+        <div className="tarjeta p-3"><Icono n="hourglass_empty" className="text-naranja-oscuro" size={20} /><p className="text-2xl font-bold leading-tight text-naranja-oscuro">{agotados}</p><p className="text-xs text-gris">Agotados</p></div>
+        <div className="tarjeta p-3"><Icono n="takeout_dining" className="text-teal-oscuro" size={20} /><p className="text-2xl font-bold leading-tight text-teal-oscuro">{redondear(cocinado.reduce((s, p) => s + Number(p.portions), 0), 1)}</p><p className="text-xs text-gris">Porciones listas</p></div>
       </div>
 
       <Link to="/compras" className="tarjeta p-4 mb-4 flex items-center gap-3">
@@ -58,7 +58,7 @@ export default function Despensa() {
 
       {cocinado.length > 0 && (
         <section className="rounded-2xl bg-teal-suave p-4 mb-4">
-          <p className="text-[11px] font-bold tracking-wider text-teal flex items-center gap-1.5"><Icono n="takeout_dining" size={16} lleno /> COMIDA LISTA</p>
+          <p className="text-[11px] font-bold tracking-wider text-teal-oscuro flex items-center gap-1.5"><Icono n="takeout_dining" size={16} lleno /> COMIDA LISTA</p>
           <div className="mt-2 space-y-2">
             {cocinado.map((p) => (
               <div key={p.recipe_id} className="flex items-center gap-2 text-sm">
@@ -125,7 +125,7 @@ export default function Despensa() {
           {editar.alimento.unit !== 'u' && <p className="text-xs text-gris mt-1.5">1 kg son 1000 g y 1 litro son 1000 ml.</p>}
           <div className="flex gap-2 mt-4">
             {!editar.nuevo && (
-              <button onClick={async () => { if (await d.quitarDeDespensa(editar.alimento.id)) setEditar(null) }} className="btn bg-rojo-suave text-rojo"><Icono n="delete" size={20} /> Quitar</button>
+              <button onClick={async () => { if (await d.confirmar({ titulo: `¿Quitar ${editar.alimento.name} de tu despensa?`, boton: 'Quitar' }) && await d.quitarDeDespensa(editar.alimento.id)) setEditar(null) }} className="btn bg-rojo-suave text-rojo"><Icono n="delete" size={20} /> Quitar</button>
             )}
             <button onClick={guardarCantidad} disabled={!!errorEditar} className="btn-primario flex-1">Guardar</button>
           </div>
