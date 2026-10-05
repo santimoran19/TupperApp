@@ -63,7 +63,7 @@ const TEXTOS = {
       ['Dónde se guardan', [
         'La base de datos y el inicio de sesión están en Supabase, en servidores ubicados en São Paulo, Brasil. El sitio se sirve desde Vercel. Los dos actúan como proveedores y no usan tus datos para otra cosa.',
         'Cuando buscás un producto de marca, el texto de la búsqueda se manda a Open Food Facts. No se manda tu email ni ningún dato tuyo.',
-        'Si pedís el análisis con IA del resumen semanal, se envía a Anthropic (el proveedor del modelo) un resumen de esa semana: tu sexo, edad, altura, peso, objetivos, los totales de cada día, los alimentos que registraste y tus medidas de peso. No se envían tu nombre ni tu email. Solo pasa cuando tocás el botón, y la devolución queda guardada en tu cuenta.',
+        'Si pedís el análisis con IA del resumen semanal, se envía a Groq (el proveedor del modelo de IA) un resumen de esa semana: tu sexo, edad, altura, peso, objetivos, los totales de cada día, los alimentos que registraste y tus medidas de peso. No se envían tu nombre ni tu email. Solo pasa cuando tocás el botón, y la devolución queda guardada en tu cuenta.',
         'En tu teléfono o computadora se guarda la sesión iniciada y alguna preferencia, como la forma en que endulzás las infusiones. La app no usa cookies de publicidad ni de seguimiento.',
         'Para saber qué pantallas se usan, contamos las visitas de forma anónima con Vercel Web Analytics: no usa cookies y no permite identificarte.',
       ]],

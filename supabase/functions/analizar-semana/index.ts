@@ -1,17 +1,17 @@
 // Devolución semanal con IA. La llama la app con la sesión del usuario:
 //   POST /functions/v1/analizar-semana   { "semana": "AAAA-MM-DD", "hoy": "AAAA-MM-DD" }
 // Lee la semana desde la base (con los permisos del usuario), se la pasa al modelo y guarda la devolución.
-// Necesita el secreto ANTHROPIC_API_KEY. Opcionales: ANTHROPIC_MODEL e IA_LIMITE_DIARIO.
+// Necesita la clave de un proveedor de IA como secreto: GROQ_API_KEY o ANTHROPIC_API_KEY (ver proveedores.ts).
+// Opcionales: IA_PROVEEDOR, GROQ_MODEL, ANTHROPIC_MODEL e IA_LIMITE_DIARIO.
 import { createClient } from 'npm:@supabase/supabase-js@2'
 import { armarDatos, esFecha, INSTRUCCIONES, interpretar, lunesDe, sumarDias } from './logica.ts'
+import { proveedor } from './proveedores.ts'
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
-const MODELO = Deno.env.get('ANTHROPIC_MODEL') || 'claude-haiku-4-5-20251001'
-const URL_IA = Deno.env.get('ANTHROPIC_URL') || 'https://api.anthropic.com/v1/messages'
 const LIMITE_DIARIO = Number(Deno.env.get('IA_LIMITE_DIARIO')) || 3
 const MINIMO_DIAS = 2
 
@@ -46,8 +46,8 @@ Deno.serve(async (req) => {
     const domingo = sumarDias(lunes, 6)
 
     // ---- ¿Está configurada la IA? ¿Le queda cupo?
-    const clave = Deno.env.get('ANTHROPIC_API_KEY')
-    if (!clave) return fallo(503, 'sin_configurar', 'El análisis con IA todavía no está activado.')
+    const ia = proveedor()
+    if (!ia) return fallo(503, 'sin_configurar', 'El análisis con IA todavía no está activado.')
     const haceUnDia = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
     const usos = await db.from('ai_analyses').select('id').eq('user_id', usuario.id).gte('created_at', haceUnDia)
     if (usos.error) throw new Error('usos: ' + usos.error.message)
@@ -71,31 +71,23 @@ Deno.serve(async (req) => {
     if (diasConRegistro < MINIMO_DIAS) return fallo(422, 'pocos_datos', `Hace falta registrar al menos ${MINIMO_DIAS} días de la semana para poder analizarla.`)
 
     // ---- Consulta al modelo
-    const ia = await fetch(URL_IA, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-api-key': clave, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({
-        model: MODELO,
-        max_tokens: 900,
-        system: INSTRUCCIONES,
-        messages: [{ role: 'user', content: 'Datos de la semana:\n' + JSON.stringify(datos) }],
-      }),
-      signal: AbortSignal.timeout(45000),
-    })
-    if (!ia.ok) {
-      const detalle = await ia.json().catch(() => null)
-      console.error('IA respondió', ia.status, detalle?.error?.type, detalle?.error?.message)
-      if (ia.status === 401 || ia.status === 403) return fallo(503, 'sin_configurar', 'El análisis con IA no está bien configurado.')
-      if (ia.status === 429 || ia.status === 529) return fallo(503, 'ocupado', 'La IA está con mucha demanda. Probá de nuevo en unos minutos.')
+    const salida = await ia.pedir(INSTRUCCIONES, 'Datos de la semana:\n' + JSON.stringify(datos), AbortSignal.timeout(45000))
+    if (!salida.ok) {
+      console.error('IA respondió', ia.nombre, ia.modelo, salida.estado, salida.tipo, salida.mensaje)
+      if (salida.estado === 401 || salida.estado === 403) return fallo(503, 'sin_configurar', 'El análisis con IA no está bien configurado.')
+      // 429: tope del proveedor (por minuto o por día). 498, 503 y 529: el proveedor está saturado.
+      if ([429, 498, 503, 529].includes(salida.estado)) return fallo(503, 'ocupado', 'La IA está con mucha demanda. Probá de nuevo en unos minutos.')
+      return fallo(502, 'error_ia', salida.tipo === 'rechazo' ? 'No se pudo generar el análisis para esta semana.' : 'No se pudo generar el análisis. Probá de nuevo en un rato.')
+    }
+    // Si la respuesta quedó cortada y no llegó a cerrar el JSON, no se guarda a medias
+    if (salida.cortado && !/\}\s*(```)?\s*$/.test(salida.texto)) {
+      console.error('IA: respuesta cortada', ia.nombre, ia.modelo)
       return fallo(502, 'error_ia', 'No se pudo generar el análisis. Probá de nuevo en un rato.')
     }
-    const salida = await ia.json()
-    if (salida.stop_reason === 'refusal') return fallo(502, 'error_ia', 'No se pudo generar el análisis para esta semana.')
-    const escrito = (salida.content || []).filter((b: { type: string }) => b.type === 'text').map((b: { text: string }) => b.text).join('\n')
-    const contenido = interpretar(escrito)
+    const contenido = interpretar(salida.texto)
 
     // ---- Se guarda y se devuelve
-    const guardado = await db.from('ai_analyses').insert({ user_id: usuario.id, week_start: lunes, content: contenido, model: MODELO }).select().single()
+    const guardado = await db.from('ai_analyses').insert({ user_id: usuario.id, week_start: lunes, content: contenido, model: ia.modelo }).select().single()
     if (guardado.error) throw new Error('guardar: ' + guardado.error.message)
     return responder(200, { analisis: guardado.data, restantes: Math.max(0, LIMITE_DIARIO - usos.data.length - 1) })
   } catch (err) {
