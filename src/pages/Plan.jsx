@@ -35,7 +35,7 @@ export default function Plan() {
     const fechas = dias.filter((f) => f >= h)
     // Lo planificado antes de esta semana (de hoy en adelante) ya tiene reservado su stock
     const existentes = new Map(d.plan.filter((p) => p.date >= h).map((p) => [`${p.date}|${p.meal}`, p]))
-    const nuevas = armarPlan({ fechas, recetas: d.recetasPorId, itemsDe: d.itemsDe, stock: d.stockMap, preparado: d.preparadoMap, reglas, existentes, ocultas: d.ocultas, favoritas: d.favoritas })
+    const nuevas = armarPlan({ fechas, recetas: d.recetasPorId, itemsDe: d.itemsPlan, stock: d.stockRecetas, preparado: d.preparadoMap, reglas, existentes, ocultas: d.ocultas, favoritas: d.favoritas })
     const listo = await d.guardarPlan(nuevas)
     setTrabajando(false)
     if (listo) d.avisar(nuevas.length ? 'Plan armado con lo que tenés' : 'La semana ya estaba completa')
@@ -47,7 +47,7 @@ export default function Plan() {
     await d.vaciarPlan(desde, dias[6])
     const fechas = dias.filter((f) => f >= h)
     const existentes = new Map(d.plan.filter((p) => p.date >= h && (p.date < desde || p.date > dias[6])).map((p) => [`${p.date}|${p.meal}`, p]))
-    const nuevas = armarPlan({ fechas, recetas: d.recetasPorId, itemsDe: d.itemsDe, stock: d.stockMap, preparado: d.preparadoMap, reglas, existentes, ocultas: d.ocultas, favoritas: d.favoritas })
+    const nuevas = armarPlan({ fechas, recetas: d.recetasPorId, itemsDe: d.itemsPlan, stock: d.stockRecetas, preparado: d.preparadoMap, reglas, existentes, ocultas: d.ocultas, favoritas: d.favoritas })
     await d.guardarPlan(nuevas)
     setTrabajando(false)
   }
@@ -74,7 +74,7 @@ export default function Plan() {
   const opciones = eligiendo
     ? d.recetas
         .filter((r) => r.meal_types.includes(eligiendo.meal))
-        .map((r) => ({ r, cocinadas: d.preparadoMap.get(r.id) || 0, ok: disponibilidad(r, d.itemsDe(r.id), d.stockMap).ok }))
+        .map((r) => ({ r, cocinadas: d.preparadoMap.get(r.id) || 0, ok: disponibilidad(r, d.itemsPlan(r.id), d.stockRecetas).ok }))
         .sort((a, b) => (eligiendoAfuera ? Number(b.r.portable) - Number(a.r.portable) : 0) || Number(d.favoritas.has(b.r.id)) - Number(d.favoritas.has(a.r.id)) || Number(b.cocinadas > 0) - Number(a.cocinadas > 0) || Number(b.ok) - Number(a.ok) || a.r.name.localeCompare(b.r.name, 'es'))
     : []
 

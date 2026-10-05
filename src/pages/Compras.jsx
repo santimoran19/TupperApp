@@ -2,10 +2,11 @@
 import { useMemo, useState } from 'react'
 import Marco from '../components/Marco'
 import SelectorAlimento from '../components/SelectorAlimento'
-import { Err, Hoja, Icono, Numero, Vacio, pesos } from '../components/ui'
+import { Chip, Err, Hoja, Icono, Numero, Vacio, pesos } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { fechaCorta, hoy, mesDe, nombreMes } from '../lib/fechas'
-import { cantidadTexto, pasoDe, unidadDe } from '../lib/nutricion'
+import { cantidadTexto, pasoDe, redondear, unidadDe } from '../lib/nutricion'
+import { convertir, nombreCorto } from '../lib/equivalencias'
 import { LIM, errCantidad, errNumero, maxEnStock } from '../lib/validar'
 
 // Redondea lo que falta a una cantidad razonable de comprar
@@ -16,7 +17,8 @@ function redondearCompra(a, falta) {
 
 export default function Compras() {
   const d = useDatos()
-  const [comprando, setComprando] = useState(null) // { alimento, qty, price }
+  // `alimento` es lo anotado en la lista y `producto` lo que se compró: el mismo, o uno que vale por él
+  const [comprando, setComprando] = useState(null) // { alimento, producto, qty, price }
   const [agregando, setAgregando] = useState(false)
 
   const delPlan = useMemo(
@@ -32,11 +34,18 @@ export default function Compras() {
   const gasto = comprasMes.reduce((s, c) => s + Number(c.price), 0)
 
   const errCompra = comprando
-    ? { qty: errCantidad(comprando.alimento, comprando.qty, maxEnStock(comprando.alimento)), price: errNumero(comprando.price, LIM.precio, { opcional: true }) }
+    ? { qty: errCantidad(comprando.producto, comprando.qty, maxEnStock(comprando.producto)), price: errNumero(comprando.price, LIM.precio, { opcional: true }) }
     : {}
+  // Al tocar "Comprado" se propone el producto vinculado que ya se venía usando, si hay
+  function empezarCompra(a, qty) {
+    const producto = d.enUso.get(a.id) || (d.equivalentes.get(a.id) || [])[0] || a
+    setComprando({ alimento: a, producto, qty: String(pasar(a, producto, qty)), price: '' })
+  }
+  const pasar = (de, a, qty) => redondear(convertir(de, a, Number(qty) || 0), a.unit === 'u' ? 1 : 0)
+  const opcionesCompra = comprando ? [comprando.alimento, ...(d.equivalentes.get(comprando.alimento.id) || [])] : []
   async function confirmar() {
     if (errCompra.qty || errCompra.price) return
-    const listo = await d.comprar({ food_id: comprando.alimento.id, qty: Number(comprando.qty), price: Number(comprando.price) || 0 })
+    const listo = await d.comprar({ food_id: comprando.producto.id, qty: Number(comprando.qty), price: Number(comprando.price) || 0, anotado: comprando.alimento.id })
     if (listo) { setComprando(null); d.avisar('Sumado a tu despensa') }
   }
 
@@ -47,7 +56,7 @@ export default function Compras() {
         <p className="text-xs text-gris">{cantidadTexto(a, qty)} · {origen}</p>
       </div>
       {id && <button onClick={() => d.quitarDeLista(id)} className="w-8 h-8 text-gris" aria-label={`Quitar ${a.name}`}><Icono n="close" size={18} /></button>}
-      <button onClick={() => setComprando({ alimento: a, qty: String(qty), price: '' })} className="btn-chico bg-verde text-white"><Icono n="check" size={16} /> Comprado</button>
+      <button onClick={() => empezarCompra(a, qty)} className="btn-chico bg-verde text-white"><Icono n="check" size={16} /> Comprado</button>
     </div>
   )
 
@@ -98,10 +107,20 @@ export default function Compras() {
       )}
       {comprando && (
         <Hoja titulo={comprando.alimento.name} onCerrar={() => setComprando(null)}>
+          {opcionesCompra.length > 1 && (
+            <div className="mb-3">
+              <p className="etiqueta">¿Qué compraste?</p>
+              <div className="flex gap-2 overflow-x-auto sin-scroll -mx-5 px-5">
+                {opcionesCompra.map((o) => (
+                  <Chip key={o.id} activo={o.id === comprando.producto.id} onClick={() => setComprando({ ...comprando, producto: o, qty: String(pasar(comprando.producto, o, comprando.qty)) })}>{nombreCorto(o)}</Chip>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="etiqueta" htmlFor="cp-cantidad">Cantidad ({comprando.alimento.unit === 'u' ? unidadDe(comprando.alimento) : comprando.alimento.unit})</label>
-              <Numero id="cp-cantidad" valor={comprando.qty} onChange={(v) => setComprando({ ...comprando, qty: v })} decimales={comprando.alimento.unit === 'u' ? 1 : 0} largo={6} error={!!errCompra.qty} />
+              <label className="etiqueta" htmlFor="cp-cantidad">Cantidad ({comprando.producto.unit === 'u' ? unidadDe(comprando.producto) : comprando.producto.unit})</label>
+              <Numero id="cp-cantidad" valor={comprando.qty} onChange={(v) => setComprando({ ...comprando, qty: v })} decimales={comprando.producto.unit === 'u' ? 1 : 0} largo={6} error={!!errCompra.qty} />
               <Err>{errCompra.qty}</Err>
             </div>
             <div>

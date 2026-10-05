@@ -56,13 +56,13 @@ export default function Diario() {
       .filter((r) => r.portable || !esAfuera(fecha, consejo.siguiente, planDia.get(consejo.siguiente)))
       .map((r) => ({
         r,
-        puntos: ((d.preparadoMap.get(r.id) || 0) >= 1 ? 2000 : disponibilidad(r, d.itemsDe(r.id), d.stockMap).ok ? 1000 : 0) + d.macrosPorReceta.get(r.id).protein,
+        puntos: ((d.preparadoMap.get(r.id) || 0) >= 1 ? 2000 : disponibilidad(r, d.itemsPlan(r.id), d.stockRecetas).ok ? 1000 : 0) + d.macrosPorReceta.get(r.id).protein,
       }))
       .filter((x) => x.puntos >= 1000)
       .sort((a, b) => b.puntos - a.puntos)
       .slice(0, 2)
       .map((x) => x.r)
-  }, [esHoy, consejo.siguiente, consejo.presupuesto, d.recetas, d.stockMap, d.preparadoMap, d.plan, reglas])
+  }, [esHoy, consejo.siguiente, consejo.presupuesto, d.recetas, d.stockRecetas, d.preparadoMap, d.plan, reglas])
 
   // Comidas de hoy y mañana que se hacen fuera de casa, salgan del plan o de las reglas semanales
   const paraLlevar = useMemo(() => {
@@ -81,14 +81,14 @@ export default function Diario() {
         // Sin nada planificado: se propone algo que se pueda llevar y que ya esté cocinado o tenga todo en stock
         const idea = d.recetas
           .filter((r) => r.portable && r.meal_types.includes(comida) && d.itemsDe(r.id).length > 0)
-          .map((r) => ({ r, cocinada: (d.preparadoMap.get(r.id) || 0) >= 1, ok: disponibilidad(r, d.itemsDe(r.id), d.stockMap).ok }))
+          .map((r) => ({ r, cocinada: (d.preparadoMap.get(r.id) || 0) >= 1, ok: disponibilidad(r, d.itemsPlan(r.id), d.stockRecetas).ok }))
           .filter((x) => x.cocinada || x.ok)
           .sort((a, b) => Number(b.cocinada) - Number(a.cocinada) || d.macrosPorReceta.get(b.r.id).protein - d.macrosPorReceta.get(a.r.id).protein)[0]
         lista.push({ f, comida, idea })
       }
     }
     return lista
-  }, [esHoy, fecha, d.plan, d.planFuturo, d.registros, d.recetas, d.stockMap, d.preparadoMap, reglas])
+  }, [esHoy, fecha, d.plan, d.planFuturo, d.registros, d.recetas, d.stockRecetas, d.preparadoMap, reglas])
 
   const comiPlan = async (comida, fila) => {
     const listo = await d.registrar({ date: fecha, meal: comida, platos: [{ recipe_id: fila.recipe_id, porciones: 1 }] })

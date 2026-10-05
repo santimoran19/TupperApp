@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { diaSemana, hoy, sumarDias } from '../lib/fechas'
 import { macrosDe, macrosReceta, redondear } from '../lib/nutricion'
 import { armarPlan, estadoDelPlan } from '../lib/planificador'
+import { baseDe, convertir, descartadas, descartar, equivalentesPorBase, gastar, itemsEnBase, productoEnUso, stockParaRecetas } from '../lib/equivalencias'
 
 const Ctx = createContext(null)
 export const useDatos = () => useContext(Ctx)
@@ -38,6 +39,10 @@ export function ProveedorDatos({ usuario, children }) {
   const [pregunta, setPregunta] = useState(null)
   const confirmar = useCallback((opciones) => new Promise((resolver) => setPregunta({ ...opciones, resolver })), [])
   const responder = useCallback((valor) => setPregunta((p) => { p?.resolver(valor); return null }), [])
+
+  // Productos para los que ya se contestó que no valen por el alimento sugerido (se recuerda en el dispositivo)
+  const [sinEquivalencia, setSinEquivalencia] = useState(descartadas)
+  const noPreguntar = useCallback((id) => setSinEquivalencia(descartar(id)), [])
 
   const avisar = useCallback((texto, tipo = 'ok') => {
     setAviso({ texto, tipo, id: Date.now() })
@@ -98,11 +103,39 @@ export function ProveedorDatos({ usuario, children }) {
     return m
   }, [e.items])
   const itemsDe = useCallback((id) => itemsPorReceta.get(id) || [], [itemsPorReceta])
-  const macrosPorReceta = useMemo(() => {
+
+  // Equivalencias: un producto propio puede valer por un alimento de las recetas (ver lib/equivalencias).
+  // Para las recetas y el plan, el stock y los ingredientes se miran siempre por el alimento "base".
+  const equivalentes = useMemo(() => equivalentesPorBase(e.alimentos, alimentosPorId), [e.alimentos, alimentosPorId])
+  const stockRecetas = useMemo(() => stockParaRecetas(stockMap, alimentosPorId), [stockMap, alimentosPorId])
+  const itemsBasePorReceta = useMemo(() => {
     const m = new Map()
-    for (const r of e.recetas) m.set(r.id, macrosReceta(r, itemsDe(r.id), alimentosPorId))
+    for (const [id, items] of itemsPorReceta) m.set(id, itemsEnBase(items, alimentosPorId))
     return m
-  }, [e.recetas, itemsDe, alimentosPorId])
+  }, [itemsPorReceta, alimentosPorId])
+  const itemsPlan = useCallback((id) => itemsBasePorReceta.get(id) || [], [itemsBasePorReceta])
+  // Alimentos por los que puede valer un producto: los que son ingrediente de alguna receta
+  const ingredientes = useMemo(() => {
+    const ids = new Set()
+    for (const items of itemsBasePorReceta.values()) for (const it of items) ids.add(it.food_id)
+    return [...ids].map((id) => alimentosPorId.get(id)).filter((a) => a && !a.same_as).sort((x, y) => x.name.localeCompare(y.name, 'es'))
+  }, [itemsBasePorReceta, alimentosPorId])
+  // El producto vinculado que hay en la despensa para cada alimento base: es el que se usa al cocinar
+  const enUso = useMemo(() => productoEnUso(equivalentes, alimentosPorId, stockMap), [equivalentes, alimentosPorId, stockMap])
+  const base = useCallback((a) => baseDe(a, alimentosPorId), [alimentosPorId])
+
+  // Las calorías de cada receta se calculan con el producto que realmente hay, si hay uno vinculado
+  const macrosPorReceta = useMemo(() => {
+    const resolver = (it) => {
+      const a = alimentosPorId.get(it.food_id)
+      if (!a) return null
+      const p = enUso.get(baseDe(a, alimentosPorId).id)
+      return p && p.id !== a.id ? { a: p, qty: convertir(a, p, it.qty) } : { a, qty: it.qty }
+    }
+    const m = new Map()
+    for (const r of e.recetas) m.set(r.id, macrosReceta(r, itemsDe(r.id), resolver))
+    return m
+  }, [e.recetas, itemsDe, alimentosPorId, enUso])
 
   // Estado del plan de hoy en adelante: qué comidas se pueden hacer y qué falta comprar.
   const planFuturo = useMemo(() => {
@@ -110,8 +143,8 @@ export function ProveedorDatos({ usuario, children }) {
     const limite = sumarDias(h, 14)
     const yaComidas = new Set(e.registros.filter((r) => r.date === h).map((r) => r.meal))
     const filas = e.plan.filter((p) => p.date >= h && p.date <= limite && !(p.date === h && yaComidas.has(p.meal)))
-    return estadoDelPlan(filas, { recetas: recetasPorId, itemsDe, stock: stockMap, preparado: preparadoMap })
-  }, [e.plan, e.registros, recetasPorId, itemsDe, stockMap, preparadoMap])
+    return estadoDelPlan(filas, { recetas: recetasPorId, itemsDe: itemsPlan, stock: stockRecetas, preparado: preparadoMap })
+  }, [e.plan, e.registros, recetasPorId, itemsPlan, stockRecetas, preparadoMap])
 
   // ---------- Acciones ----------
   // Envuelve cada acción: si falla muestra el error y devuelve false.
@@ -145,6 +178,14 @@ export function ProveedorDatos({ usuario, children }) {
       for (const f of guardadas) stock = reemplazar(stock, f, (x) => x.food_id === f.food_id)
       return { ...s, stock }
     })
+  }
+
+  // Lo que gasta una receta: cada ingrediente sale primero del producto vinculado que haya y después del alimento base
+  function gastoDeReceta(cambios, receta, porciones) {
+    for (const it of itemsPlan(receta.id)) {
+      const b = alimentosPorId.get(it.food_id)
+      if (b) gastar(cambios, b, (it.qty / receta.servings) * porciones, equivalentes.get(b.id) || [], stockMap)
+    }
   }
 
   async function fijarPreparado(recipe_id, portions) {
@@ -185,7 +226,7 @@ export function ProveedorDatos({ usuario, children }) {
       for (const clave of aCambiar) existentes.set(clave, { ...porClave.get(clave), recipe_id: null, away: true })
       const fechas = [...new Set(futuras.map((p) => p.date))].sort()
       const nuevas = armarPlan({
-        fechas, recetas: recetasPorId, itemsDe, stock: stockMap, preparado: preparadoMap, reglas: new Set(), existentes, soloClaves: aCambiar, ocultas, favoritas,
+        fechas, recetas: recetasPorId, itemsDe: itemsPlan, stock: stockRecetas, preparado: preparadoMap, reglas: new Set(), existentes, soloClaves: aCambiar, ocultas, favoritas,
       })
       for (const n of nuevas) {
         filas.push(n)
@@ -255,7 +296,7 @@ export function ProveedorDatos({ usuario, children }) {
     cocinar: accion(async (recipe_id, porciones) => {
       const receta = recetasPorId.get(recipe_id)
       const cambios = new Map()
-      for (const it of itemsDe(recipe_id)) cambios.set(it.food_id, (-it.qty / receta.servings) * porciones)
+      gastoDeReceta(cambios, receta, porciones)
       await moverStock(cambios)
       await fijarPreparado(recipe_id, (preparadoMap.get(recipe_id) || 0) + porciones)
     }),
@@ -291,9 +332,7 @@ export function ProveedorDatos({ usuario, children }) {
           const usadas = Math.min(listas, p.porciones)
           if (usadas > 0) prepNuevo.set(r.id, listas - usadas)
           const resto = p.porciones - usadas
-          if (resto > 0) {
-            for (const it of itemsDe(r.id)) cambios.set(it.food_id, (cambios.get(it.food_id) || 0) - (it.qty / r.servings) * resto)
-          }
+          if (resto > 0) gastoDeReceta(cambios, r, resto)
         }
       }
       const guardadas = ok(await supabase.from('log_entries').insert(filas).select())
@@ -364,12 +403,13 @@ export function ProveedorDatos({ usuario, children }) {
     }),
 
     // Comprar: guarda el gasto, suma al stock y saca el producto de la lista.
-    comprar: accion(async ({ food_id, qty, price }) => {
+    // `anotado` es el alimento que figuraba en la lista, cuando se compró un producto que vale por ese
+    comprar: accion(async ({ food_id, qty, price, anotado = food_id }) => {
       const a = alimentosPorId.get(food_id)
       const [c] = ok(await supabase.from('purchases').insert({ user_id: uid, food_id, name: a.name, qty, price: price || 0, date: hoy() }).select())
       setE((s) => ({ ...s, compras: [...s.compras, c] }))
       await moverStock(new Map([[food_id, qty]]))
-      const enLista = e.lista.find((x) => x.food_id === food_id)
+      const enLista = e.lista.find((x) => x.food_id === anotado) || e.lista.find((x) => x.food_id === food_id)
       if (enLista) {
         ok(await supabase.from('shopping_items').delete().eq('id', enLista.id))
         setE((s) => ({ ...s, lista: s.lista.filter((x) => x.id !== enLista.id) }))
@@ -442,7 +482,10 @@ export function ProveedorDatos({ usuario, children }) {
         comida_lista: e.preparado.map((p) => ({ receta: nombreReceta(p.recipe_id), porciones: Number(p.portions) })),
         lista_de_compras: e.lista.map((l) => ({ alimento: nombreAlimento(l.food_id), cantidad: Number(l.qty) })),
         compras: compras.map((c) => ({ fecha: c.date, producto: c.name, cantidad: Number(c.qty), precio: Number(c.price) })),
-        alimentos_propios: e.alimentos.filter((a) => a.owner),
+        alimentos_propios: e.alimentos.filter((a) => a.owner).map(({ same_as, ...resto }) => {
+          const b = base({ ...resto, same_as })
+          return { ...resto, cuenta_como: b.id === resto.id ? null : b.name }
+        }),
         recetas_propias: e.recetas.filter((r) => r.owner).map((r) => ({ ...r, ingredientes: itemsDe(r.id).map((i) => ({ alimento: nombreAlimento(i.food_id), cantidad: i.qty })) })),
         recetas_favoritas: [...favoritas].map(nombreReceta),
         recetas_ocultas: [...ocultas].map(nombreReceta),
@@ -483,6 +526,8 @@ export function ProveedorDatos({ usuario, children }) {
     // `recetas` son las visibles; las ocultas van aparte y recetasPorId las tiene todas (para mostrar nombres viejos)
     recetas: recetasVisibles, recetasOcultas, ocultas, favoritas,
     alimentosPorId, recetasPorId, stockMap, preparadoMap, itemsDe, macrosPorReceta, planFuturo,
+    // Equivalencias: stock e ingredientes vistos por el alimento base, y qué producto cubre cada uno
+    stockRecetas, itemsPlan, equivalentes, enUso, base, ingredientes, sinEquivalencia, noPreguntar,
     ...acciones,
   }
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>

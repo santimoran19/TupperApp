@@ -17,13 +17,13 @@ export default function Recetas() {
 
   const lista = useMemo(
     () => d.recetas.map((r) => {
-      const items = d.itemsDe(r.id)
+      const items = d.itemsPlan(r.id)
       const cocinadas = d.preparadoMap.get(r.id) || 0
-      const disp = disponibilidad(r, items, d.stockMap)
-      return { r, m: d.macrosPorReceta.get(r.id), cocinadas, disp, posibles: porcionesPosibles(r, items, d.stockMap), total: items.length }
+      const disp = disponibilidad(r, items, d.stockRecetas)
+      return { r, m: d.macrosPorReceta.get(r.id), cocinadas, disp, posibles: porcionesPosibles(r, items, d.stockRecetas), total: items.length }
     }).sort((a, b) => (Number(b.cocinadas > 0) - Number(a.cocinadas > 0)) || (Number(b.disp.ok) - Number(a.disp.ok)) || a.disp.faltan.length - b.disp.faltan.length
       || Number(d.favoritas.has(b.r.id)) - Number(d.favoritas.has(a.r.id)) || a.r.name.localeCompare(b.r.name, 'es')),
-    [d.recetas, d.itemsDe, d.stockMap, d.preparadoMap, d.macrosPorReceta, d.favoritas],
+    [d.recetas, d.itemsPlan, d.stockRecetas, d.preparadoMap, d.macrosPorReceta, d.favoritas],
   )
   const ocultas = [...d.recetasOcultas].sort((a, b) => a.name.localeCompare(b.name, 'es'))
   // El filtro "Ocultas" solo aparece si hay alguna

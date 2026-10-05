@@ -103,12 +103,15 @@ export function sumar(lista) {
   )
 }
 
-// Macros de UNA porción de la receta
+// Macros de UNA porción de la receta.
+// `alimentos` es el Map de alimentos o una función que, para cada ingrediente, dice con qué alimento
+// y qué cantidad se cubre ({ a, qty }): así se usa el producto que realmente hay en la despensa.
 export function macrosReceta(receta, items, alimentos) {
+  const resolver = typeof alimentos === 'function' ? alimentos : (it) => { const a = alimentos.get(it.food_id); return a ? { a, qty: it.qty } : null }
   const total = sumar(
     items.map((it) => {
-      const a = alimentos.get(it.food_id)
-      return a ? macrosDe(a, it.qty) : CERO
+      const r = resolver(it)
+      return r ? macrosDe(r.a, r.qty) : CERO
     }),
   )
   const s = receta.servings || 1

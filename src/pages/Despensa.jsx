@@ -2,11 +2,12 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Marco from '../components/Marco'
-import SelectorAlimento from '../components/SelectorAlimento'
+import SelectorAlimento, { ValePor } from '../components/SelectorAlimento'
 import { Chip, Err, Hoja, Icono, Numero, Vacio } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { cantidadTexto, pasoDe, redondear, unidadDe } from '../lib/nutricion'
 import { errCantidad, maxEnStock } from '../lib/validar'
+import { nombreCorto, sugerirBase } from '../lib/equivalencias'
 
 export default function Despensa() {
   const d = useDatos()
@@ -28,6 +29,16 @@ export default function Despensa() {
   const activos = filas.filter((f) => f.qty > 0).length
   const agotados = filas.filter((f) => f.qty <= 0).length
   const faltanPlan = d.planFuturo.faltantes.size
+  // Productos propios que se parecen a un ingrediente de las recetas y todavía no se dijo si valen por él
+  const parecidos = useMemo(() => {
+    const m = new Map()
+    for (const { a } of filas) {
+      if (!a.owner || a.same_as || d.sinEquivalencia.has(a.id) || d.equivalentes.has(a.id)) continue
+      const b = sugerirBase(a, d.ingredientes)
+      if (b) m.set(a.id, b)
+    }
+    return m
+  }, [filas, d.sinEquivalencia, d.ingredientes, d.equivalentes])
   const cocinado = d.preparado.filter((p) => Number(p.portions) > 0 && d.recetasPorId.has(p.recipe_id))
 
   const errorEditar = editar ? errCantidad(editar.alimento, editar.qty, maxEnStock(editar.alimento), { permitirCero: true }) : null
@@ -100,7 +111,7 @@ export default function Despensa() {
                 <div className="flex items-start gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold truncate">{a.name}</p>
-                    <p className="text-xs text-gris">{a.category}</p>
+                    <p className="text-xs text-gris">{a.category}{d.base(a).id !== a.id && <span className="text-teal-oscuro"> · cuenta como {nombreCorto(d.base(a))}</span>}</p>
                   </div>
                   {qty <= 0 && <span className="pill bg-naranja-suave text-naranja-oscuro">Agotado</span>}
                   <button onClick={() => quitar(a)} className="w-8 h-8 -mt-1 -mr-1.5 flex items-center justify-center text-gris" aria-label={`Quitar ${a.name} de la despensa`}><Icono n="delete" size={19} /></button>
@@ -113,6 +124,13 @@ export default function Despensa() {
                   </div>
                   <button onClick={() => d.agregarALista(a.id, pasoDe(a)).then((ok) => ok && d.avisar('Anotado en la lista de compras'))} className="ml-auto btn-chico bg-verde-suave text-verde-texto"><Icono n="add_shopping_cart" size={16} /> Comprar</button>
                 </div>
+                {parecidos.has(a.id) && (
+                  <div className="mt-3 rounded-xl bg-teal-suave px-3 py-2 flex items-center gap-2">
+                    <p className="flex-1 text-sm">¿Cuenta como <b>{nombreCorto(parecidos.get(a.id))}</b> en las recetas?</p>
+                    <button onClick={() => d.actualizarAlimento(a.id, { same_as: parecidos.get(a.id).id, category: ['Otros', 'Bebidas'].includes(a.category) ? parecidos.get(a.id).category : a.category }).then((ok) => ok && d.avisar(`Las recetas ya lo usan como ${nombreCorto(parecidos.get(a.id)).toLowerCase()}`))} className="btn-chico bg-teal-fuerte text-white">Sí</button>
+                    <button onClick={() => d.noPreguntar(a.id)} className="btn-chico bg-superficie text-tinta">No</button>
+                  </div>
+                )}
               </div>
             ))}
             {visibles.length === 0 && <p className="text-sm text-gris text-center py-6">Nada con ese filtro.</p>}
@@ -132,6 +150,12 @@ export default function Despensa() {
             error={editar.qty !== '' && !!errorEditar} placeholder={editar.alimento.unit === 'u' ? 'Ej.: 6' : 'Ej.: 1000'} />
           <Err>{editar.qty !== '' && errorEditar}</Err>
           {editar.alimento.unit !== 'u' && <p className="text-xs text-gris mt-1.5">1 kg son 1000 g y 1 litro son 1000 ml.</p>}
+          {editar.alimento.owner && (
+            <div className="mt-4">
+              <ValePor id="dp-vale" medida={editar.alimento} propio={editar.alimento.id} valor={d.alimentosPorId.get(editar.alimento.id)?.same_as || ''}
+                onChange={(v) => d.actualizarAlimento(editar.alimento.id, { same_as: v || null })} />
+            </div>
+          )}
           <div className="flex gap-2 mt-4">
             {!editar.nuevo && (
               <button onClick={async () => { if (await quitar(editar.alimento)) setEditar(null) }} className="btn bg-rojo-suave text-rojo-texto"><Icono n="delete" size={20} /> Quitar</button>

@@ -47,7 +47,7 @@ function Confirmacion({ pregunta, onResponder }) {
         <h2 id="conf-titulo" className="text-lg font-semibold leading-snug">{pregunta.titulo}</h2>
         {pregunta.texto && <p id="conf-texto" className="text-sm text-gris mt-1.5">{pregunta.texto}</p>}
         <div className="flex gap-2 mt-5">
-          <button ref={cancelar} onClick={() => onResponder(false)} className="btn flex-1 bg-campo text-tinta">Cancelar</button>
+          <button ref={cancelar} onClick={() => onResponder(false)} className="btn flex-1 bg-campo text-tinta">{pregunta.cancelar || 'Cancelar'}</button>
           <button onClick={() => onResponder(true)} className={`btn flex-1 text-white ${pregunta.peligro === false ? 'bg-verde' : 'bg-rojo'}`}>{pregunta.boton || 'Borrar'}</button>
         </div>
       </div>

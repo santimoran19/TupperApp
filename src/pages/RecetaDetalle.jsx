@@ -6,6 +6,7 @@ import { Err, Hoja, Icono, Macros, Numero } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { cantidadTexto, listaComidas, redondear } from '../lib/nutricion'
 import { disponibilidad } from '../lib/planificador'
+import { convertir, nombreCorto } from '../lib/equivalencias'
 import { LIM, errNumero } from '../lib/validar'
 
 export default function RecetaDetalle() {
@@ -18,10 +19,12 @@ export default function RecetaDetalle() {
   if (!receta) return <Marco titulo="Receta" atras><p className="text-gris">Esa receta ya no existe.</p></Marco>
 
   const items = d.itemsDe(id)
+  // Para saber si alcanza se mira por el alimento base: ahí ya está sumado lo de los productos que valen por él
+  const itemsBase = d.itemsPlan(id)
   const m = d.macrosPorReceta.get(id)
   const cocinadas = d.preparadoMap.get(id) || 0
   const porciones = Number(cocinando) || 0
-  const disp = disponibilidad(receta, items, d.stockMap, porciones || 1)
+  const disp = disponibilidad(receta, itemsBase, d.stockRecetas, porciones || 1)
   const faltaDe = new Map(disp.faltan.map((f) => [f.food_id, f.falta]))
 
   const errPorciones = cocinando === null ? null : errNumero(cocinando, LIM.porciones)
@@ -31,7 +34,7 @@ export default function RecetaDetalle() {
     if (listo) { setCocinando(null); d.avisar(`${porciones} ${porciones === 1 ? 'porción lista' : 'porciones listas'}`) }
   }
   async function anotarFaltantes() {
-    for (const f of disponibilidad(receta, items, d.stockMap, 1).faltan) {
+    for (const f of disponibilidad(receta, itemsBase, d.stockRecetas, 1).faltan) {
       const a = d.alimentosPorId.get(f.food_id)
       await d.agregarALista(f.food_id, a.unit === 'u' ? Math.ceil(f.falta) : Math.ceil(f.falta / 50) * 50)
     }
@@ -87,8 +90,10 @@ export default function RecetaDetalle() {
           {items.map((it) => {
             const a = d.alimentosPorId.get(it.food_id)
             if (!a) return null
-            const hay = d.stockMap.get(a.id) || 0
+            const b = d.base(a)
+            const hay = convertir(b, a, d.stockRecetas.get(b.id) || 0)
             const alcanza = hay + 0.001 >= it.qty / receta.servings
+            const producto = d.enUso.get(b.id)
             return (
               <div key={a.id} className="flex items-center gap-3 py-2.5">
                 <Icono n={alcanza ? 'check_circle' : 'cancel'} lleno className={alcanza ? 'text-verde-medio' : 'text-naranja-oscuro'} size={20} />
@@ -96,12 +101,13 @@ export default function RecetaDetalle() {
                 <span className="text-sm text-right">
                   <b>{cantidadTexto(a, it.qty)}</b>
                   <span className="block text-xs text-gris">tenés {cantidadTexto(a, hay)}</span>
+                  {producto && producto.id !== a.id && <span className="block text-xs text-teal-oscuro">con {nombreCorto(producto)}</span>}
                 </span>
               </div>
             )
           })}
         </div>
-        {!disponibilidad(receta, items, d.stockMap, 1).ok && (
+        {!disponibilidad(receta, itemsBase, d.stockRecetas, 1).ok && (
           <button onClick={anotarFaltantes} className="btn-suave w-full mt-3"><Icono n="add_shopping_cart" size={20} /> Anotar lo que falta en la lista</button>
         )}
       </section>

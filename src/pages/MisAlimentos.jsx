@@ -5,6 +5,7 @@ import { NuevoAlimento } from '../components/SelectorAlimento'
 import { Hoja, Icono, Vacio } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { redondear } from '../lib/nutricion'
+import { nombreCorto } from '../lib/equivalencias'
 
 export default function MisAlimentos() {
   const d = useDatos()
@@ -34,6 +35,7 @@ export default function MisAlimentos() {
                   <p className="font-medium truncate">{a.name}</p>
                   <p className="text-xs text-gris">
                     {redondear(a.kcal)} kcal y {redondear(a.protein, 1)} g prot. cada 100 {a.unit === 'ml' ? 'ml' : 'g'} · {a.category}
+                    {d.base(a).id !== a.id && <span className="text-teal-oscuro"> · cuenta como {nombreCorto(d.base(a))}</span>}
                   </p>
                 </div>
                 <button onClick={() => setEditando(a)} className="w-9 h-9 text-verde-texto" aria-label={`Editar ${a.name}`}><Icono n="edit" size={20} /></button>

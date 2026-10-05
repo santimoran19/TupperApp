@@ -5,6 +5,7 @@ import { useDatos } from '../store/Datos'
 import { CATEGORIAS, cantidadTexto, redondear, tieneAlcohol } from '../lib/nutricion'
 import { buscarProductos } from '../lib/openfoodfacts'
 import { LIM, errNumero, errTexto, hayErrores } from '../lib/validar'
+import { nombreCorto, sonCompatibles, sugerirBase } from '../lib/equivalencias'
 
 const normal = (t) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
@@ -18,7 +19,7 @@ const cada100 = (a) => `${redondear(a.kcal)} kcal y ${redondear(a.protein, 1)} g
 
 // `categoria`: si viene, solo se muestran alimentos de esa categoría (se usa para "Bebidas").
 export default function SelectorAlimento({ onElegir, soloConStock = false, categoria = null }) {
-  const { alimentos, stockMap, crearAlimento } = useDatos()
+  const { alimentos, stockMap, crearAlimento, ingredientes, confirmar, noPreguntar } = useDatos()
   const [texto, setTexto] = useState('')
   const [creando, setCreando] = useState(false)
   const [alcohol, setAlcohol] = useState('todas') // filtro dentro de bebidas: todas | sin | con
@@ -50,12 +51,23 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
   async function elegirProducto(p) {
     const ya = alimentos.find((a) => normal(a.name) === normal(p.name))
     if (ya) return onElegir(ya)
+    // Si se parece a un ingrediente de las recetas, se pregunta si vale por ese
+    const unit = bebidas ? 'ml' : p.unit
+    const parecido = sugerirBase({ name: p.name, unit, unit_grams: null }, ingredientes)
+    const vale = parecido && await confirmar({
+      titulo: `¿Cuenta como ${nombreCorto(parecido)} en las recetas?`,
+      texto: `Si decís que sí, las recetas que piden ${nombreCorto(parecido).toLowerCase()} van a usar ${p.name}. Lo podés cambiar después en Mis alimentos.`,
+      boton: 'Sí', cancelar: 'No', peligro: false,
+    })
     setAgregando(true)
     const a = await crearAlimento({
-      name: p.name, unit: bebidas ? 'ml' : p.unit, category: bebidas ? 'Bebidas' : p.category,
+      name: p.name, unit, category: bebidas ? 'Bebidas' : vale ? parecido.category : p.category,
       unit_grams: null, unit_label: null, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, alcohol: false,
+      same_as: vale ? parecido.id : null,
     })
     setAgregando(false)
+    // Si dijo que no, no se vuelve a preguntar desde la despensa
+    if (a && parecido && !vale) noPreguntar(a.id)
     if (a) onElegir(a)
   }
 
@@ -136,18 +148,37 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
   )
 }
 
+// Desplegable para elegir por qué alimento de las recetas vale un producto propio.
+// `medida` es { unit, unit_grams } del producto; `propio` es su id cuando ya existe.
+// Si otros alimentos ya valen por él no se ofrece nada: las equivalencias no se encadenan.
+export function ValePor({ id, medida, propio = null, valor, onChange }) {
+  const { ingredientes, equivalentes } = useDatos()
+  const opciones = propio && equivalentes.has(propio) ? [] : ingredientes.filter((c) => c.id !== propio && sonCompatibles(medida, c))
+  if (opciones.length === 0) return null
+  return (
+    <div>
+      <label className="etiqueta" htmlFor={id}>En las recetas cuenta como</label>
+      <select id={id} className="campo" value={opciones.some((c) => c.id === valor) ? valor : ''} onChange={(e) => onChange(e.target.value)}>
+        <option value="">Nada: es un alimento aparte</option>
+        {opciones.map((c) => <option key={c.id} value={c.id}>{nombreCorto(c)}</option>)}
+      </select>
+      <p className="text-xs text-gris mt-1.5">Si elegís uno, las recetas que lo piden usan este producto cuando lo tenés.</p>
+    </div>
+  )
+}
+
 // Crear un alimento propio o, si viene `inicial`, editarlo.
 export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, inicial = null, onListo, onCancelar }) {
-  const { crearAlimento, actualizarAlimento } = useDatos()
+  const { crearAlimento, actualizarAlimento, ingredientes, equivalentes } = useDatos()
   const [f, setF] = useState(inicial
     ? {
         name: inicial.name, unit: inicial.unit, unit_grams: inicial.unit_grams ?? '', unit_label: inicial.unit_label || 'unidad',
         kcal: String(Number(inicial.kcal)), protein: String(Number(inicial.protein)), carbs: String(Number(inicial.carbs)), fat: String(Number(inicial.fat)),
-        category: inicial.category, alcohol: !!inicial.alcohol,
+        category: inicial.category, alcohol: !!inicial.alcohol, same_as: inicial.same_as || '',
       }
     : {
         name: nombreInicial, unit: categoriaInicial === 'Bebidas' ? 'ml' : 'g', unit_grams: '', unit_label: 'unidad',
-        kcal: '', protein: '', carbs: '', fat: '', category: categoriaInicial || 'Otros', alcohol: false,
+        kcal: '', protein: '', carbs: '', fat: '', category: categoriaInicial || 'Otros', alcohol: false, same_as: '',
       })
   const [guardando, setGuardando] = useState(false)
   const [intento, setIntento] = useState(false)
@@ -169,6 +200,11 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
   if (!errores.protein && !errores.carbs && !errores.fat && suma > 100.5) errores.fat = 'Proteína, carbohidratos y grasas no pueden sumar más de 100.'
   const ver = (k) => (errores[k] && (intento || f[k] !== '') ? errores[k] : null)
 
+  // El vínculo solo vale si las medidas se pueden pasar de una a otra (y si no hay otros que ya valgan por este)
+  const medida = { unit: f.unit, unit_grams: f.unit === 'u' ? Number(f.unit_grams) || 0 : null }
+  const destino = f.same_as && !(inicial && equivalentes.has(inicial.id)) ? ingredientes.find((c) => c.id === f.same_as && c.id !== inicial?.id) : null
+  const valePor = destino && sonCompatibles(medida, destino) ? destino.id : ''
+
   async function guardar() {
     setIntento(true)
     if (hayErrores(errores)) return
@@ -179,6 +215,7 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
       unit_label: f.unit === 'u' ? f.unit_label.trim() : null,
       kcal: Number(f.kcal), protein: Number(f.protein) || 0, carbs: Number(f.carbs) || 0, fat: Number(f.fat) || 0,
       alcohol: f.category === 'Bebidas' && f.alcohol,
+      same_as: valePor || null,
     }
     const a = inicial ? await actualizarAlimento(inicial.id, datos) : await crearAlimento(datos)
     setGuardando(false)
@@ -247,6 +284,7 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
           <Err>{ver('fat')}</Err>
         </div>
       </div>
+      <ValePor id="na-vale" medida={medida} propio={inicial?.id} valor={f.same_as} onChange={set('same_as')} />
       {f.category === 'Bebidas' && (
         <label className="flex items-center gap-3 text-sm">
           <input type="checkbox" checked={f.alcohol} onChange={(e) => set('alcohol')(e.target.checked)} className="w-5 h-5 accent-verde" />
