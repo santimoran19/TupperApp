@@ -38,7 +38,8 @@ export default function Compras() {
     : {}
   // Al tocar "Comprado" se propone el producto vinculado que ya se venía usando, si hay
   function empezarCompra(a, qty) {
-    const producto = d.enUso.get(a.id) || (d.equivalentes.get(a.id) || [])[0] || a
+    // Se propone lo que viene reemplazando al alimento en la despensa o, si no, un producto propio vinculado
+    const producto = d.enUso.get(a.id) || (d.equivalentes.get(a.id) || []).find((p) => p.owner) || a
     setComprando({ alimento: a, producto, qty: String(pasar(a, producto, qty)), price: '' })
   }
   const pasar = (de, a, qty) => redondear(convertir(de, a, Number(qty) || 0), a.unit === 'u' ? 1 : 0)

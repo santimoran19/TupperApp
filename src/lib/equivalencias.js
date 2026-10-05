@@ -1,6 +1,7 @@
 // Equivalencias: un alimento propio (por ejemplo, un producto de marca) puede valer por un alimento
 // de las recetas. Las recetas siguen pidiendo "Aceite" y lo cubre cualquier producto que cuente como aceite.
 import { gramos } from './nutricion'
+import { ALIAS, FAMILIA } from './alias'
 
 const EPS = 0.001
 
@@ -59,11 +60,23 @@ export function itemsEnBase(items, alimentos) {
   return [...m.values()]
 }
 
-// De los productos que valen por cada alimento, el que más hay en la despensa (si hay alguno)
+// Alimentos de la base que valen por otro de la base sin que el usuario tenga que decirlo
+// (cualquier leche cuenta como leche): se les completa `same_as` a partir de FAMILIA.
+export function conFamilia(lista) {
+  const porSlug = new Map(lista.filter((a) => a.slug).map((a) => [a.slug, a]))
+  return lista.map((a) => {
+    const destino = !a.owner && !a.same_as && FAMILIA[a.slug] ? porSlug.get(FAMILIA[a.slug]) : null
+    return destino ? { ...a, same_as: destino.id } : a
+  })
+}
+
+// Para cada alimento base que no está en la despensa, el producto que lo reemplaza: de los que valen
+// por él, el que más hay. Si del alimento de la receta hay algo, se usa ese y no hay reemplazo.
 export function productoEnUso(equivalentes, alimentos, stock) {
   const m = new Map()
   for (const [baseId, productos] of equivalentes) {
     const b = alimentos.get(baseId)
+    if ((stock.get(baseId) || 0) > EPS) continue
     let mejor = null
     for (const p of productos) {
       const hay = convertir(p, b, stock.get(p.id) || 0)
@@ -75,9 +88,17 @@ export function productoEnUso(equivalentes, alimentos, stock) {
 }
 
 // Anota en `cambios` (Map alimento -> diferencia de stock) lo que se gasta de un ingrediente:
-// primero sale de los productos vinculados que haya y lo que falte, del alimento de la receta.
+// primero sale del alimento que pide la receta, después de los productos que valen por él (del que más hay)
+// y, si igual no alcanza, lo que falta se le anota al alimento de la receta (el stock queda en cero).
 export function gastar(cambios, base, cantidad, productos, stock) {
   let resto = cantidad
+  const hayBase = Math.max(0, (stock.get(base.id) || 0) + (cambios.get(base.id) || 0))
+  const usaBase = Math.min(hayBase, resto)
+  if (usaBase > EPS) {
+    cambios.set(base.id, (cambios.get(base.id) || 0) - usaBase)
+    resto -= usaBase
+    if (resto <= EPS) return
+  }
   const conStock = productos
     .map((p) => ({ p, hay: convertir(p, base, (stock.get(p.id) || 0) + (cambios.get(p.id) || 0)) }))
     .filter((x) => x.hay > EPS)
@@ -102,22 +123,43 @@ function palabras(nombre) {
     .map((p) => (p.length > 3 && p.endsWith('s') ? p.slice(0, -1) : p))
 }
 
-// Devuelve el candidato que mejor coincide con el nombre del producto, o null.
-// Tiene que empezar igual ("Aceite girasol" -> "Aceite") para no proponer cosas como "Galletitas de arroz" -> "Arroz".
-export function sugerirBase(producto, candidatos) {
+// El alimento de `todos` que más se parece al producto, por nombre o por sinónimo, o null.
+export function parecidoEnBase(producto, todos) {
   const mias = palabras(producto.name)
   if (mias.length === 0) return null
   const tengo = new Set(mias)
-  const posibles = candidatos
-    .filter((c) => c.id !== producto.id && sonCompatibles(producto, c))
+  // 1. Por nombre: tiene que empezar igual ("Aceite girasol" -> "Aceite") y tener todas sus palabras en el producto.
+  //    Entre varios, el más específico ("Aceite de oliva" antes que "Aceite").
+  const porNombre = todos
     .map((c) => ({ c, p: palabras(c.name) }))
-    .filter((x) => x.p.length > 0 && x.p[0] === mias[0])
-  if (posibles.length === 0) return null
-  // El que tiene todas sus palabras en el nombre del producto; entre varios, el más específico
-  const completos = posibles.filter((x) => x.p.every((w) => tengo.has(w))).sort((x, y) => y.p.length - x.p.length)
-  if (completos.length > 0) return completos[0].c
-  // Si no, solo cuando hay un único alimento que empieza así
-  return posibles.length === 1 ? posibles[0].c : null
+    .filter((x) => x.p.length > 0 && x.p[0] === mias[0] && x.p.every((w) => tengo.has(w)))
+    .sort((x, y) => y.p.length - x.p.length)
+  if (porNombre.length > 0) return porNombre[0].c
+  // 2. Por sinónimo o marca: "Tirabuzón Matarazzo" -> fideos, "Salsa Lista Pomarola" -> salsa de tomate
+  const porAlias = todos
+    .map((c) => ({ c, n: Math.max(0, ...(ALIAS[c.slug] || []).map((a) => { const p = palabras(a); return p.length > 0 && p.every((w) => tengo.has(w)) ? p.length : 0 })) }))
+    .filter((x) => x.n > 0)
+    .sort((x, y) => y.n - x.n)
+  return porAlias.length > 0 ? porAlias[0].c : null
+}
+
+// Devuelve el alimento de las recetas por el que podría valer el producto, o null.
+// `candidatos` son los ingredientes de las recetas y `todos`, la base entera: si el producto se parece más
+// a un alimento que no es ingrediente ("Galletitas Oreo"), no se propone nada.
+export function sugerirBase(producto, candidatos, todos = candidatos) {
+  const sirve = (c) => c.id !== producto.id && sonCompatibles(producto, c)
+  const esCandidato = new Set(candidatos.map((c) => c.id))
+  let mejor = parecidoEnBase(producto, todos.filter((c) => c.id !== producto.id))
+  if (mejor) {
+    // "Leche descremada" no es ingrediente, pero vale por la leche de las recetas
+    const familia = !esCandidato.has(mejor.id) && FAMILIA[mejor.slug] ? todos.find((c) => c.slug === FAMILIA[mejor.slug]) : null
+    mejor = familia || mejor
+    return esCandidato.has(mejor.id) && sirve(mejor) ? mejor : null
+  }
+  // Si no, solo cuando hay un único candidato que empieza con la misma palabra
+  const primera = palabras(producto.name)[0]
+  const posibles = primera ? candidatos.filter((c) => sirve(c) && palabras(c.name)[0] === primera) : []
+  return posibles.length === 1 ? posibles[0] : null
 }
 
 // "No" a una sugerencia: se recuerda en el dispositivo para no volver a preguntar

@@ -7,7 +7,9 @@ export const NOMBRE_COMIDA = { desayuno: 'Desayuno', almuerzo: 'Almuerzo', merie
 export const ICONO_COMIDA = { desayuno: 'wb_twilight', almuerzo: 'restaurant', merienda: 'local_cafe', cena: 'bedtime', extra: 'local_bar' }
 // Reparto por defecto de las calorías del día cuando no hay nada planificado
 export const REPARTO = { desayuno: 0.22, almuerzo: 0.32, merienda: 0.16, cena: 0.3 }
-export const CATEGORIAS = ['Proteínas', 'Carbohidratos', 'Verduras', 'Frutas', 'Lácteos', 'Despensa', 'Snacks', 'Comidas hechas', 'Bebidas', 'Otros']
+// Categorías por góndola, como se ordena una despensa
+export const CATEGORIAS = ['Carnes y huevos', 'Pescados', 'Lácteos', 'Verduras', 'Frutas', 'Pastas y arroz', 'Legumbres', 'Panadería', 'Cereales', 'Enlatados',
+  'Salsas y aderezos', 'Despensa', 'Snacks y dulces', 'Congelados', 'Comidas hechas', 'Bebidas', 'Otros']
 
 export const CON_ARTICULO = { desayuno: 'el desayuno', almuerzo: 'el almuerzo', merienda: 'la merienda', cena: 'la cena' }
 
@@ -23,8 +25,10 @@ const GRUPOS = {
   vino: ['vino', 'vino-blanco', 'espumante'],
   medida: ['fernet', 'bebida-blanca', 'campari', 'vermut', 'licor'],
   trago: ['fernet-coca', 'gin-tonic', 'ron-cola', 'aperol-spritz', 'trago-dulce'],
-  cuchara: ['azucar', 'miel', 'mermelada', 'mermelada-light', 'cacao', 'aceite', 'queso-untable', 'crema', 'ketchup', 'salsa-soja'],
-  punado: ['mani-cascara', 'mani', 'nueces', 'almendras', 'aceitunas'],
+  cuchara: ['azucar', 'miel', 'mermelada', 'mermelada-light', 'cacao', 'aceite', 'queso-untable', 'crema', 'ketchup', 'salsa-soja',
+    'aceite-oliva', 'mayonesa', 'mayonesa-light', 'mostaza', 'salsa-golf', 'vinagre', 'aceto', 'jugo-limon', 'chimichurri', 'pesto', 'salsa-barbacoa',
+    'mani-pasta', 'leche-condensada', 'dulce-de-leche', 'cafe-polvo', 'queso-untable-clasico', 'chia', 'leche-polvo'],
+  punado: ['mani-cascara', 'mani', 'mani-pelado', 'nueces', 'almendras', 'aceitunas', 'mix-frutos-secos', 'pasas', 'granola'],
 }
 const GRUPO_DE = new Map(Object.entries(GRUPOS).flatMap(([g, slugs]) => slugs.map((s) => [s, g])))
 export const grupoDe = (alimento) => GRUPO_DE.get(alimento?.slug) || null

@@ -7,7 +7,7 @@ PWA para llevar la despensa, las recetas, el plan de la semana y lo que se come 
 - **Plan semanal:** se arma con el stock y marca las comidas que se hacen fuera de casa. Esas comidas usan recetas que se pueden llevar.
 - **Diario:** lo que se comió contra el objetivo, con un consejo para cerrar el día y el contador de líquido. Se puede marcar "no comí" y cargar bebidas (con sus medidas y el azúcar) o cosas entre comidas.
 - **Resumen semanal:** promedios contra el objetivo, días cumplidos y peso, más una devolución de la semana escrita con IA (opcional, ver `supabase/functions/LEEME.md`).
-- **Alimentos:** base propia más búsqueda de productos de marca en Open Food Facts (gratis, sin clave). Un producto propio puede valer por un alimento de las recetas ("Aceite girasol Natura" cuenta como "Aceite"): las recetas lo usan, lo descuentan al cocinar y calculan las calorías con sus valores.
+- **Alimentos:** base propia (se busca también por sinónimos y marcas: "spaghetti" encuentra "Fideos secos") más búsqueda de productos de marca en Open Food Facts (gratis, sin clave; prueba sus dos buscadores y reintenta sola). Un producto propio puede valer por un alimento de las recetas ("Aceite girasol Natura" cuenta como "Aceite"): las recetas lo usan, lo descuentan al cocinar y calculan las calorías con sus valores.
 - **Lista de compras:** lo que falta para el plan y lo anotado a mano, con el precio de cada compra y el gasto del mes.
 - **Perfil:** objetivos de calorías, proteína y líquido, peso y cintura con gráfico, descarga de los datos y borrado de la cuenta.
 
@@ -49,7 +49,8 @@ Para crear la base desde cero, se ejecutan en este orden:
 3. `supabase/actualizacion-3.sql`: objetivo de líquido, bebidas con alcohol, recetas ocultas y favoritas, y la función que borra la cuenta.
 4. `supabase/actualizacion-4.sql`: la tabla donde se guardan los análisis hechos con IA.
 5. `supabase/actualizacion-5.sql`: el dato que dice por qué alimento de las recetas vale un producto propio.
-6. `supabase/seed.sql`: los 148 alimentos y las 62 recetas base, comunes a todos.
+6. `supabase/actualizacion-6.sql`: las categorías por góndola de los alimentos que ya estaban.
+7. `supabase/seed.sql`: los 274 alimentos y las 88 recetas base, comunes a todos. Se puede ejecutar de nuevo: agrega solo lo que falta.
 
 La función que consulta a la IA está en `supabase/functions/analizar-semana/`; cómo activarla, en `supabase/functions/LEEME.md`.
 
@@ -81,7 +82,7 @@ Los alimentos guardan calorías y macros cada 100 g (o 100 ml). Si se miden por 
 
 ```
 src/
-  lib/          cuentas de calorías, fechas, validaciones, el armado del plan, las equivalencias y la búsqueda en Open Food Facts
+  lib/          cuentas de calorías, fechas, validaciones, el armado del plan, las equivalencias, los sinónimos (alias.js) y la búsqueda en Open Food Facts
   store/        Datos.jsx: carga todo de Supabase y tiene las acciones
   components/   piezas de interfaz compartidas
   pages/        una por pantalla

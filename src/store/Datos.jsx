@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase'
 import { diaSemana, hoy, sumarDias } from '../lib/fechas'
 import { macrosDe, macrosReceta, redondear } from '../lib/nutricion'
 import { armarPlan, estadoDelPlan } from '../lib/planificador'
-import { baseDe, convertir, descartadas, descartar, equivalentesPorBase, gastar, itemsEnBase, productoEnUso, stockParaRecetas } from '../lib/equivalencias'
+import { baseDe, conFamilia, convertir, descartadas, descartar, equivalentesPorBase, gastar, itemsEnBase, productoEnUso, stockParaRecetas } from '../lib/equivalencias'
 
 const Ctx = createContext(null)
 export const useDatos = () => useContext(Ctx)
@@ -85,7 +85,10 @@ export function ProveedorDatos({ usuario, children }) {
   useEffect(() => { cargar() }, [cargar])
 
   // ---------- Datos derivados ----------
-  const alimentosPorId = useMemo(() => new Map(e.alimentos.map((a) => [a.id, a])), [e.alimentos])
+  // A los alimentos base que valen por otro (cualquier leche cuenta como leche) se les completa el vínculo
+  const alimentos = useMemo(() => conFamilia(e.alimentos), [e.alimentos])
+  const alimentosPorId = useMemo(() => new Map(alimentos.map((a) => [a.id, a])), [alimentos])
+  const deLaBase = useMemo(() => alimentos.filter((a) => !a.owner), [alimentos])
   const recetasPorId = useMemo(() => new Map(e.recetas.map((r) => [r.id, r])), [e.recetas])
   // Preferencias sobre recetas: las ocultas no aparecen en listas, plan ni sugerencias; las favoritas tienen prioridad
   const ocultas = useMemo(() => new Set(e.prefs.filter((p) => p.hidden).map((p) => p.recipe_id)), [e.prefs])
@@ -106,7 +109,7 @@ export function ProveedorDatos({ usuario, children }) {
 
   // Equivalencias: un producto propio puede valer por un alimento de las recetas (ver lib/equivalencias).
   // Para las recetas y el plan, el stock y los ingredientes se miran siempre por el alimento "base".
-  const equivalentes = useMemo(() => equivalentesPorBase(e.alimentos, alimentosPorId), [e.alimentos, alimentosPorId])
+  const equivalentes = useMemo(() => equivalentesPorBase(alimentos, alimentosPorId), [alimentos, alimentosPorId])
   const stockRecetas = useMemo(() => stockParaRecetas(stockMap, alimentosPorId), [stockMap, alimentosPorId])
   const itemsBasePorReceta = useMemo(() => {
     const m = new Map()
@@ -522,12 +525,12 @@ export function ProveedorDatos({ usuario, children }) {
   }
 
   const valor = {
-    ...e, usuario, aviso, pregunta,
+    ...e, alimentos, usuario, aviso, pregunta,
     // `recetas` son las visibles; las ocultas van aparte y recetasPorId las tiene todas (para mostrar nombres viejos)
     recetas: recetasVisibles, recetasOcultas, ocultas, favoritas,
     alimentosPorId, recetasPorId, stockMap, preparadoMap, itemsDe, macrosPorReceta, planFuturo,
     // Equivalencias: stock e ingredientes vistos por el alimento base, y qué producto cubre cada uno
-    stockRecetas, itemsPlan, equivalentes, enUso, base, ingredientes, sinEquivalencia, noPreguntar,
+    stockRecetas, itemsPlan, equivalentes, enUso, base, ingredientes, deLaBase, sinEquivalencia, noPreguntar,
     ...acciones,
   }
   return <Ctx.Provider value={valor}>{children}</Ctx.Provider>

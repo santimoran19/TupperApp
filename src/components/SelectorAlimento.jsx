@@ -1,25 +1,32 @@
 // Buscador de alimentos (base + propios) con opción de crear uno nuevo o traerlo de Open Food Facts.
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Chip, Err, Icono, Numero } from './ui'
 import { useDatos } from '../store/Datos'
 import { CATEGORIAS, cantidadTexto, redondear, tieneAlcohol } from '../lib/nutricion'
 import { buscarProductos } from '../lib/openfoodfacts'
 import { LIM, errNumero, errTexto, hayErrores } from '../lib/validar'
-import { nombreCorto, sonCompatibles, sugerirBase } from '../lib/equivalencias'
+import { nombreCorto, parecidoEnBase, sonCompatibles, sugerirBase } from '../lib/equivalencias'
+import { ALIAS } from '../lib/alias'
 
 const normal = (t) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
 
+// Busca por nombre y también por los otros nombres de cada alimento (marcas, sinónimos): "spaghetti" encuentra "Fideos secos".
+// Primero van los que coinciden por nombre.
 export function buscarAlimentos(alimentos, texto) {
   const q = normal(texto.trim())
-  const lista = q ? alimentos.filter((a) => normal(a.name).includes(q)) : alimentos
-  return [...lista].sort((a, b) => a.name.localeCompare(b.name, 'es'))
+  const alfabetico = (a, b) => a.name.localeCompare(b.name, 'es')
+  if (!q) return [...alimentos].sort(alfabetico)
+  const porNombre = alimentos.filter((a) => normal(a.name).includes(q))
+  const vistos = new Set(porNombre.map((a) => a.id))
+  const porAlias = q.length < 3 ? [] : alimentos.filter((a) => !vistos.has(a.id) && (ALIAS[a.slug] || []).some((s) => s.includes(q) || q.includes(s)))
+  return [...porNombre.sort(alfabetico), ...porAlias.sort(alfabetico)]
 }
 
 const cada100 = (a) => `${redondear(a.kcal)} kcal y ${redondear(a.protein, 1)} g prot. cada 100 ${a.unit === 'ml' ? 'ml' : 'g'}`
 
 // `categoria`: si viene, solo se muestran alimentos de esa categoría (se usa para "Bebidas").
 export default function SelectorAlimento({ onElegir, soloConStock = false, categoria = null }) {
-  const { alimentos, stockMap, crearAlimento, ingredientes, confirmar, noPreguntar } = useDatos()
+  const { alimentos, stockMap, crearAlimento, ingredientes, deLaBase, confirmar, noPreguntar } = useDatos()
   const [texto, setTexto] = useState('')
   const [creando, setCreando] = useState(false)
   const [alcohol, setAlcohol] = useState('todas') // filtro dentro de bebidas: todas | sin | con
@@ -35,15 +42,18 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
     return l.slice(0, 60)
   }, [alimentos, texto, soloConStock, stockMap, categoria, bebidas, alcohol])
 
-  const cambiarTexto = (v) => { setTexto(v.slice(0, LIM.nombre)); setOff(null) }
+  const pedido = useRef(0) // para descartar la respuesta de una búsqueda que ya no es la que se está mirando
+  const cambiarTexto = (v) => { setTexto(v.slice(0, LIM.nombre)); pedido.current++; setOff(null) }
 
+  // La búsqueda reintenta sola un rato (ver lib/openfoodfacts): mientras tanto se muestra que sigue buscando
   async function buscarAfuera() {
-    setOff({ estado: 'cargando', productos: [] })
+    const n = ++pedido.current
+    setOff({ estado: 'cargando', productos: [], lento: false })
     try {
-      const productos = await buscarProductos(texto.trim())
-      setOff({ estado: 'listo', productos })
+      const productos = await buscarProductos(texto.trim(), { alReintentar: () => { if (pedido.current === n) setOff((s) => s && { ...s, lento: true }) } })
+      if (pedido.current === n) setOff({ estado: 'listo', productos })
     } catch {
-      setOff({ estado: 'error', productos: [] })
+      if (pedido.current === n) setOff({ estado: 'error', productos: [] })
     }
   }
 
@@ -53,7 +63,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
     if (ya) return onElegir(ya)
     // Si se parece a un ingrediente de las recetas, se pregunta si vale por ese
     const unit = bebidas ? 'ml' : p.unit
-    const parecido = sugerirBase({ name: p.name, unit, unit_grams: null }, ingredientes)
+    const parecido = sugerirBase({ name: p.name, unit, unit_grams: null }, ingredientes, deLaBase)
     const vale = parecido && await confirmar({
       titulo: `¿Cuenta como ${nombreCorto(parecido)} en las recetas?`,
       texto: `Si decís que sí, las recetas que piden ${nombreCorto(parecido).toLowerCase()} van a usar ${p.name}. Lo podés cambiar después en Mis alimentos.`,
@@ -61,8 +71,9 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
     })
     setAgregando(true)
     const a = await crearAlimento({
-      name: p.name, unit, category: bebidas ? 'Bebidas' : vale ? parecido.category : p.category,
-      unit_grams: null, unit_label: null, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, alcohol: false,
+      // La categoría sale del alimento por el que vale o del que más se le parece en la base; si no, de lo que diga Open Food Facts
+      name: p.name, unit, category: bebidas ? 'Bebidas' : vale ? parecido.category : parecidoEnBase(p, deLaBase)?.category || p.category,
+      unit_grams: null, unit_label: null, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, alcohol: !!p.alcohol && (bebidas || p.unit === 'ml'),
       same_as: vale ? parecido.id : null,
     })
     setAgregando(false)
@@ -117,9 +128,9 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
       {off && (
         <div className="mt-3 rounded-2xl bg-teal-suave p-3">
           <p className="text-[11px] font-bold tracking-wider text-teal-oscuro flex items-center gap-1.5"><Icono n="travel_explore" size={16} /> OPEN FOOD FACTS</p>
-          {off.estado === 'cargando' && <p className="text-sm text-gris py-2">Buscando...</p>}
+          {off.estado === 'cargando' && <p className="text-sm text-gris py-2" role="status">{off.lento ? 'Sigue buscando: Open Food Facts a veces tarda un poco...' : 'Buscando...'}</p>}
           {off.estado === 'error' && (
-            <p className="text-sm py-2">No se pudo consultar. Probá de nuevo en un rato o cargalo a mano. <button onClick={buscarAfuera} className="font-semibold text-teal-oscuro underline">Reintentar</button></p>
+            <p className="text-sm py-2">Open Food Facts no está respondiendo ahora. Probá de nuevo en un rato o cargalo a mano. <button onClick={buscarAfuera} className="font-semibold text-teal-oscuro underline">Reintentar</button></p>
           )}
           {off.estado === 'listo' && off.productos.length === 0 && <p className="text-sm py-2">No apareció nada con ese nombre. Podés crearlo a mano con los datos de la etiqueta.</p>}
           {off.estado === 'listo' && off.productos.length > 0 && (
@@ -244,7 +255,7 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
         <div>
           <label className="etiqueta" htmlFor="na-cat">Categoría</label>
           <select id="na-cat" className="campo" value={f.category} onChange={(e) => set('category')(e.target.value)}>
-            {CATEGORIAS.map((c) => <option key={c}>{c}</option>)}
+            {[...new Set([...CATEGORIAS, f.category])].map((c) => <option key={c}>{c}</option>)}
           </select>
         </div>
       </div>

@@ -5,7 +5,7 @@ import Marco from '../components/Marco'
 import SelectorAlimento, { ValePor } from '../components/SelectorAlimento'
 import { Chip, Err, Hoja, Icono, Numero, Vacio } from '../components/ui'
 import { useDatos } from '../store/Datos'
-import { cantidadTexto, pasoDe, redondear, unidadDe } from '../lib/nutricion'
+import { CATEGORIAS, cantidadTexto, pasoDe, redondear, unidadDe } from '../lib/nutricion'
 import { errCantidad, maxEnStock } from '../lib/validar'
 import { nombreCorto, sugerirBase } from '../lib/equivalencias'
 
@@ -23,7 +23,9 @@ export default function Despensa() {
       .sort((x, y) => x.a.name.localeCompare(y.a.name, 'es')),
     [d.stock, d.alimentosPorId],
   )
-  const categorias = ['Todos', ...new Set(filas.map((f) => f.a.category))]
+  // Los filtros van en el orden de la lista de categorías; las que no estén en la lista, al final
+  const orden = (c) => (CATEGORIAS.indexOf(c) === -1 ? 99 : CATEGORIAS.indexOf(c))
+  const categorias = ['Todos', ...[...new Set(filas.map((f) => f.a.category))].sort((x, y) => orden(x) - orden(y))]
   const q = texto.trim().toLowerCase()
   const visibles = filas.filter((f) => (categoria === 'Todos' || f.a.category === categoria) && (!q || f.a.name.toLowerCase().includes(q)))
   const activos = filas.filter((f) => f.qty > 0).length
@@ -34,13 +36,15 @@ export default function Despensa() {
     const m = new Map()
     for (const { a } of filas) {
       if (!a.owner || a.same_as || d.sinEquivalencia.has(a.id) || d.equivalentes.has(a.id)) continue
-      const b = sugerirBase(a, d.ingredientes)
+      const b = sugerirBase(a, d.ingredientes, d.deLaBase)
       if (b) m.set(a.id, b)
     }
     return m
-  }, [filas, d.sinEquivalencia, d.ingredientes, d.equivalentes])
+  }, [filas, d.sinEquivalencia, d.ingredientes, d.deLaBase, d.equivalentes])
   const cocinado = d.preparado.filter((p) => Number(p.portions) > 0 && d.recetasPorId.has(p.recipe_id))
 
+  // El alimento de la hoja, al día (la hoja guarda una copia de cuando se abrió)
+  const actual = editar ? d.alimentosPorId.get(editar.alimento.id) || editar.alimento : null
   const errorEditar = editar ? errCantidad(editar.alimento, editar.qty, maxEnStock(editar.alimento), { permitirCero: true }) : null
   async function quitar(a) {
     if (!(await d.confirmar({ titulo: `¿Quitar ${a.name} de tu despensa?`, texto: 'Si lo tenías en el plan, va a aparecer como faltante en la lista de compras.', boton: 'Quitar' }))) return false
@@ -151,9 +155,15 @@ export default function Despensa() {
           <Err>{editar.qty !== '' && errorEditar}</Err>
           {editar.alimento.unit !== 'u' && <p className="text-xs text-gris mt-1.5">1 kg son 1000 g y 1 litro son 1000 ml.</p>}
           {editar.alimento.owner && (
-            <div className="mt-4">
-              <ValePor id="dp-vale" medida={editar.alimento} propio={editar.alimento.id} valor={d.alimentosPorId.get(editar.alimento.id)?.same_as || ''}
-                onChange={(v) => d.actualizarAlimento(editar.alimento.id, { same_as: v || null })} />
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="etiqueta" htmlFor="dp-categoria">Categoría</label>
+                <select id="dp-categoria" className="campo" value={actual.category} onChange={(e) => d.actualizarAlimento(actual.id, { category: e.target.value })}>
+                  {[...new Set([...CATEGORIAS, actual.category])].map((c) => <option key={c}>{c}</option>)}
+                </select>
+              </div>
+              <ValePor id="dp-vale" medida={actual} propio={actual.id} valor={actual.same_as || ''}
+                onChange={(v) => d.actualizarAlimento(actual.id, { same_as: v || null })} />
             </div>
           )}
           <div className="flex gap-2 mt-4">
