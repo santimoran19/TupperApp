@@ -1,8 +1,13 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'node:fs'
+
+const { version } = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'))
 
 export default defineConfig({
+  // La versión del package.json queda disponible en el código (se muestra en el perfil y va en el registro de errores)
+  define: { __APP_VERSION__: JSON.stringify(version) },
   build: {
     rollupOptions: {
       output: {
@@ -17,7 +22,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // Cuando hay una versión nueva no se cambia sola por detrás: la app muestra un aviso con el botón "Actualizar"
+      // (components/AvisoVersion.jsx), que es el que registra el service worker.
+      registerType: 'prompt',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Tupper',

@@ -4,6 +4,7 @@ import { Chip, Err, Icono, Numero } from './ui'
 import { useDatos } from '../store/Datos'
 import { CATEGORIAS, cantidadTexto, redondear, tieneAlcohol } from '../lib/nutricion'
 import { buscarProductos } from '../lib/openfoodfacts'
+import { anotarEvento } from '../lib/eventos'
 import { LIM, errNumero, errTexto, hayErrores } from '../lib/validar'
 import { nombreCorto, parecidoEnBase, sonCompatibles, sugerirBase } from '../lib/equivalencias'
 import { ALIAS } from '../lib/alias'
@@ -50,7 +51,11 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
     const n = ++pedido.current
     setOff({ estado: 'cargando', productos: [], lento: false })
     try {
-      const productos = await buscarProductos(texto.trim(), { alReintentar: () => { if (pedido.current === n) setOff((s) => s && { ...s, lento: true }) } })
+      const productos = await buscarProductos(texto.trim(), {
+        alReintentar: () => { if (pedido.current === n) setOff((s) => s && { ...s, lento: true }) },
+        // Se anota cómo salió (sin lo que se buscó) para saber si Open Food Facts está respondiendo
+        alTerminar: (como) => anotarEvento('off_busqueda', como),
+      })
       if (pedido.current === n) setOff({ estado: 'listo', productos })
     } catch {
       if (pedido.current === n) setOff({ estado: 'error', productos: [] })

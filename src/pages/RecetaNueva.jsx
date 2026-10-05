@@ -18,9 +18,12 @@ export default function RecetaNueva() {
   const [f, setF] = useState(original
     ? { name: original.name, minutes: String(original.minutes), servings: String(original.servings), meal_types: original.meal_types, portable: original.portable, steps: original.steps || '' }
     : { name: '', minutes: '15', servings: '1', meal_types: ['almuerzo', 'cena'], portable: true, steps: '' })
-  const [ingredientes, setIngredientes] = useState(() => (original
+  const [elegidos, setIngredientes] = useState(() => (original
     ? d.itemsDe(id).filter((i) => d.alimentosPorId.has(i.food_id)).map((i) => ({ food_id: i.food_id, qty: String(i.qty) }))
     : []))
+  // Si un alimento se borró desde otro dispositivo con esta pantalla abierta, se saca de la lista
+  const ingredientes = elegidos.every((i) => d.alimentosPorId.has(i.food_id)) ? elegidos : elegidos.filter((i) => d.alimentosPorId.has(i.food_id))
+  if (ingredientes !== elegidos) setIngredientes(ingredientes)
   const [buscando, setBuscando] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }))

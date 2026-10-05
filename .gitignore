@@ -4,3 +4,9 @@ dev-dist
 .vercel
 .env
 *.local
+
+# Pruebas
+test-results
+playwright-report
+pruebas/e2e/.estado
+pruebas/e2e/capturas

@@ -41,10 +41,14 @@ export default function Registrar() {
   // La fecha viene en la dirección: si no es una fecha válida dentro del rango, se usa hoy
   const fecha = params.get('fecha') && !errFecha(params.get('fecha'), rangoDiario()) ? params.get('fecha') : hoy()
   const [comida, setComida] = useState(MOMENTOS.includes(params.get('comida')) ? params.get('comida') : comidaPorHora())
-  const [platos, setPlatos] = useState(() => {
+  const [elegidos, setPlatos] = useState(() => {
     const r = params.get('receta')
     return r && d.recetasPorId.has(r) ? [{ recipe_id: r, porciones: '1' }] : []
   })
+  // Si algo de lo elegido se borró desde otro dispositivo con esta pantalla abierta, se saca de la lista
+  const sigue = (p) => (p.food_id ? d.alimentosPorId.has(p.food_id) : d.recetasPorId.has(p.recipe_id))
+  const platos = elegidos.every(sigue) ? elegidos : elegidos.filter(sigue)
+  if (platos !== elegidos) setPlatos(platos)
   const [buscando, setBuscando] = useState(params.get('abrir') === 'bebida' ? 'bebida' : null) // 'alimento' | 'bebida' | 'receta'
   const [descontar, setDescontar] = useState(true)
   const [guardando, setGuardando] = useState(false)

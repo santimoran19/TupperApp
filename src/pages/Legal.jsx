@@ -54,6 +54,7 @@ const TEXTOS = {
         'Tu email y tu contraseña (cifrada, no la podemos ver).',
         'Los datos de tu perfil: nombre, sexo, fecha de nacimiento, altura, peso, peso objetivo, nivel de actividad y objetivos diarios.',
         'Lo que registrás: comidas y bebidas, medidas de peso y cintura, tu despensa, tus recetas, tu plan semanal y tu lista de compras.',
+        'Un registro técnico: si la app falla mientras la usás, se anota el error, en qué pantalla pasó, la versión de la app y el tipo de navegador, para poder arreglarlo. También se anota si una búsqueda de productos o un análisis con IA respondió o no. Ahí no se guarda lo que comés ni lo que buscás.',
         'Varios de estos son datos de salud, que la ley considera sensibles. Los cargás por decisión propia y, al hacerlo, das tu consentimiento para que los guardemos con el único fin de que la app funcione para vos.',
       ]],
       ['Para qué los usamos', [
@@ -76,6 +77,7 @@ const TEXTOS = {
       ]],
       ['Cuánto tiempo los guardamos', [
         'Mientras tengas la cuenta. Si la borrás, se eliminan todos tus datos de la base.',
+        'El registro técnico se borra a los 90 días.',
       ]],
       ['Menores', [
         'La app no está pensada para menores de 18 años sin la autorización de un adulto responsable.',

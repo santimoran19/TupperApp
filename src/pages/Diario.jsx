@@ -1,5 +1,5 @@
 // Diario: lo comido en el día contra el objetivo, con el consejo para cerrar el día.
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Marco from '../components/Marco'
 import { Anillo, Barra, Icono } from '../components/ui'
@@ -90,9 +90,17 @@ export default function Diario() {
     return lista
   }, [esHoy, fecha, d.plan, d.planFuturo, d.registros, d.recetas, d.stockRecetas, d.preparadoMap, reglas])
 
+  // Un doble toque (pasa con la conexión lenta) no la registra dos veces
+  const registrando = useRef(false)
   const comiPlan = async (comida, fila) => {
-    const listo = await d.registrar({ date: fecha, meal: comida, platos: [{ recipe_id: fila.recipe_id, porciones: 1 }] })
-    if (listo) d.avisar('Registrado')
+    if (registrando.current) return
+    registrando.current = true
+    try {
+      const listo = await d.registrar({ date: fecha, meal: comida, platos: [{ recipe_id: fila.recipe_id, porciones: 1 }] })
+      if (listo) d.avisar('Registrado')
+    } finally {
+      registrando.current = false
+    }
   }
   const quitarRegistro = async (r) => {
     if (await d.confirmar({ titulo: `¿Borrar ${r.name}?`, texto: 'Se saca de lo registrado ese día. Lo que se descontó de la despensa no vuelve solo.' })) d.borrarRegistro(r.id)

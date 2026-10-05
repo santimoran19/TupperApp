@@ -122,9 +122,9 @@ export default function Despensa() {
                 </div>
                 <div className="flex items-center gap-2 mt-3">
                   <div className="flex items-center rounded-full bg-campo">
-                    <button onClick={() => d.fijarStock(a.id, qty - pasoDe(a))} disabled={qty <= 0} className="w-10 h-10 flex items-center justify-center disabled:opacity-30" aria-label={`Restar ${a.name}`}><Icono n="remove" size={20} /></button>
+                    <button onClick={() => d.ajustarStock(a.id, -pasoDe(a))} disabled={qty <= 0} className="w-10 h-10 flex items-center justify-center disabled:opacity-30" aria-label={`Restar ${a.name}`}><Icono n="remove" size={20} /></button>
                     <button onClick={() => setEditar({ alimento: a, qty: String(qty) })} className="min-w-[92px] px-1 text-sm font-semibold">{cantidadTexto(a, qty)}</button>
-                    <button onClick={() => d.fijarStock(a.id, qty + pasoDe(a))} disabled={qty + pasoDe(a) > maxEnStock(a)} className="w-10 h-10 flex items-center justify-center disabled:opacity-30" aria-label={`Sumar ${a.name}`}><Icono n="add" size={20} /></button>
+                    <button onClick={() => d.ajustarStock(a.id, pasoDe(a))} disabled={qty + pasoDe(a) > maxEnStock(a)} className="w-10 h-10 flex items-center justify-center disabled:opacity-30" aria-label={`Sumar ${a.name}`}><Icono n="add" size={20} /></button>
                   </div>
                   <button onClick={() => d.agregarALista(a.id, pasoDe(a)).then((ok) => ok && d.avisar('Anotado en la lista de compras'))} className="ml-auto btn-chico bg-verde-suave text-verde-texto"><Icono n="add_shopping_cart" size={16} /> Comprar</button>
                 </div>

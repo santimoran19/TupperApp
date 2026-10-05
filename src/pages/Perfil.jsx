@@ -9,6 +9,7 @@ import { diasCortos, fechaCorta, hoy } from '../lib/fechas'
 import { COMIDAS, NOMBRE_COMIDA, litros, objetivoLiquido, redondear } from '../lib/nutricion'
 import { LIM, errFecha, errNumero } from '../lib/validar'
 import { TEMAS, elegirTema, temaGuardado } from '../lib/tema'
+import { VERSION } from '../lib/eventos'
 
 function Grafico({ puntos, meta }) {
   if (puntos.length < 2) return <p className="text-sm text-gris">Cuando tengas dos registros aparece la curva.</p>
@@ -213,6 +214,7 @@ export default function Perfil() {
 
       <button onClick={() => { nav('/', { replace: true }); salir() }} className="btn w-full bg-superficie border border-linea text-rojo-texto"><Icono n="logout" size={20} /> Cerrar sesión</button>
       <button onClick={() => setBorrando('')} className="mx-auto mt-5 text-sm text-gris underline flex items-center gap-1.5"><Icono n="person_remove" size={16} /> Borrar mi cuenta</button>
+      {VERSION && <p className="mt-6 text-center text-xs text-gris">Tupper {VERSION}</p>}
 
       {editando && (
         <Hoja titulo="Editar perfil" onCerrar={() => setEditando(false)}>

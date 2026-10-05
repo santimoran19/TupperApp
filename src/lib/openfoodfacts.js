@@ -152,15 +152,15 @@ function unir(listas) {
 // Una vuelta: prueba el buscador nuevo y, si falla, el viejo. Primero lo que se vende en Argentina y, si hay poco, el resto.
 async function unaVuelta(texto, hasta) {
   let ultimo = null
-  for (const pedir of [pedirNuevo, pedirViejo]) {
+  for (const [fuente, pedir] of [['nuevo', pedirNuevo], ['viejo', pedirViejo]]) {
     const queda = () => Math.max(1000, Math.min(TIEMPO_PEDIDO, hasta - Date.now()))
     try {
       const deAca = (await pedir(texto, true, queda())).map(aAlimento).filter(Boolean)
-      if (deAca.length >= 3) return unir([deAca])
+      if (deAca.length >= 3) return { fuente, lista: unir([deAca]) }
       try {
-        return unir([deAca, (await pedir(texto, false, queda())).map(aAlimento).filter(Boolean)])
+        return { fuente, lista: unir([deAca, (await pedir(texto, false, queda())).map(aAlimento).filter(Boolean)]) }
       } catch (e) {
-        if (deAca.length > 0) return unir([deAca])
+        if (deAca.length > 0) return { fuente, lista: unir([deAca]) }
         throw e
       }
     } catch (e) {
@@ -174,19 +174,27 @@ const guardadas = new Map() // búsquedas ya hechas en esta sesión: no se vuelv
 
 // Busca productos. Reintenta sola hasta TIEMPO_TOTAL o VUELTAS (lo que pase primero); si igual no hay respuesta, tira el error.
 // `alReintentar` avisa cuando arranca una vuelta nueva (para mostrar que sigue buscando).
-export async function buscarProductos(texto, { alReintentar } = {}) {
+// `alTerminar` recibe cómo salió ({ resultado, fuente, vueltas, ms }), para poder medir si el servicio anda bien.
+export async function buscarProductos(texto, { alReintentar, alTerminar } = {}) {
+  const avisar = (como) => { try { alTerminar?.(como) } catch { /* medir no puede romper la búsqueda */ } }
   const clave = normal(texto.trim())
   if (guardadas.has(clave)) return guardadas.get(clave)
-  const hasta = Date.now() + TIEMPO_TOTAL
+  const inicio = Date.now()
+  const hasta = inicio + TIEMPO_TOTAL
   for (let vuelta = 0; ; vuelta++) {
     try {
-      const lista = (await unaVuelta(texto.trim(), hasta)).slice(0, 20)
+      const { fuente, lista: todos } = await unaVuelta(texto.trim(), hasta)
+      const lista = todos.slice(0, 20)
       if (guardadas.size >= 60) guardadas.delete(guardadas.keys().next().value)
       guardadas.set(clave, lista)
+      avisar({ resultado: lista.length > 0 ? 'ok' : 'vacio', fuente, vueltas: vuelta + 1, ms: Date.now() - inicio })
       return lista
     } catch (e) {
       const pausa = ESPERAS[Math.min(vuelta, ESPERAS.length - 1)]
-      if (vuelta + 1 >= VUELTAS || Date.now() + pausa + 1000 >= hasta) throw e
+      if (vuelta + 1 >= VUELTAS || Date.now() + pausa + 1000 >= hasta) {
+        avisar({ resultado: 'error', vueltas: vuelta + 1, ms: Date.now() - inicio, motivo: String(e?.message || e).slice(0, 80) })
+        throw e
+      }
       alReintentar?.(vuelta + 1)
       await dormir(pausa)
     }

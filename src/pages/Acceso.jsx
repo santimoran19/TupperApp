@@ -22,7 +22,7 @@ function traducir(err) {
   if (/different from the old/i.test(m)) return 'La contraseña nueva tiene que ser distinta a la anterior.'
   if (/weak|should be at least|password/i.test(m)) return 'La contraseña no es lo bastante segura. Probá con otra.'
   if (/signups? not allowed|disabled/i.test(m)) return 'Por ahora no se pueden crear cuentas nuevas.'
-  if (/fetch|network/i.test(m)) return 'No hay conexión. Revisá internet y probá de nuevo.'
+  if (/fetch|network|abort/i.test(m)) return 'No hay conexión. Revisá internet y probá de nuevo.'
   return 'Algo salió mal. Probá de nuevo.'
 }
 
