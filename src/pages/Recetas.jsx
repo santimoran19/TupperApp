@@ -60,7 +60,7 @@ export default function Recetas() {
       <div className="flex gap-2 mb-3">
         <div className="relative flex-1 min-w-0">
           <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
-          <input className="campo pl-11 bg-superficie shadow-tarjeta" maxLength={60} placeholder="Buscar receta o ingrediente..." value={texto} onChange={(e) => setTexto(e.target.value)} />
+          <input className="campo pl-11 bg-superficie shadow-tarjeta" maxLength={60} placeholder="Buscar receta..." value={texto} onChange={(e) => setTexto(e.target.value)} />
         </div>
         <Link to="/recetas/nueva" className="btn-primario px-4 shrink-0"><Icono n="add" size={20} /> Nueva</Link>
       </div>

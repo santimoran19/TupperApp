@@ -76,7 +76,7 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
           )}
           <div className="min-w-0 flex-1">
             {!atras && <p className="text-[11px] font-bold tracking-wider text-verde-texto leading-none mb-0.5">TUPPER</p>}
-            <h1 className="text-lg font-semibold leading-tight truncate">{titulo}</h1>
+            <h1 className={`${atras ? 'text-base' : 'text-lg'} font-semibold leading-tight truncate`}>{titulo}</h1>
           </div>
           <span className="pill bg-verde-suave text-verde-texto h-8 px-3">
             <Icono n="local_fire_department" size={16} /> {kcalHoy.toLocaleString('es-AR')} kcal
