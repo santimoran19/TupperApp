@@ -61,7 +61,18 @@ export function estadoDelPlan(filas, { recetas, itemsDe, stock, preparado }) {
 // `existentes`: Map 'fecha|comida' -> fila ya guardada. `reglas`: Set 'diaSemana|comida' de comidas fuera de casa.
 // `soloClaves`: si viene, solo se eligen recetas para esas 'fecha|comida' (sirve para cambiar una comida puntual).
 // `ocultas`: recetas que el usuario no quiere ver; `favoritas`: tienen prioridad.
-export function armarPlan({ fechas, recetas, itemsDe, stock, preparado, reglas, existentes, soloClaves = null, ocultas = new Set(), favoritas = new Set() }) {
+export function armarPlan({
+  fechas,
+  recetas,
+  itemsDe,
+  stock,
+  preparado,
+  reglas,
+  existentes,
+  soloClaves = null,
+  ocultas = new Set(),
+  favoritas = new Set(),
+}) {
   const sim = new Map(stock)
   const prep = new Map(preparado)
   const usos = new Map()
@@ -93,7 +104,8 @@ export function armarPlan({ fechas, recetas, itemsDe, stock, preparado, reglas, 
 
       const ayer = elegidas.get(`${sumarDias(fecha, -1)}|${comida}`)
       const manana = elegidas.get(`${sumarDias(fecha, 1)}|${comida}`)
-      const otraPrincipal = comida === 'cena' ? elegidas.get(`${fecha}|almuerzo`) : comida === 'almuerzo' ? elegidas.get(`${fecha}|cena`) : null
+      const otraPrincipal =
+        comida === 'cena' ? elegidas.get(`${fecha}|almuerzo`) : comida === 'almuerzo' ? elegidas.get(`${fecha}|cena`) : null
       let mejor = null
       for (const r of candidatas) {
         let puntos

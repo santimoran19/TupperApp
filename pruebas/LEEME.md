@@ -13,12 +13,13 @@ Tarda unos segundos y no abre ningún navegador. Corre todo lo que hay en `prueb
 | `openfoodfacts.test.js` | La búsqueda: los dos buscadores, la memoria por búsqueda y los reintentos (con la red y el reloj simulados). |
 | `analisis.test.js` | El análisis con IA: los datos que se le mandan al modelo, la lectura de la respuesta y la elección del proveedor. |
 | `base-de-datos.test.js` | La base de verdad: arma un Postgres en memoria, le aplica los `.sql` de `supabase/` en orden y prueba las funciones (cocinar, registrar, comprar, guardar receta), que nada quede a medias cuando algo falla, los permisos por usuario y el registro de errores. |
+| `sin-conexion.test.js` | Lo que la app hace en el teléfono cuando no hay conexión contra lo que hace la base cuando el cambio llega: tienen que dar lo mismo (stock, comida lista, registros, lista y compras). |
 
-Si agregás una actualización de la base (`supabase/actualizacion-8.sql`), sumala a la lista `ARCHIVOS` de `base-de-datos.test.js`.
+Si agregás una actualización de la base (`supabase/actualizacion-8.sql`), sumala a la lista `ARCHIVOS` de `postgres.js` (el Postgres en memoria que comparten las dos pruebas de la base).
 
 ## `npm run test:e2e`: la app entera en un navegador
 
-Tarda unos 3 minutos. Levanta dos cosas solo y las apaga al terminar:
+Tarda unos 5 minutos. Levanta dos cosas solo y las apaga al terminar:
 
 - un **Supabase simulado** (`e2e/servidor/supabase-simulado.mjs`, puerto 54321) con el acceso, las tablas, las funciones de la base y un modelo de IA falso, todo en memoria;
 - la **app** apuntando a ese simulador (puerto 5199).
@@ -45,10 +46,11 @@ Cosas a saber:
   En Windows (PowerShell) las variables se ponen antes: `$env:REUSAR=1; npx playwright test 08-`.
 
 - **El navegador cree que siempre es sábado 3/10/2026 a las 21:30.** Varias pruebas dependen del día de la semana; así dan lo mismo cualquier día.
+- **Al abrir, la app muestra un instante lo que tenía guardado en el teléfono y enseguida lo que trae la base.** Para que ninguna prueba lea lo viejo, `goto` y `reload` esperan solos a que estén los datos de la base (`apoyo.js`; la app lo deja marcado en `<html data-datos="base">`). Cuando la prueba sabe que eso no va a pasar (sin conexión, o con la base rechazando un cambio), se apaga con `ctx.sinEsperarDatos = true`.
 - **Capturas:** con `CAPTURAS=1` se guardan las pantallas en `pruebas/e2e/capturas/` (no se suben al repo). Sirve para mirar cómo quedó algo.
 - **Análisis con IA:** la función corre de verdad si tenés [Deno](https://deno.com) instalado; si no, esa parte se saltea y el resto corre igual. La lógica de la función se prueba siempre en `npm test`.
 - Si una prueba falla, las siguientes probablemente también: mirá la primera que falló.
 
 ## Cuándo correrlas
 
-Antes de cada `git push`: `npm test` siempre, y `npm run test:e2e` cuando el cambio toca pantallas o el guardado de datos.
+Antes de cada `git push`: `npm run lint` y `npm test` siempre, y `npm run test:e2e` cuando el cambio toca pantallas o el guardado de datos.

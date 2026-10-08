@@ -53,13 +53,69 @@ export function errFecha(v, { min, max, opcional = false }) {
 
 // ---------- Email y contraseña ----------
 // Casillas descartables más comunes: sirven para crear cuentas truchas, así que no se aceptan.
-const DESCARTABLES = new Set(['mailinator.com', 'yopmail.com', 'guerrillamail.com', 'guerrillamail.net', 'sharklasers.com', '10minutemail.com', '10minutemail.net',
-  'tempmail.com', 'temp-mail.org', 'tempmail.net', 'tempail.com', 'throwawaymail.com', 'trashmail.com', 'getnada.com', 'nada.email', 'maildrop.cc', 'dispostable.com',
-  'fakeinbox.com', 'mintemail.com', 'mohmal.com', 'emailondeck.com', 'moakt.com', 'tmpmail.org', 'tmpmail.net', 'mailnesia.com', 'spamgourmet.com', 'mytemp.email',
-  'burnermail.io', 'inboxkitten.com', 'tempr.email', 'discard.email', 'mailcatch.com', 'harakirimail.com', 'luxusmail.org', 'minutemail.com', 'tempinbox.com'])
+const DESCARTABLES = new Set([
+  'mailinator.com',
+  'yopmail.com',
+  'guerrillamail.com',
+  'guerrillamail.net',
+  'sharklasers.com',
+  '10minutemail.com',
+  '10minutemail.net',
+  'tempmail.com',
+  'temp-mail.org',
+  'tempmail.net',
+  'tempail.com',
+  'throwawaymail.com',
+  'trashmail.com',
+  'getnada.com',
+  'nada.email',
+  'maildrop.cc',
+  'dispostable.com',
+  'fakeinbox.com',
+  'mintemail.com',
+  'mohmal.com',
+  'emailondeck.com',
+  'moakt.com',
+  'tmpmail.org',
+  'tmpmail.net',
+  'mailnesia.com',
+  'spamgourmet.com',
+  'mytemp.email',
+  'burnermail.io',
+  'inboxkitten.com',
+  'tempr.email',
+  'discard.email',
+  'mailcatch.com',
+  'harakirimail.com',
+  'luxusmail.org',
+  'minutemail.com',
+  'tempinbox.com',
+])
 // Proveedores conocidos: si el dominio se parece mucho a uno de estos, se sugiere la corrección
-const CONOCIDOS = ['gmail.com', 'hotmail.com', 'hotmail.com.ar', 'hotmail.es', 'outlook.com', 'outlook.com.ar', 'outlook.es', 'live.com', 'live.com.ar', 'yahoo.com',
-  'yahoo.com.ar', 'icloud.com', 'proton.me', 'protonmail.com', 'fibertel.com.ar', 'arnet.com.ar', 'ymail.com', 'gmx.com', 'mail.com', 'me.com', 'msn.com', 'aol.com']
+const CONOCIDOS = [
+  'gmail.com',
+  'hotmail.com',
+  'hotmail.com.ar',
+  'hotmail.es',
+  'outlook.com',
+  'outlook.com.ar',
+  'outlook.es',
+  'live.com',
+  'live.com.ar',
+  'yahoo.com',
+  'yahoo.com.ar',
+  'icloud.com',
+  'proton.me',
+  'protonmail.com',
+  'fibertel.com.ar',
+  'arnet.com.ar',
+  'ymail.com',
+  'gmx.com',
+  'mail.com',
+  'me.com',
+  'msn.com',
+  'aol.com',
+]
 
 function distancia(a, b) {
   const d = Array.from({ length: a.length + 1 }, (_, i) => [i, ...Array(b.length).fill(0)])
@@ -77,7 +133,8 @@ function distancia(a, b) {
 export function errEmail(v) {
   const t = (v || '').trim().toLowerCase()
   if (!t) return 'Escribí tu email.'
-  if (!/^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(t) || t.includes('..') || t.length > 120) return 'El email no es válido.'
+  if (!/^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(t) || t.includes('..') || t.length > 120)
+    return 'El email no es válido.'
   if (DESCARTABLES.has(t.split('@')[1])) return 'Usá un email tuyo de verdad: los temporales no sirven para recuperar la cuenta.'
   return null
 }
@@ -99,12 +156,77 @@ export function sugerirEmail(v) {
 }
 
 // Contraseñas que se adivinan en segundos: las más usadas y las obvias para esta app
-const CLAVES_COMUNES = new Set(['password', 'password1', 'password123', 'contraseña', 'contrasena', 'contrasenia', 'qwerty', 'qwertyui', 'qwerty123', 'asdfghjk', 'asdf1234',
-  '12345678', '123456789', '1234567890', '87654321', '11111111', '00000000', 'abcd1234', 'abc12345', '1q2w3e4r', '1qaz2wsx', 'iloveyou', 'teamo123', 'tequiero',
-  'argentina', 'argentina1', 'boca1234', 'river1234', 'bocajuniors', 'riverplate', 'tupper123', 'tupper1234', 'hola1234', 'holahola', 'admin123', 'usuario1', 'welcome1', 'letmein1'])
+const CLAVES_COMUNES = new Set([
+  'password',
+  'password1',
+  'password123',
+  'contraseña',
+  'contrasena',
+  'contrasenia',
+  'qwerty',
+  'qwertyui',
+  'qwerty123',
+  'asdfghjk',
+  'asdf1234',
+  '12345678',
+  '123456789',
+  '1234567890',
+  '87654321',
+  '11111111',
+  '00000000',
+  'abcd1234',
+  'abc12345',
+  '1q2w3e4r',
+  '1qaz2wsx',
+  'iloveyou',
+  'teamo123',
+  'tequiero',
+  'argentina',
+  'argentina1',
+  'boca1234',
+  'river1234',
+  'bocajuniors',
+  'riverplate',
+  'tupper123',
+  'tupper1234',
+  'hola1234',
+  'holahola',
+  'admin123',
+  'usuario1',
+  'welcome1',
+  'letmein1',
+])
 // Palabras típicas que la gente usa con un año o un número atrás (Boca2024, Cordoba2026)
-const PALABRAS_COMUNES = new Set(['boca', 'river', 'messi', 'maradona', 'talleres', 'belgrano', 'instituto', 'racing', 'independiente', 'cordoba', 'buenosaires', 'rosario',
-  'argentina', 'tupper', 'hola', 'teamo', 'tequiero', 'amor', 'familia', 'futbol', 'password', 'contraseña', 'contrasena', 'clave', 'secreto', 'qwerty', 'admin', 'usuario'])
+const PALABRAS_COMUNES = new Set([
+  'boca',
+  'river',
+  'messi',
+  'maradona',
+  'talleres',
+  'belgrano',
+  'instituto',
+  'racing',
+  'independiente',
+  'cordoba',
+  'buenosaires',
+  'rosario',
+  'argentina',
+  'tupper',
+  'hola',
+  'teamo',
+  'tequiero',
+  'amor',
+  'familia',
+  'futbol',
+  'password',
+  'contraseña',
+  'contrasena',
+  'clave',
+  'secreto',
+  'qwerty',
+  'admin',
+  'usuario',
+])
 const TIRAS = ['0123456789', '9876543210', 'abcdefghijklmnopqrstuvwxyz', 'qwertyuiop', 'asdfghjklñ', 'zxcvbnm']
 
 // ¿Es fácil de adivinar? Común, casi todo igual, una tira del teclado o armada con el propio email
@@ -121,7 +243,11 @@ function claveFacil(clave, email = '') {
       }
     }
   }
-  const usuario = email.trim().toLowerCase().split('@')[0].replace(/[^a-z0-9ñ]/g, '')
+  const usuario = email
+    .trim()
+    .toLowerCase()
+    .split('@')[0]
+    .replace(/[^a-z0-9ñ]/g, '')
   return usuario.length >= 4 && c.replace(/[^a-z0-9ñ]/g, '').includes(usuario)
 }
 

@@ -1,11 +1,22 @@
 // Diario: lo comido en el día contra el objetivo, con el consejo para cerrar el día.
-import { useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Marco from '../components/Marco'
 import { Anillo, Barra, Icono } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { diaCorto, diaSemana, fechaLarga, hoy, numeroDia, semanaDe, sumarDias } from '../lib/fechas'
-import { COMIDAS, EXTRA, ICONO_COMIDA, NOMBRE_COMIDA, consejoDelDia, cuentaComoLiquido, litros, objetivoLiquido, redondear, sumar } from '../lib/nutricion'
+import {
+  COMIDAS,
+  EXTRA,
+  ICONO_COMIDA,
+  NOMBRE_COMIDA,
+  consejoDelDia,
+  cuentaComoLiquido,
+  litros,
+  objetivoLiquido,
+  redondear,
+  sumar,
+} from '../lib/nutricion'
 import { disponibilidad } from '../lib/planificador'
 import { rangoDiario } from '../lib/validar'
 
@@ -23,12 +34,16 @@ export default function Diario() {
   const esHoy = fecha === hoy()
   const rango = rangoDiario()
   // Mueve una semana sin salirse del rango que la app maneja
-  const mover = (dias) => setFecha((f) => { const n = sumarDias(f, dias); return n < rango.min ? rango.min : n > rango.max ? rango.max : n })
+  const mover = (dias) =>
+    setFecha((f) => {
+      const n = sumarDias(f, dias)
+      return n < rango.min ? rango.min : n > rango.max ? rango.max : n
+    })
 
-  const delDia = d.registros.filter((r) => r.date === fecha)
+  const delDia = useMemo(() => d.registros.filter((r) => r.date === fecha), [d.registros, fecha])
   const total = sumar(delDia)
   // Comidas resueltas: las que tienen algo cargado y las marcadas como "no comí". Lo de entre comidas no cuenta.
-  const registradas = new Set(delDia.filter((r) => r.meal !== EXTRA).map((r) => r.meal))
+  const registradas = useMemo(() => new Set(delDia.filter((r) => r.meal !== EXTRA).map((r) => r.meal)), [delDia])
   const salteadas = new Set(delDia.filter((r) => r.skipped).map((r) => r.meal))
   const extras = delDia.filter((r) => r.meal === EXTRA)
   // Líquido del día contra el objetivo: lo registrado en ml que no tiene alcohol
@@ -37,8 +52,8 @@ export default function Diario() {
   const agua = d.alimentos.find((a) => a.slug === 'agua')
   const reglas = useMemo(() => new Set(d.reglas.map((r) => `${r.weekday}|${r.meal}`)), [d.reglas])
   // Una comida es "afuera" si así está en el plan o, cuando no hay nada planificado, si lo dice la regla semanal
-  const esAfuera = (f, comida, fila) => (fila ? fila.away : reglas.has(`${diaSemana(f)}|${comida}`))
-  const planDia = new Map(d.plan.filter((p) => p.date === fecha).map((p) => [p.meal, p]))
+  const esAfuera = useCallback((f, comida, fila) => (fila ? fila.away : reglas.has(`${diaSemana(f)}|${comida}`)), [reglas])
+  const planDia = useMemo(() => new Map(d.plan.filter((p) => p.date === fecha).map((p) => [p.meal, p])), [d.plan, fecha])
   const planHoy = new Map()
   for (const [comida, fila] of planDia) {
     const m = fila.recipe_id && d.macrosPorReceta.get(fila.recipe_id)
@@ -56,13 +71,15 @@ export default function Diario() {
       .filter((r) => r.portable || !esAfuera(fecha, consejo.siguiente, planDia.get(consejo.siguiente)))
       .map((r) => ({
         r,
-        puntos: ((d.preparadoMap.get(r.id) || 0) >= 1 ? 2000 : disponibilidad(r, d.itemsPlan(r.id), d.stockRecetas).ok ? 1000 : 0) + d.macrosPorReceta.get(r.id).protein,
+        puntos:
+          ((d.preparadoMap.get(r.id) || 0) >= 1 ? 2000 : disponibilidad(r, d.itemsPlan(r.id), d.stockRecetas).ok ? 1000 : 0) +
+          d.macrosPorReceta.get(r.id).protein,
       }))
       .filter((x) => x.puntos >= 1000)
       .sort((a, b) => b.puntos - a.puntos)
       .slice(0, 2)
       .map((x) => x.r)
-  }, [esHoy, consejo.siguiente, consejo.presupuesto, d.recetas, d.stockRecetas, d.preparadoMap, d.plan, reglas])
+  }, [esHoy, fecha, consejo.siguiente, consejo.presupuesto, d, planDia, esAfuera])
 
   // Comidas de hoy y mañana que se hacen fuera de casa, salgan del plan o de las reglas semanales
   const paraLlevar = useMemo(() => {
@@ -83,12 +100,15 @@ export default function Diario() {
           .filter((r) => r.portable && r.meal_types.includes(comida) && d.itemsDe(r.id).length > 0)
           .map((r) => ({ r, cocinada: (d.preparadoMap.get(r.id) || 0) >= 1, ok: disponibilidad(r, d.itemsPlan(r.id), d.stockRecetas).ok }))
           .filter((x) => x.cocinada || x.ok)
-          .sort((a, b) => Number(b.cocinada) - Number(a.cocinada) || d.macrosPorReceta.get(b.r.id).protein - d.macrosPorReceta.get(a.r.id).protein)[0]
+          .sort(
+            (a, b) =>
+              Number(b.cocinada) - Number(a.cocinada) || d.macrosPorReceta.get(b.r.id).protein - d.macrosPorReceta.get(a.r.id).protein,
+          )[0]
         lista.push({ f, comida, idea })
       }
     }
     return lista
-  }, [esHoy, fecha, d.plan, d.planFuturo, d.registros, d.recetas, d.stockRecetas, d.preparadoMap, reglas])
+  }, [esHoy, fecha, d, registradas, esAfuera])
 
   // Un doble toque (pasa con la conexión lenta) no la registra dos veces
   const registrando = useRef(false)
@@ -103,7 +123,13 @@ export default function Diario() {
     }
   }
   const quitarRegistro = async (r) => {
-    if (await d.confirmar({ titulo: `¿Borrar ${r.name}?`, texto: 'Se saca de lo registrado ese día. Lo que se descontó de la despensa no vuelve solo.' })) d.borrarRegistro(r.id)
+    if (
+      await d.confirmar({
+        titulo: `¿Borrar ${r.name}?`,
+        texto: 'Se saca de lo registrado ese día. Lo que se descontó de la despensa no vuelve solo.',
+      })
+    )
+      d.borrarRegistro(r.id)
   }
   const tomeAgua = async () => {
     const listo = await d.registrar({ date: fecha, meal: EXTRA, platos: [{ food_id: agua.id, qty: 250 }], descontar: false })
@@ -113,25 +139,47 @@ export default function Diario() {
   return (
     <Marco titulo="Diario">
       <p className="text-sm text-gris">{fechaLarga(fecha)}</p>
-      <h2 className="text-2xl font-bold tracking-tight mb-3">{esHoy ? `¡Hola, ${d.perfil.name.split(' ')[0]}!` : fechaLarga(fecha).split(' ')[0]}</h2>
+      <h2 className="text-2xl font-bold tracking-tight mb-3">
+        {esHoy ? `¡Hola, ${d.perfil.name.split(' ')[0]}!` : fechaLarga(fecha).split(' ')[0]}
+      </h2>
 
       <div className="flex items-center gap-1 mb-4">
-        <button onClick={() => mover(-7)} disabled={fecha <= rango.min} className="w-7 h-12 text-gris disabled:opacity-30" aria-label="Semana anterior"><Icono n="chevron_left" /></button>
+        <button
+          onClick={() => mover(-7)}
+          disabled={fecha <= rango.min}
+          className="w-7 h-12 text-gris disabled:opacity-30"
+          aria-label="Semana anterior"
+        >
+          <Icono n="chevron_left" />
+        </button>
         <div className="flex-1 grid grid-cols-7 gap-1">
           {semanaDe(fecha).map((f) => {
             const activo = f === fecha
             const tiene = d.registros.some((r) => r.date === f)
             return (
-              <button key={f} onClick={() => setFecha(f)} disabled={f < rango.min || f > rango.max}
-                className={`flex flex-col items-center py-2 rounded-2xl disabled:opacity-40 ${activo ? 'bg-verde text-white shadow-tarjeta' : 'bg-superficie shadow-tarjeta'}`}>
+              <button
+                key={f}
+                onClick={() => setFecha(f)}
+                disabled={f < rango.min || f > rango.max}
+                className={`flex flex-col items-center py-2 rounded-2xl disabled:opacity-40 ${activo ? 'bg-verde text-white shadow-tarjeta' : 'bg-superficie shadow-tarjeta'}`}
+              >
                 <span className={`text-[11px] font-medium ${activo ? 'opacity-90' : 'text-gris'}`}>{diaCorto(f)}</span>
                 <span className="text-sm font-bold">{numeroDia(f)}</span>
-                <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${tiene ? (activo ? 'bg-superficie' : 'bg-verde-medio') : 'bg-transparent'}`} />
+                <span
+                  className={`w-1.5 h-1.5 rounded-full mt-0.5 ${tiene ? (activo ? 'bg-superficie' : 'bg-verde-medio') : 'bg-transparent'}`}
+                />
               </button>
             )
           })}
         </div>
-        <button onClick={() => mover(7)} disabled={fecha >= rango.max} className="w-7 h-12 text-gris disabled:opacity-30" aria-label="Semana siguiente"><Icono n="chevron_right" /></button>
+        <button
+          onClick={() => mover(7)}
+          disabled={fecha >= rango.max}
+          className="w-7 h-12 text-gris disabled:opacity-30"
+          aria-label="Semana siguiente"
+        >
+          <Icono n="chevron_right" />
+        </button>
       </div>
 
       <section className="tarjeta rounded-3xl p-5 mb-4">
@@ -143,7 +191,9 @@ export default function Diario() {
           <div className="flex-1 space-y-2">
             <div className={`rounded-2xl p-3 ${restante < 0 ? 'bg-naranja-suave' : 'bg-verde-claro'}`}>
               <p className="text-xs font-semibold text-gris">{restante < 0 ? 'Te pasaste' : 'Restante'}</p>
-              <p className={`text-lg font-bold ${restante < 0 ? 'text-naranja-oscuro' : 'text-verde-texto'}`}>{Math.abs(restante).toLocaleString('es-AR')} kcal</p>
+              <p className={`text-lg font-bold ${restante < 0 ? 'text-naranja-oscuro' : 'text-verde-texto'}`}>
+                {Math.abs(restante).toLocaleString('es-AR')} kcal
+              </p>
             </div>
             <div className="rounded-2xl p-3 bg-campo">
               <p className="text-xs font-semibold text-gris">Comidas</p>
@@ -163,15 +213,26 @@ export default function Diario() {
           <div>
             <div className="flex items-center justify-between text-sm mb-1.5">
               <span className="font-medium">Líquido</span>
-              <span className="text-gris"><b className="text-tinta">{litros(liquido)} L</b> / {litros(metaLiquido)} L</span>
+              <span className="text-gris">
+                <b className="text-tinta">{litros(liquido)} L</b> / {litros(metaLiquido)} L
+              </span>
             </div>
             <div className="h-2 rounded-full bg-pista overflow-hidden">
-              <div className="h-full rounded-full bg-teal" style={{ width: `${Math.min((liquido / metaLiquido) * 100, 100)}%`, transition: 'width .4s' }} />
+              <div
+                className="h-full rounded-full bg-teal"
+                style={{ width: `${Math.min((liquido / metaLiquido) * 100, 100)}%`, transition: 'width .4s' }}
+              />
             </div>
             <div className="flex items-center justify-between gap-2 mt-2">
-              <p className="text-xs text-gris">{liquido >= metaLiquido ? 'Llegaste al objetivo de líquido.' : `Te ${metaLiquido - liquido === 1000 ? 'falta' : 'faltan'} ${litros(metaLiquido - liquido)} L para llegar.`}</p>
+              <p className="text-xs text-gris">
+                {liquido >= metaLiquido
+                  ? 'Llegaste al objetivo de líquido.'
+                  : `Te ${metaLiquido - liquido === 1000 ? 'falta' : 'faltan'} ${litros(metaLiquido - liquido)} L para llegar.`}
+              </p>
               {agua && fecha <= hoy() && (
-                <button onClick={tomeAgua} className="btn-chico h-8 bg-teal-suave text-teal-oscuro whitespace-nowrap"><Icono n="water_drop" size={15} /> Vaso de agua</button>
+                <button onClick={tomeAgua} className="btn-chico h-8 bg-teal-suave text-teal-oscuro whitespace-nowrap">
+                  <Icono n="water_drop" size={15} /> Vaso de agua
+                </button>
               )}
             </div>
           </div>
@@ -208,19 +269,36 @@ export default function Diario() {
           <ul className="mt-2 space-y-1.5 text-sm">
             {paraLlevar.map((p) => (
               <li key={p.f + p.comida}>
-                <b>{p.f === fecha ? 'Hoy' : 'Mañana'}, {NOMBRE_COMIDA[p.comida].toLowerCase()}:</b>{' '}
+                <b>
+                  {p.f === fecha ? 'Hoy' : 'Mañana'}, {NOMBRE_COMIDA[p.comida].toLowerCase()}:
+                </b>{' '}
                 {p.receta ? (
                   <>
                     {p.receta.name}.{' '}
-                    {!p.receta.portable ? 'Ojo: esta receta no es para llevar, cambiala en el plan.'
-                      : p.estado === 'preparado' ? 'Ya está cocinado: pasalo a un tupper.'
-                      : p.estado === 'falta' ? 'Te faltan ingredientes, mirá la lista de compras.'
-                      : 'Tenés todo: dejalo cocinado y en un tupper.'}
+                    {!p.receta.portable
+                      ? 'Ojo: esta receta no es para llevar, cambiala en el plan.'
+                      : p.estado === 'preparado'
+                        ? 'Ya está cocinado: pasalo a un tupper.'
+                        : p.estado === 'falta'
+                          ? 'Te faltan ingredientes, mirá la lista de compras.'
+                          : 'Tenés todo: dejalo cocinado y en un tupper.'}
                   </>
                 ) : p.idea ? (
-                  <>no hay nada planificado. Podés llevar <Link to={`/recetas/${p.idea.r.id}`} className="font-semibold underline">{p.idea.r.name}</Link>{p.idea.cocinada ? ', que ya está cocinado.' : ', tenés todo para hacerlo.'}</>
+                  <>
+                    no hay nada planificado. Podés llevar{' '}
+                    <Link to={`/recetas/${p.idea.r.id}`} className="font-semibold underline">
+                      {p.idea.r.name}
+                    </Link>
+                    {p.idea.cocinada ? ', que ya está cocinado.' : ', tenés todo para hacerlo.'}
+                  </>
                 ) : (
-                  <>no hay nada planificado. <Link to="/plan" className="font-semibold underline">Armá el plan</Link> para ver qué llevar.</>
+                  <>
+                    no hay nada planificado.{' '}
+                    <Link to="/plan" className="font-semibold underline">
+                      Armá el plan
+                    </Link>{' '}
+                    para ver qué llevar.
+                  </>
                 )}
               </li>
             ))}
@@ -243,19 +321,34 @@ export default function Diario() {
           const subtotal = sumar(entradas)
           const irARegistrar = () => nav(`/registrar?fecha=${fecha}&comida=${comida}`)
           return (
-            <section key={comida} className={`tarjeta p-4 ${entradas.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}>
+            <section
+              key={comida}
+              className={`tarjeta p-4 ${entradas.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}
+            >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-verde-claro text-verde-texto flex items-center justify-center"><Icono n={ICONO_COMIDA[comida]} /></div>
+                <div className="w-10 h-10 rounded-xl bg-verde-claro text-verde-texto flex items-center justify-center">
+                  <Icono n={ICONO_COMIDA[comida]} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-bold tracking-wider text-verde-texto">{NOMBRE_COMIDA[comida].toUpperCase()}</p>
-                  {entradas.length > 0
-                    ? <p className="text-sm text-gris">{redondear(subtotal.protein)} g de proteína</p>
-                    : salteada
-                      ? <p className="text-sm text-gris">No comiste</p>
-                      : <p className="text-sm text-gris truncate">{receta ? `Plan: ${receta.name}` : 'Sin registrar'}</p>}
+                  {entradas.length > 0 ? (
+                    <p className="text-sm text-gris">{redondear(subtotal.protein)} g de proteína</p>
+                  ) : salteada ? (
+                    <p className="text-sm text-gris">No comiste</p>
+                  ) : (
+                    <p className="text-sm text-gris truncate">{receta ? `Plan: ${receta.name}` : 'Sin registrar'}</p>
+                  )}
                 </div>
-                {esAfuera(fecha, comida, fila) && <span className="pill bg-naranja-suave text-naranja-oscuro"><Icono n="takeout_dining" size={14} /> Afuera</span>}
-                {entradas.length > 0 && <p className="font-bold">{redondear(subtotal.kcal)} <span className="text-xs font-medium text-gris">kcal</span></p>}
+                {esAfuera(fecha, comida, fila) && (
+                  <span className="pill bg-naranja-suave text-naranja-oscuro">
+                    <Icono n="takeout_dining" size={14} /> Afuera
+                  </span>
+                )}
+                {entradas.length > 0 && (
+                  <p className="font-bold">
+                    {redondear(subtotal.kcal)} <span className="text-xs font-medium text-gris">kcal</span>
+                  </p>
+                )}
               </div>
 
               {entradas.length > 0 && (
@@ -264,17 +357,25 @@ export default function Diario() {
                     <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
                       <span className="flex-1 min-w-0 truncate">{r.name}</span>
                       <span className="text-gris">{redondear(r.kcal)} kcal</span>
-                      <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}><Icono n="close" size={18} /></button>
+                      <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
+                        <Icono n="close" size={18} />
+                      </button>
                     </div>
                   ))}
-                  <button onClick={irARegistrar} className="pt-2.5 text-sm font-semibold text-verde-texto flex items-center gap-1"><Icono n="add" size={18} /> Agregar algo más</button>
+                  <button onClick={irARegistrar} className="pt-2.5 text-sm font-semibold text-verde-texto flex items-center gap-1">
+                    <Icono n="add" size={18} /> Agregar algo más
+                  </button>
                 </div>
               )}
 
               {entradas.length === 0 && salteada && (
                 <div className="mt-3 flex items-center gap-2">
-                  <button onClick={() => d.borrarRegistro(salteada.id)} className="btn-chico bg-campo text-tinta flex-1"><Icono n="undo" size={16} /> Deshacer</button>
-                  <button onClick={irARegistrar} className="btn-chico bg-verde-suave text-verde-texto flex-1"><Icono n="add" size={16} /> Al final comí</button>
+                  <button onClick={() => d.borrarRegistro(salteada.id)} className="btn-chico bg-campo text-tinta flex-1">
+                    <Icono n="undo" size={16} /> Deshacer
+                  </button>
+                  <button onClick={irARegistrar} className="btn-chico bg-verde-suave text-verde-texto flex-1">
+                    <Icono n="add" size={16} /> Al final comí
+                  </button>
                 </div>
               )}
 
@@ -285,11 +386,18 @@ export default function Diario() {
                       <Icono n="check" size={16} /> Comí esto · {redondear(m.kcal)} kcal
                     </button>
                   )}
-                  <button onClick={irARegistrar} className={`btn-chico bg-verde-suave text-verde-texto whitespace-nowrap ${receta ? '' : 'flex-1'}`}>
+                  <button
+                    onClick={irARegistrar}
+                    className={`btn-chico bg-verde-suave text-verde-texto whitespace-nowrap ${receta ? '' : 'flex-1'}`}
+                  >
                     <Icono n={receta ? 'swap_horiz' : 'add'} size={16} /> {receta ? 'Otra cosa' : 'Registrar'}
                   </button>
                   {fecha <= hoy() && (
-                    <button onClick={() => d.saltear(fecha, comida)} className="btn-chico bg-campo text-gris whitespace-nowrap" aria-label={`No comí ${NOMBRE_COMIDA[comida].toLowerCase()}`}>
+                    <button
+                      onClick={() => d.saltear(fecha, comida)}
+                      className="btn-chico bg-campo text-gris whitespace-nowrap"
+                      aria-label={`No comí ${NOMBRE_COMIDA[comida].toLowerCase()}`}
+                    >
                       <Icono n="no_meals" size={16} /> No comí
                     </button>
                   )}
@@ -301,12 +409,20 @@ export default function Diario() {
 
         <section className={`tarjeta p-4 ${extras.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-suave text-teal-oscuro flex items-center justify-center"><Icono n={ICONO_COMIDA[EXTRA]} /></div>
+            <div className="w-10 h-10 rounded-xl bg-teal-suave text-teal-oscuro flex items-center justify-center">
+              <Icono n={ICONO_COMIDA[EXTRA]} />
+            </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold tracking-wider text-teal-oscuro">BEBIDAS Y ENTRE COMIDAS</p>
-              <p className="text-sm text-gris">{extras.length > 0 ? `${redondear(sumar(extras).protein)} g de proteína` : 'Agua, mate, café, alcohol, algo que picaste'}</p>
+              <p className="text-sm text-gris">
+                {extras.length > 0 ? `${redondear(sumar(extras).protein)} g de proteína` : 'Agua, mate, café, alcohol, algo que picaste'}
+              </p>
             </div>
-            {extras.length > 0 && <p className="font-bold">{redondear(sumar(extras).kcal)} <span className="text-xs font-medium text-gris">kcal</span></p>}
+            {extras.length > 0 && (
+              <p className="font-bold">
+                {redondear(sumar(extras).kcal)} <span className="text-xs font-medium text-gris">kcal</span>
+              </p>
+            )}
           </div>
           {extras.length > 0 && (
             <div className="mt-3 pt-1 border-t border-linea divide-y divide-linea">
@@ -314,17 +430,32 @@ export default function Diario() {
                 const a = d.alimentosPorId.get(r.food_id)
                 return (
                   <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
-                    <span className="flex-1 min-w-0 truncate">{r.name}{a?.unit === 'ml' ? ` · ${redondear(r.qty)} ml` : ''}</span>
+                    <span className="flex-1 min-w-0 truncate">
+                      {r.name}
+                      {a?.unit === 'ml' ? ` · ${redondear(r.qty)} ml` : ''}
+                    </span>
                     <span className="text-gris">{redondear(r.kcal)} kcal</span>
-                    <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}><Icono n="close" size={18} /></button>
+                    <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
+                      <Icono n="close" size={18} />
+                    </button>
                   </div>
                 )
               })}
             </div>
           )}
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}&abrir=bebida`)} className="btn-chico bg-teal-suave text-teal-oscuro flex-1 whitespace-nowrap"><Icono n="local_bar" size={16} /> Bebida</button>
-            <button onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}`)} className="btn-chico bg-verde-suave text-verde-texto flex-1 whitespace-nowrap"><Icono n="add" size={16} /> Otra cosa</button>
+            <button
+              onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}&abrir=bebida`)}
+              className="btn-chico bg-teal-suave text-teal-oscuro flex-1 whitespace-nowrap"
+            >
+              <Icono n="local_bar" size={16} /> Bebida
+            </button>
+            <button
+              onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}`)}
+              className="btn-chico bg-verde-suave text-verde-texto flex-1 whitespace-nowrap"
+            >
+              <Icono n="add" size={16} /> Otra cosa
+            </button>
           </div>
         </section>
       </div>

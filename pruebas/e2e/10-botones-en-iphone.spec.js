@@ -5,16 +5,27 @@ import { APP, captura, contexto, IPHONE } from './apoyo.js'
 // ¿Algún botón o enlace visible queda tapado por la barra o por el botón flotante, o se sale de la pantalla?
 const TAPADOS = () => {
   const malos = []
-  const vh = innerHeight, vw = innerWidth
+  const vh = innerHeight,
+    vw = innerWidth
   for (const el of document.querySelectorAll('button, a')) {
     const r = el.getBoundingClientRect()
     if (r.width === 0 || r.height === 0 || r.bottom <= 0 || r.top >= vh) continue
     const nombre = (el.innerText || el.getAttribute('aria-label') || '').trim().slice(0, 30)
-    if (r.right > vw + 1 || r.left < -1) { if (!el.closest('.sin-scroll')) malos.push('se sale: ' + nombre); continue }
-    const cx = Math.min(Math.max(r.left + r.width / 2, 1), vw - 1), cy = Math.min(Math.max(r.top + r.height / 2, 1), vh - 1)
+    if (r.right > vw + 1 || r.left < -1) {
+      if (!el.closest('.sin-scroll')) malos.push('se sale: ' + nombre)
+      continue
+    }
+    const cx = Math.min(Math.max(r.left + r.width / 2, 1), vw - 1),
+      cy = Math.min(Math.max(r.top + r.height / 2, 1), vh - 1)
     const arriba = document.elementFromPoint(cx, cy)
     if (arriba && !el.contains(arriba) && !arriba.contains(el)) {
-      const quien = arriba.closest('nav') ? 'la barra' : arriba.closest('header') ? 'el encabezado' : arriba.closest('.fixed') ? 'algo flotante' : null
+      const quien = arriba.closest('nav')
+        ? 'la barra'
+        : arriba.closest('header')
+          ? 'el encabezado'
+          : arriba.closest('.fixed')
+            ? 'algo flotante'
+            : null
       if (quien) malos.push(nombre + ' tapado por ' + quien)
     }
   }
@@ -23,7 +34,9 @@ const TAPADOS = () => {
 
 test('botones en iPhone: nada tapado ni cortado con la franja inferior', async ({ browser }) => {
   const ctx = await contexto(browser, { sesion: true, ...IPHONE })
-  await ctx.addInitScript(() => { addEventListener('DOMContentLoaded', () => document.documentElement.style.setProperty('--seguro', '34px')) })
+  await ctx.addInitScript(() => {
+    addEventListener('DOMContentLoaded', () => document.documentElement.style.setProperty('--seguro', '34px'))
+  })
   const pg = await ctx.newPage()
   const reporte = {}
   const fin = async () => {

@@ -256,15 +256,33 @@ test('cuenta con código, bebidas, recetas y resumen', async ({ browser }) => {
     }
     // repetir lo de ayer
     const ayer = new Date(Date.parse(hoy + 'T00:00:00Z') - 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-    await pg.evaluate(async ([api, ayer]) => {
-      const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
-      const ses = JSON.parse(localStorage.getItem(k))
-      const h = { Authorization: 'Bearer ' + ses.access_token, apikey: 'test', 'Content-Type': 'application/json' }
-      const foods = await (await fetch(api + '/rest/v1/foods?select=*', { headers: h })).json()
-      const f = (s) => foods.find((x) => x.slug === s)
-      const filas = [['cena', 'arroz', 70, 252, 4.9], ['cena', 'huevo', 2, 150, 12.5], ['almuerzo', 'fideos', 100, 355, 12]].map(([meal, s, qty, kcal, protein]) => ({ user_id: ses.user.id, date: ayer, meal, name: f(s).name, food_id: f(s).id, qty, kcal, protein, carbs: 0, fat: 0 }))
-      await fetch(api + '/rest/v1/log_entries', { method: 'POST', headers: h, body: JSON.stringify(filas) })
-    }, [API, ayer])
+    await pg.evaluate(
+      async ([api, ayer]) => {
+        const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
+        const ses = JSON.parse(localStorage.getItem(k))
+        const h = { Authorization: 'Bearer ' + ses.access_token, apikey: 'test', 'Content-Type': 'application/json' }
+        const foods = await (await fetch(api + '/rest/v1/foods?select=*', { headers: h })).json()
+        const f = (s) => foods.find((x) => x.slug === s)
+        const filas = [
+          ['cena', 'arroz', 70, 252, 4.9],
+          ['cena', 'huevo', 2, 150, 12.5],
+          ['almuerzo', 'fideos', 100, 355, 12],
+        ].map(([meal, s, qty, kcal, protein]) => ({
+          user_id: ses.user.id,
+          date: ayer,
+          meal,
+          name: f(s).name,
+          food_id: f(s).id,
+          qty,
+          kcal,
+          protein,
+          carbs: 0,
+          fat: 0,
+        }))
+        await fetch(api + '/rest/v1/log_entries', { method: 'POST', headers: h, body: JSON.stringify(filas) })
+      },
+      [API, ayer],
+    )
     await pg.goto(APP + '/registrar?comida=cena')
     await pg.waitForSelector('text=Repetir lo de ayer')
     await pg.click('button:has-text("Repetir lo de ayer")')

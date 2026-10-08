@@ -4,9 +4,33 @@ import { expect, test } from '@playwright/test'
 import { API, APP, IPHONE, captura, contexto, escuchar, rest, sinErrores } from './apoyo.js'
 
 const OFF = {
-  'aceite natura': [{ code: '779001', product_name: 'Aceite de girasol', brands: 'Natura', quantity: '900 ml', nutriments: { 'energy-kcal_100g': 828, proteins_100g: 0, carbohydrates_100g: 0, fat_100g: 92 } }],
-  'arroz gallo': [{ code: '779002', product_name: 'Arroz Gallo Oro', brands: 'Gallo', quantity: '1 kg', nutriments: { 'energy-kcal_100g': 350, proteins_100g: 7, carbohydrates_100g: 78, fat_100g: 1 } }],
-  alfajor: [{ code: '779003', product_name: 'Alfajor triple', brands: 'Jorgito', quantity: '70 g', nutriments: { 'energy-kcal_100g': 420, proteins_100g: 5, carbohydrates_100g: 65, fat_100g: 16 } }],
+  'aceite natura': [
+    {
+      code: '779001',
+      product_name: 'Aceite de girasol',
+      brands: 'Natura',
+      quantity: '900 ml',
+      nutriments: { 'energy-kcal_100g': 828, proteins_100g: 0, carbohydrates_100g: 0, fat_100g: 92 },
+    },
+  ],
+  'arroz gallo': [
+    {
+      code: '779002',
+      product_name: 'Arroz Gallo Oro',
+      brands: 'Gallo',
+      quantity: '1 kg',
+      nutriments: { 'energy-kcal_100g': 350, proteins_100g: 7, carbohydrates_100g: 78, fat_100g: 1 },
+    },
+  ],
+  alfajor: [
+    {
+      code: '779003',
+      product_name: 'Alfajor triple',
+      brands: 'Jorgito',
+      quantity: '70 g',
+      nutriments: { 'energy-kcal_100g': 420, proteins_100g: 5, carbohydrates_100g: 65, fat_100g: 16 },
+    },
+  ],
 }
 
 test('equivalencias: un producto propio vale por un alimento de las recetas', async ({ browser }) => {
@@ -14,7 +38,12 @@ test('equivalencias: un producto propio vale por un alimento de las recetas', as
   await ctx.route('https://world.openfoodfacts.org/**', async (route) => {
     const url = new URL(route.request().url())
     const q = (url.searchParams.get('search_terms') || '').toLowerCase()
-    await route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ products: OFF[q] || [] }) })
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ products: OFF[q] || [] }),
+    })
   })
   await ctx.route('https://search.openfoodfacts.org/**', (route) => route.abort()) // ERR_FAILED: el buscador nuevo, que acá se simula caído
   const pg = await ctx.newPage()
@@ -23,31 +52,51 @@ test('equivalencias: un producto propio vale por un alimento de las recetas', as
   await pg.waitForSelector('text=¡Hola, Santi!')
 
   // Escribe en la base simulada con la sesión de la página ('UID' es el id del usuario)
-  const enviar = (metodo, ruta, cuerpo = null, prefer = null) => pg.evaluate(async ([api, metodo, ruta, cuerpo, prefer]) => {
-    const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
-    const ses = JSON.parse(localStorage.getItem(k))
-    const h = { Authorization: 'Bearer ' + ses.access_token, apikey: 'test', 'Content-Type': 'application/json', Prefer: prefer || 'return=representation' }
-    const r = await fetch(api + '/rest/v1/' + ruta.replace('UID', ses.user.id), { method: metodo, headers: h, body: cuerpo ? JSON.stringify(cuerpo).replaceAll('UID', ses.user.id) : undefined })
-    const t = await r.text()
-    return t ? JSON.parse(t) : null
-  }, [API, metodo, ruta, cuerpo, prefer])
+  const enviar = (metodo, ruta, cuerpo = null, prefer = null) =>
+    pg.evaluate(
+      async ([api, metodo, ruta, cuerpo, prefer]) => {
+        const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
+        const ses = JSON.parse(localStorage.getItem(k))
+        const h = {
+          Authorization: 'Bearer ' + ses.access_token,
+          apikey: 'test',
+          'Content-Type': 'application/json',
+          Prefer: prefer || 'return=representation',
+        }
+        const r = await fetch(api + '/rest/v1/' + ruta.replace('UID', ses.user.id), {
+          method: metodo,
+          headers: h,
+          body: cuerpo ? JSON.stringify(cuerpo).replaceAll('UID', ses.user.id) : undefined,
+        })
+        const t = await r.text()
+        return t ? JSON.parse(t) : null
+      },
+      [API, metodo, ruta, cuerpo, prefer],
+    )
 
   const foods = await rest(pg, 'foods')
   const base = Object.fromEntries(foods.filter((a) => a.slug).map((a) => [a.slug, a]))
   const poner = async (slugOId, qty) => {
     const fid = Object.hasOwn(base, slugOId) ? base[slugOId].id : slugOId
-    await enviar('POST', 'stock?on_conflict=user_id,food_id', { user_id: 'UID', food_id: fid, qty }, 'resolution=merge-duplicates,return=representation')
+    await enviar(
+      'POST',
+      'stock?on_conflict=user_id,food_id',
+      { user_id: 'UID', food_id: fid, qty },
+      'resolution=merge-duplicates,return=representation',
+    )
   }
   const stock = async (fid) => {
     const r = await rest(pg, 'stock', '&food_id=eq.' + fid)
     return r.length ? parseFloat(r[0].qty) : null
   }
-  const filaIngrediente = (nombre) => pg.locator('section.tarjeta div.flex.items-center.gap-3', { has: pg.locator(`span.flex-1:text-is("${nombre}")`) }).first()
+  const filaIngrediente = (nombre) =>
+    pg.locator('section.tarjeta div.flex.items-center.gap-3', { has: pg.locator(`span.flex-1:text-is("${nombre}")`) }).first()
   const abrirReceta = async () => {
     await pg.goto(APP + '/recetas/' + receta.id)
     await pg.waitForSelector('text=Ingredientes')
   }
-  const macros = async () => (await pg.locator('main p:has-text("Valores por porción")').locator('xpath=preceding-sibling::*[1]').innerText()).replaceAll('\n', ' ')
+  const macros = async () =>
+    (await pg.locator('main p:has-text("Valores por porción")').locator('xpath=preceding-sibling::*[1]').innerText()).replaceAll('\n', ' ')
 
   let receta
   let natura
@@ -57,7 +106,15 @@ test('equivalencias: un producto propio vale por un alimento de las recetas', as
 
   await test.step('punto de partida: sin aceite ni atún', async () => {
     // Punto de partida: sin aceite ni atún, con el resto de la receta de prueba
-    for (const [s, q] of [['aceite', 0], ['atun-natural', 0], ['pata-muslo', 12], ['papa', 2000], ['batata', 1000], ['arroz', 0]]) await poner(s, q)
+    for (const [s, q] of [
+      ['aceite', 0],
+      ['atun-natural', 0],
+      ['pata-muslo', 12],
+      ['papa', 2000],
+      ['batata', 1000],
+      ['arroz', 0],
+    ])
+      await poner(s, q)
     receta = (await rest(pg, 'recipes')).filter((r) => r.slug === 'pata-muslo-horno')[0]
     await abrirReceta()
     const f = filaIngrediente('Aceite')
@@ -169,7 +226,21 @@ test('equivalencias: un producto propio vale por un alimento de las recetas', as
   })
 
   await test.step('un producto que ya estaba cargado (en gramos) contra un alimento en latas', async () => {
-    camp = (await enviar('POST', 'foods', { owner: 'UID', name: 'Atún al natural La Campagnola', unit: 'g', unit_grams: null, unit_label: null, kcal: 105, protein: 24, carbs: 0, fat: 1, category: 'Otros', alcohol: false }))[0]
+    camp = (
+      await enviar('POST', 'foods', {
+        owner: 'UID',
+        name: 'Atún al natural La Campagnola',
+        unit: 'g',
+        unit_grams: null,
+        unit_label: null,
+        kcal: 105,
+        protein: 24,
+        carbs: 0,
+        fat: 1,
+        category: 'Otros',
+        alcohol: false,
+      })
+    )[0]
     await poner(camp.id, 240)
     await pg.goto(APP + '/despensa')
     await pg.waitForSelector('p.font-semibold:text-is("Atún al natural La Campagnola")')
@@ -260,8 +331,13 @@ test('equivalencias: un producto propio vale por un alimento de las recetas', as
     expect(await stock(natura.id)).toBe(1785)
     expect(await stock(base.aceite.id)).toBe(0)
     await pg.waitForTimeout(300)
-    expect(await pg.locator('div.flex.items-center.gap-2.py-3', { has: pg.locator('p.font-medium:text-is("Aceite")') }).count(), 'tiene que salir de la lista').toBe(0)
-    expect(await pg.locator('text=Compras del mes').locator('xpath=following-sibling::div[1]').innerText()).toContain('Aceite de girasol (Natura)')
+    expect(
+      await pg.locator('div.flex.items-center.gap-2.py-3', { has: pg.locator('p.font-medium:text-is("Aceite")') }).count(),
+      'tiene que salir de la lista',
+    ).toBe(0)
+    expect(await pg.locator('text=Compras del mes').locator('xpath=following-sibling::div[1]').innerText()).toContain(
+      'Aceite de girasol (Natura)',
+    )
   })
 
   await test.step('borrar el producto: las recetas vuelven a mirar el genérico', async () => {
@@ -271,7 +347,7 @@ test('equivalencias: un producto propio vale por un alimento de las recetas', as
     await pg.waitForSelector('text=Alimento borrado')
     await abrirReceta()
     const f = filaIngrediente('Aceite')
-    expect(await f.innerText()).toContain('tenés 0 ml')
+    await expect(f).toContainText('tenés 0 ml')
     expect(await f.innerText()).not.toContain('con ')
     // exportar: el vínculo sale con nombre
     await pg.goto(APP + '/perfil')
@@ -284,12 +360,28 @@ test('equivalencias: un producto propio vale por un alimento de las recetas', as
   await test.step('vista en iPhone oscuro', async () => {
     const ctx2 = await contexto(browser, { sesion: true, ...IPHONE })
     const pg2 = await ctx2.newPage()
-    const c2 = (await enviar('POST', 'foods', { owner: 'UID', name: 'Leche descremada La Serenísima', unit: 'ml', unit_grams: null, unit_label: null, kcal: 33, protein: 3, carbs: 4.7, fat: 0.1, category: 'Lácteos', alcohol: false }))[0]
+    const c2 = (
+      await enviar('POST', 'foods', {
+        owner: 'UID',
+        name: 'Leche descremada La Serenísima',
+        unit: 'ml',
+        unit_grams: null,
+        unit_label: null,
+        kcal: 33,
+        protein: 3,
+        carbs: 4.7,
+        fat: 0.1,
+        category: 'Lácteos',
+        alcohol: false,
+      })
+    )[0]
     await poner(c2.id, 1000)
     await poner(campo.id, 6)
     await pg2.goto(APP + '/despensa')
     await pg2.waitForSelector('p.font-semibold:text-is("Leche descremada La Serenísima")')
-    await pg2.locator('div.tarjeta', { has: pg2.locator('p.font-semibold:text-is("Leche descremada La Serenísima")') }).scrollIntoViewIfNeeded()
+    await pg2
+      .locator('div.tarjeta', { has: pg2.locator('p.font-semibold:text-is("Leche descremada La Serenísima")') })
+      .scrollIntoViewIfNeeded()
     await pg2.evaluate(() => window.scrollBy(0, -220))
     await captura(pg2, 'e08_oscuro_despensa', false)
     await ctx2.close()

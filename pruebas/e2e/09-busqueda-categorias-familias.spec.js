@@ -6,8 +6,17 @@ import { API, APP, captura, contexto, escuchar, IPHONE, sinErrores } from './apo
 const PEDIDO = async ([api, metodo, ruta, cuerpo, prefer]) => {
   const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
   const ses = JSON.parse(localStorage.getItem(k))
-  const h = { Authorization: 'Bearer ' + ses.access_token, apikey: 'test', 'Content-Type': 'application/json', Prefer: prefer || 'return=representation' }
-  const r = await fetch(api + '/rest/v1/' + ruta.replace('UID', ses.user.id), { method: metodo, headers: h, body: cuerpo ? JSON.stringify(cuerpo).replaceAll('UID', ses.user.id) : undefined })
+  const h = {
+    Authorization: 'Bearer ' + ses.access_token,
+    apikey: 'test',
+    'Content-Type': 'application/json',
+    Prefer: prefer || 'return=representation',
+  }
+  const r = await fetch(api + '/rest/v1/' + ruta.replace('UID', ses.user.id), {
+    method: metodo,
+    headers: h,
+    body: cuerpo ? JSON.stringify(cuerpo).replaceAll('UID', ses.user.id) : undefined,
+  })
   const t = await r.text()
   return t ? JSON.parse(t) : null
 }
@@ -15,14 +24,57 @@ const PEDIDO = async ([api, metodo, ruta, cuerpo, prefer]) => {
 // Respuestas del buscador nuevo (hits, nombre por idioma, marca como etiqueta)
 const NUEVO = {
   'tirabuzon matarazzo': [
-    { code: '7790001', product_name: { main: 'Tirabuzón N°28', es: 'Tirabuzón N°28' }, brands: ['matarazzo'], quantity: '500 g', nutriments: { 'energy-kcal_100g': 352, proteins_100g: 12, carbohydrates_100g: 72, fat_100g: 1.5 }, categories_tags: ['en:plant-based-foods-and-beverages', 'en:pastas'], countries_tags: ['en:argentina'] },
-    { code: '7790002', product_name: 'Tirabuzón integral', brands: ['matarazzo'], quantity: '500 g', nutriments: { 'energy-kcal_100g': 340, proteins_100g: 13 }, countries_tags: ['en:argentina'] },
-    { code: '7790003', product_name: 'Fideos tirabuzón al huevo', brands: 'Don Vicente', quantity: '500 g', nutriments: { 'energy-kj_100g': 1500 }, countries_tags: ['en:argentina'] },
+    {
+      code: '7790001',
+      product_name: { main: 'Tirabuzón N°28', es: 'Tirabuzón N°28' },
+      brands: ['matarazzo'],
+      quantity: '500 g',
+      nutriments: { 'energy-kcal_100g': 352, proteins_100g: 12, carbohydrates_100g: 72, fat_100g: 1.5 },
+      categories_tags: ['en:plant-based-foods-and-beverages', 'en:pastas'],
+      countries_tags: ['en:argentina'],
+    },
+    {
+      code: '7790002',
+      product_name: 'Tirabuzón integral',
+      brands: ['matarazzo'],
+      quantity: '500 g',
+      nutriments: { 'energy-kcal_100g': 340, proteins_100g: 13 },
+      countries_tags: ['en:argentina'],
+    },
+    {
+      code: '7790003',
+      product_name: 'Fideos tirabuzón al huevo',
+      brands: 'Don Vicente',
+      quantity: '500 g',
+      nutriments: { 'energy-kj_100g': 1500 },
+      countries_tags: ['en:argentina'],
+    },
   ],
   'yerba playadito': [
-    { code: '7790010', product_name: 'Yerba mate suave', brands: ['playadito'], quantity: '1 kg', nutriments: { 'energy-kcal_100g': 0 }, countries_tags: ['en:argentina'] },
-    { code: '7790011', product_name: 'Yerba mate con palo', brands: ['playadito'], quantity: '500 g', nutriments: { 'energy-kcal_100g': 0 }, countries_tags: ['en:argentina'] },
-    { code: '7790012', product_name: 'Yerba mate despalada', brands: ['playadito'], quantity: '500 g', nutriments: { 'energy-kcal_100g': 0 }, countries_tags: ['en:argentina'] },
+    {
+      code: '7790010',
+      product_name: 'Yerba mate suave',
+      brands: ['playadito'],
+      quantity: '1 kg',
+      nutriments: { 'energy-kcal_100g': 0 },
+      countries_tags: ['en:argentina'],
+    },
+    {
+      code: '7790011',
+      product_name: 'Yerba mate con palo',
+      brands: ['playadito'],
+      quantity: '500 g',
+      nutriments: { 'energy-kcal_100g': 0 },
+      countries_tags: ['en:argentina'],
+    },
+    {
+      code: '7790012',
+      product_name: 'Yerba mate despalada',
+      brands: ['playadito'],
+      quantity: '500 g',
+      nutriments: { 'energy-kcal_100g': 0 },
+      countries_tags: ['en:argentina'],
+    },
   ],
 }
 
@@ -39,7 +91,12 @@ test('buscador con sinónimos, Open Food Facts, categorías, familias y recetas 
       return route.fulfill({ status: 503, contentType: 'text/html', body: '<html>Service Unavailable</html>' })
     }
     const hits = Object.hasOwn(NUEVO, q) ? NUEVO[q] : []
-    await route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ hits, count: hits.length, page: 1 }) })
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify({ hits, count: hits.length, page: 1 }),
+    })
   })
   await ctx.route('https://world.openfoodfacts.org/**', async (route) => {
     const url = new URL(route.request().url())
@@ -54,9 +111,29 @@ test('buscador con sinónimos, Open Food Facts, categorías, familias y recetas 
   const api = (metodo, ruta, cuerpo = null, prefer = null) => pg.evaluate(PEDIDO, [API, metodo, ruta, cuerpo, prefer])
   const foods = await api('GET', 'foods?select=*')
   const base = Object.fromEntries(foods.filter((f) => f.slug).map((f) => [f.slug, f]))
-  const poner = (fid, qty) => api('POST', 'stock?on_conflict=user_id,food_id', { user_id: 'UID', food_id: fid, qty }, 'resolution=merge-duplicates,return=representation')
+  const poner = (fid, qty) =>
+    api(
+      'POST',
+      'stock?on_conflict=user_id,food_id',
+      { user_id: 'UID', food_id: fid, qty },
+      'resolution=merge-duplicates,return=representation',
+    )
   const propio = async (nombre, { unit = 'g', cat = 'Otros', qty = 500 } = {}) => {
-    const a = (await api('POST', 'foods', { owner: 'UID', name: nombre, unit, unit_grams: null, unit_label: null, kcal: 350, protein: 10, carbs: 70, fat: 2, category: cat, alcohol: false }))[0]
+    const a = (
+      await api('POST', 'foods', {
+        owner: 'UID',
+        name: nombre,
+        unit,
+        unit_grams: null,
+        unit_label: null,
+        kcal: 350,
+        protein: 10,
+        carbs: 70,
+        fat: 2,
+        category: cat,
+        alcohol: false,
+      })
+    )[0]
     await poner(a.id, qty)
     return a
   }
@@ -65,7 +142,8 @@ test('buscador con sinónimos, Open Food Facts, categorías, familias y recetas 
     await pg.goto(APP + '/despensa')
     await pg.waitForSelector('text=Lista de compras')
   }
-  const resultados = async () => (await pg.locator('div.fixed div.divide-y.divide-linea > button').allInnerTexts()).map((t) => t.split('\n')[0])
+  const resultados = async () =>
+    (await pg.locator('div.fixed div.divide-y.divide-linea > button').allInnerTexts()).map((t) => t.split('\n')[0])
 
   await test.step('el buscador propio encuentra por sinónimos y hay productos nuevos', async () => {
     await abrirDespensa()
@@ -171,7 +249,9 @@ test('buscador con sinónimos, Open Food Facts, categorías, familias y recetas 
     const avena = (await api('GET', 'recipes?select=*')).filter((r) => r.slug === 'desayuno-avena')[0]
     await pg.goto(APP + '/recetas/' + avena.id)
     await pg.waitForSelector('text=Ingredientes')
-    const fila = pg.locator('section.tarjeta div.flex.items-center.gap-3', { has: pg.locator('span.flex-1:text-is("Leche parcialmente descremada")') }).first()
+    const fila = pg
+      .locator('section.tarjeta div.flex.items-center.gap-3', { has: pg.locator('span.flex-1:text-is("Leche parcialmente descremada")') })
+      .first()
     expect(await fila.innerText()).toContain('tenés 1 L')
     expect(await fila.innerText()).toContain('con Leche entera')
     expect(await fila.innerHTML()).toContain('text-verde-medio')

@@ -23,10 +23,16 @@ async function anotar(tipo, nombre, detalle) {
     const { data } = await supabase.auth.getSession()
     if (!data?.session) return // sin sesión no hay a nombre de quién guardarlo
     await supabase.from('eventos').insert({
-      tipo, nombre: recortar(nombre, 60), detalle, version: recortar(VERSION, 20),
-      ruta: pantalla(), dispositivo: recortar(navigator.userAgent, 200),
+      tipo,
+      nombre: recortar(nombre, 60),
+      detalle,
+      version: recortar(VERSION, 20),
+      ruta: pantalla(),
+      dispositivo: recortar(navigator.userAgent, 200),
     })
-  } catch { /* sin conexión o sin la tabla: no pasa nada */ }
+  } catch {
+    /* sin conexión o sin la tabla: no pasa nada */
+  }
 }
 
 // Algo que conviene medir (una búsqueda que no respondió, un análisis pedido). `detalle` son pocos datos y cortos.
@@ -48,7 +54,9 @@ export function anotarError(donde, error, extra = {}) {
 export function escucharErrores() {
   window.addEventListener('error', (ev) => {
     if (!ev.message) return // una imagen o un archivo que no cargó: no es un error del código
-    anotarError('js', ev.error || ev.message, { origen: recortar(`${ev.filename || ''}:${ev.lineno || 0}:${ev.colno || 0}`.replace(location.origin, ''), 160) })
+    anotarError('js', ev.error || ev.message, {
+      origen: recortar(`${ev.filename || ''}:${ev.lineno || 0}:${ev.colno || 0}`.replace(location.origin, ''), 160),
+    })
   })
   window.addEventListener('unhandledrejection', (ev) => anotarError('promesa', ev.reason))
 }

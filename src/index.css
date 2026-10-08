@@ -56,7 +56,7 @@
   --c-rojo-suave: 255 218 214;
   /* #ffdad6 */
   --sombra-tarjeta: 0px 4px 20px -2px rgba(46, 125, 50, 0.06), 0px 2px 6px -1px rgba(30, 41, 59, 0.04);
-  --sombra-flotante: 0px 16px 36px -6px rgba(30, 41, 59, 0.16), 0px 6px 12px -2px rgba(59, 122, 87, 0.10);
+  --sombra-flotante: 0px 16px 36px -6px rgba(30, 41, 59, 0.16), 0px 6px 12px -2px rgba(59, 122, 87, 0.1);
 }
 
 /* Tema oscuro: cuando la persona lo elige en el perfil... */
@@ -188,7 +188,6 @@
 @tailwind utilities;
 
 @layer base {
-
   html,
   body {
     background-color: rgb(var(--c-fondo));

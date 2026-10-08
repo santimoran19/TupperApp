@@ -17,13 +17,19 @@ export default function AvisoVersion() {
     const buscar = () => {
       if (!registro || document.visibilityState !== 'visible' || !navigator.onLine) return
       ultima = Date.now()
-      registro.update().catch(() => { /* sin conexión: se busca la próxima vez */ })
+      registro.update().catch(() => {
+        /* sin conexión: se busca la próxima vez */
+      })
     }
     // Al volver a la app también se busca (si pasó un rato): el teléfono no la "abre de nuevo", la trae como estaba
-    const alVolver = () => { if (Date.now() - ultima > 60 * 1000) buscar() }
+    const alVolver = () => {
+      if (Date.now() - ultima > 60 * 1000) buscar()
+    }
     aplicar.current = registerSW({
       onNeedRefresh: () => setHayNueva(true),
-      onRegisteredSW: (_url, r) => { registro = r || null },
+      onRegisteredSW: (_url, r) => {
+        registro = r || null
+      },
     })
     const reloj = setInterval(buscar, CADA_CUANTO)
     document.addEventListener('visibilitychange', alVolver)
@@ -44,7 +50,10 @@ export default function AvisoVersion() {
   if (!hayNueva) return null
   return (
     <div className="fixed top-[72px] left-0 right-0 z-[65] flex justify-center px-4 pointer-events-none">
-      <div role="status" className="pointer-events-auto flex items-center gap-2 rounded-full bg-tinta text-fondo shadow-flotante pl-4 pr-1.5 py-1.5 text-sm font-medium">
+      <div
+        role="status"
+        className="pointer-events-auto flex items-center gap-2 rounded-full bg-tinta text-fondo shadow-flotante pl-4 pr-1.5 py-1.5 text-sm font-medium"
+      >
         <span>Hay una versión nueva</span>
         <button onClick={actualizar} disabled={aplicando} className="btn-chico bg-verde text-white">
           <Icono n="refresh" size={16} /> {aplicando ? 'Actualizando...' : 'Actualizar'}

@@ -2,7 +2,14 @@
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
 import { buscarProductos, _olvidar } from '../../src/lib/openfoodfacts.js'
 
-const prod = (n) => ({ code: n, product_name: n, brands: 'Marca', quantity: '100 g', nutriments: { 'energy-kcal_100g': 100 }, countries_tags: ['en:argentina'] })
+const prod = (n) => ({
+  code: n,
+  product_name: n,
+  brands: 'Marca',
+  quantity: '100 g',
+  nutriments: { 'energy-kcal_100g': 100 },
+  countries_tags: ['en:argentina'],
+})
 const esNuevo = (u) => u.includes('search.openfoodfacts')
 
 // reglas(url, númeroDePedido) dice qué responde cada pedido: 'caido' (sin red), un número (error HTTP) o el JSON
@@ -24,13 +31,30 @@ async function esperar(promesa) {
   const inicio = Date.now()
   let fin = false
   let resultado, error
-  promesa.then((r) => { resultado = r }, (e) => { error = e }).finally(() => { fin = true })
+  promesa
+    .then(
+      (r) => {
+        resultado = r
+      },
+      (e) => {
+        error = e
+      },
+    )
+    .finally(() => {
+      fin = true
+    })
   while (!fin) await vi.advanceTimersByTimeAsync(100)
   return { resultado, error, segundos: (Date.now() - inicio) / 1000 }
 }
 
-beforeEach(() => { vi.useFakeTimers(); _olvidar() })
-afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals() })
+beforeEach(() => {
+  vi.useFakeTimers()
+  _olvidar()
+})
+afterEach(() => {
+  vi.useRealTimers()
+  vi.unstubAllGlobals()
+})
 
 test('con el buscador nuevo andando, un solo pedido; la misma búsqueda no vuelve a consultar', async () => {
   red((u) => (esNuevo(u) ? { hits: [prod('A'), prod('B'), prod('C')] } : 'caido'))
@@ -97,7 +121,13 @@ test('avisa cómo salió cada búsqueda (sin lo que se buscó), y un aviso que f
 
   _olvidar()
   red(() => ({ hits: [prod('A'), prod('B'), prod('C')] }))
-  const { resultado, error } = await esperar(buscarProductos('arroz', { alTerminar: () => { throw new Error('se rompió el aviso') } }))
+  const { resultado, error } = await esperar(
+    buscarProductos('arroz', {
+      alTerminar: () => {
+        throw new Error('se rompió el aviso')
+      },
+    }),
+  )
   expect(error).toBeUndefined()
   expect(resultado.length).toBe(3)
   expect(pedidos).toEqual(['nuevo'])

@@ -3,7 +3,11 @@
 const CLAVE = 'tupper:tema'
 const COLOR_BARRA = { claro: '#206140', oscuro: '#0f1512' } // color de la barra del navegador
 
-export const TEMAS = [['auto', 'Automático'], ['claro', 'Claro'], ['oscuro', 'Oscuro']]
+export const TEMAS = [
+  ['auto', 'Automático'],
+  ['claro', 'Claro'],
+  ['oscuro', 'Oscuro'],
+]
 
 export function temaGuardado() {
   try {
@@ -18,7 +22,9 @@ export function elegirTema(tema) {
   try {
     if (tema === 'auto') localStorage.removeItem(CLAVE)
     else localStorage.setItem(CLAVE, tema)
-  } catch { /* sin almacenamiento: vale solo hasta cerrar la app */ }
+  } catch {
+    /* sin almacenamiento: vale solo hasta cerrar la app */
+  }
   const raiz = document.documentElement
   if (tema === 'auto') raiz.removeAttribute('data-tema')
   else raiz.setAttribute('data-tema', tema)

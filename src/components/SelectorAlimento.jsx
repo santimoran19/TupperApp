@@ -19,7 +19,8 @@ export function buscarAlimentos(alimentos, texto) {
   if (!q) return [...alimentos].sort(alfabetico)
   const porNombre = alimentos.filter((a) => normal(a.name).includes(q))
   const vistos = new Set(porNombre.map((a) => a.id))
-  const porAlias = q.length < 3 ? [] : alimentos.filter((a) => !vistos.has(a.id) && (ALIAS[a.slug] || []).some((s) => s.includes(q) || q.includes(s)))
+  const porAlias =
+    q.length < 3 ? [] : alimentos.filter((a) => !vistos.has(a.id) && (ALIAS[a.slug] || []).some((s) => s.includes(q) || q.includes(s)))
   return [...porNombre.sort(alfabetico), ...porAlias.sort(alfabetico)]
 }
 
@@ -44,7 +45,11 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
   }, [alimentos, texto, soloConStock, stockMap, categoria, bebidas, alcohol])
 
   const pedido = useRef(0) // para descartar la respuesta de una búsqueda que ya no es la que se está mirando
-  const cambiarTexto = (v) => { setTexto(v.slice(0, LIM.nombre)); pedido.current++; setOff(null) }
+  const cambiarTexto = (v) => {
+    setTexto(v.slice(0, LIM.nombre))
+    pedido.current++
+    setOff(null)
+  }
 
   // La búsqueda reintenta sola un rato (ver lib/openfoodfacts): mientras tanto se muestra que sigue buscando
   async function buscarAfuera() {
@@ -52,7 +57,9 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
     setOff({ estado: 'cargando', productos: [], lento: false })
     try {
       const productos = await buscarProductos(texto.trim(), {
-        alReintentar: () => { if (pedido.current === n) setOff((s) => s && { ...s, lento: true }) },
+        alReintentar: () => {
+          if (pedido.current === n) setOff((s) => s && { ...s, lento: true })
+        },
         // Se anota cómo salió (sin lo que se buscó) para saber si Open Food Facts está respondiendo
         alTerminar: (como) => anotarEvento('off_busqueda', como),
       })
@@ -69,16 +76,28 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
     // Si se parece a un ingrediente de las recetas, se pregunta si vale por ese
     const unit = bebidas ? 'ml' : p.unit
     const parecido = sugerirBase({ name: p.name, unit, unit_grams: null }, ingredientes, deLaBase)
-    const vale = parecido && await confirmar({
-      titulo: `¿Cuenta como ${nombreCorto(parecido)} en las recetas?`,
-      texto: `Si decís que sí, las recetas que piden ${nombreCorto(parecido).toLowerCase()} van a usar ${p.name}. Lo podés cambiar después en Mis alimentos.`,
-      boton: 'Sí', cancelar: 'No', peligro: false,
-    })
+    const vale =
+      parecido &&
+      (await confirmar({
+        titulo: `¿Cuenta como ${nombreCorto(parecido)} en las recetas?`,
+        texto: `Si decís que sí, las recetas que piden ${nombreCorto(parecido).toLowerCase()} van a usar ${p.name}. Lo podés cambiar después en Mis alimentos.`,
+        boton: 'Sí',
+        cancelar: 'No',
+        peligro: false,
+      }))
     setAgregando(true)
     const a = await crearAlimento({
       // La categoría sale del alimento por el que vale o del que más se le parece en la base; si no, de lo que diga Open Food Facts
-      name: p.name, unit, category: bebidas ? 'Bebidas' : vale ? parecido.category : parecidoEnBase(p, deLaBase)?.category || p.category,
-      unit_grams: null, unit_label: null, kcal: p.kcal, protein: p.protein, carbs: p.carbs, fat: p.fat, alcohol: !!p.alcohol && (bebidas || p.unit === 'ml'),
+      name: p.name,
+      unit,
+      category: bebidas ? 'Bebidas' : vale ? parecido.category : parecidoEnBase(p, deLaBase)?.category || p.category,
+      unit_grams: null,
+      unit_label: null,
+      kcal: p.kcal,
+      protein: p.protein,
+      carbs: p.carbs,
+      fat: p.fat,
+      alcohol: !!p.alcohol && (bebidas || p.unit === 'ml'),
       same_as: vale ? parecido.id : null,
     })
     setAgregando(false)
@@ -88,18 +107,34 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
   }
 
   if (creando) {
-    return <NuevoAlimento nombreInicial={texto} categoriaInicial={categoria} onListo={(a) => onElegir(a)} onCancelar={() => setCreando(false)} />
+    return (
+      <NuevoAlimento nombreInicial={texto} categoriaInicial={categoria} onListo={(a) => onElegir(a)} onCancelar={() => setCreando(false)} />
+    )
   }
 
   return (
     <div>
       <div className="relative mb-3">
         <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
-        <input className="campo pl-11" placeholder={bebidas ? 'Buscar bebida...' : 'Buscar alimento...'} value={texto} onChange={(e) => cambiarTexto(e.target.value)} autoFocus />
+        <input
+          className="campo pl-11"
+          placeholder={bebidas ? 'Buscar bebida...' : 'Buscar alimento...'}
+          value={texto}
+          onChange={(e) => cambiarTexto(e.target.value)}
+          autoFocus
+        />
       </div>
       {bebidas && (
         <div className="flex gap-2 mb-2">
-          {[['todas', 'Todas'], ['sin', 'Sin alcohol'], ['con', 'Con alcohol']].map(([k, t]) => <Chip key={k} activo={alcohol === k} onClick={() => setAlcohol(k)}>{t}</Chip>)}
+          {[
+            ['todas', 'Todas'],
+            ['sin', 'Sin alcohol'],
+            ['con', 'Con alcohol'],
+          ].map(([k, t]) => (
+            <Chip key={k} activo={alcohol === k} onClick={() => setAlcohol(k)}>
+              {t}
+            </Chip>
+          ))}
         </div>
       )}
       <div className="divide-y divide-linea">
@@ -119,11 +154,15 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
           )
         })}
       </div>
-      {resultados.length === 0 && <p className="text-sm text-gris py-4 text-center">No hay {bebidas ? 'bebidas' : 'alimentos'} con ese nombre.</p>}
+      {resultados.length === 0 && (
+        <p className="text-sm text-gris py-4 text-center">No hay {bebidas ? 'bebidas' : 'alimentos'} con ese nombre.</p>
+      )}
 
       {!soloConStock && texto.trim().length >= 3 && !off && (
         <button onClick={buscarAfuera} className="w-full mt-3 rounded-2xl border border-linea p-3 flex items-center gap-3 text-left">
-          <span className="w-10 h-10 rounded-full bg-teal-suave text-teal-oscuro flex items-center justify-center"><Icono n="travel_explore" /></span>
+          <span className="w-10 h-10 rounded-full bg-teal-suave text-teal-oscuro flex items-center justify-center">
+            <Icono n="travel_explore" />
+          </span>
           <span className="flex-1 min-w-0">
             <span className="block text-sm font-semibold truncate">Buscar “{texto.trim()}” en Open Food Facts</span>
             <span className="block text-xs text-gris">Productos de marca con los valores de su etiqueta</span>
@@ -132,20 +171,41 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
       )}
       {off && (
         <div className="mt-3 rounded-2xl bg-teal-suave p-3">
-          <p className="text-[11px] font-bold tracking-wider text-teal-oscuro flex items-center gap-1.5"><Icono n="travel_explore" size={16} /> OPEN FOOD FACTS</p>
-          {off.estado === 'cargando' && <p className="text-sm text-gris py-2" role="status">{off.lento ? 'Sigue buscando: Open Food Facts a veces tarda un poco...' : 'Buscando...'}</p>}
-          {off.estado === 'error' && (
-            <p className="text-sm py-2">Open Food Facts no está respondiendo ahora. Probá de nuevo en un rato o cargalo a mano. <button onClick={buscarAfuera} className="font-semibold text-teal-oscuro underline">Reintentar</button></p>
+          <p className="text-[11px] font-bold tracking-wider text-teal-oscuro flex items-center gap-1.5">
+            <Icono n="travel_explore" size={16} /> OPEN FOOD FACTS
+          </p>
+          {off.estado === 'cargando' && (
+            <p className="text-sm text-gris py-2" role="status">
+              {off.lento ? 'Sigue buscando: Open Food Facts a veces tarda un poco...' : 'Buscando...'}
+            </p>
           )}
-          {off.estado === 'listo' && off.productos.length === 0 && <p className="text-sm py-2">No apareció nada con ese nombre. Podés crearlo a mano con los datos de la etiqueta.</p>}
+          {off.estado === 'error' && (
+            <p className="text-sm py-2">
+              Open Food Facts no está respondiendo ahora. Probá de nuevo en un rato o cargalo a mano.{' '}
+              <button onClick={buscarAfuera} className="font-semibold text-teal-oscuro underline">
+                Reintentar
+              </button>
+            </p>
+          )}
+          {off.estado === 'listo' && off.productos.length === 0 && (
+            <p className="text-sm py-2">No apareció nada con ese nombre. Podés crearlo a mano con los datos de la etiqueta.</p>
+          )}
           {off.estado === 'listo' && off.productos.length > 0 && (
             <>
               <div className="divide-y divide-superficie">
                 {off.productos.map((p) => (
-                  <button key={p.codigo} onClick={() => elegirProducto(p)} disabled={agregando} className="w-full flex items-center gap-3 py-2.5 text-left">
+                  <button
+                    key={p.codigo}
+                    onClick={() => elegirProducto(p)}
+                    disabled={agregando}
+                    className="w-full flex items-center gap-3 py-2.5 text-left"
+                  >
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{p.name}</p>
-                      <p className="text-xs text-gris">{cada100(p)}{p.detalle ? ` · ${p.detalle}` : ''}</p>
+                      <p className="text-xs text-gris">
+                        {cada100(p)}
+                        {p.detalle ? ` · ${p.detalle}` : ''}
+                      </p>
                     </div>
                     <Icono n="add_circle" className="text-teal-oscuro" />
                   </button>
@@ -173,10 +233,21 @@ export function ValePor({ id, medida, propio = null, valor, onChange }) {
   if (opciones.length === 0) return null
   return (
     <div>
-      <label className="etiqueta" htmlFor={id}>En las recetas cuenta como</label>
-      <select id={id} className="campo" value={opciones.some((c) => c.id === valor) ? valor : ''} onChange={(e) => onChange(e.target.value)}>
+      <label className="etiqueta" htmlFor={id}>
+        En las recetas cuenta como
+      </label>
+      <select
+        id={id}
+        className="campo"
+        value={opciones.some((c) => c.id === valor) ? valor : ''}
+        onChange={(e) => onChange(e.target.value)}
+      >
         <option value="">Nada: es un alimento aparte</option>
-        {opciones.map((c) => <option key={c.id} value={c.id}>{nombreCorto(c)}</option>)}
+        {opciones.map((c) => (
+          <option key={c.id} value={c.id}>
+            {nombreCorto(c)}
+          </option>
+        ))}
       </select>
       <p className="text-xs text-gris mt-1.5">Si elegís uno, las recetas que lo piden usan este producto cuando lo tenés.</p>
     </div>
@@ -186,16 +257,35 @@ export function ValePor({ id, medida, propio = null, valor, onChange }) {
 // Crear un alimento propio o, si viene `inicial`, editarlo.
 export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, inicial = null, onListo, onCancelar }) {
   const { crearAlimento, actualizarAlimento, ingredientes, equivalentes } = useDatos()
-  const [f, setF] = useState(inicial
-    ? {
-        name: inicial.name, unit: inicial.unit, unit_grams: inicial.unit_grams ?? '', unit_label: inicial.unit_label || 'unidad',
-        kcal: String(Number(inicial.kcal)), protein: String(Number(inicial.protein)), carbs: String(Number(inicial.carbs)), fat: String(Number(inicial.fat)),
-        category: inicial.category, alcohol: !!inicial.alcohol, same_as: inicial.same_as || '',
-      }
-    : {
-        name: nombreInicial, unit: categoriaInicial === 'Bebidas' ? 'ml' : 'g', unit_grams: '', unit_label: 'unidad',
-        kcal: '', protein: '', carbs: '', fat: '', category: categoriaInicial || 'Otros', alcohol: false, same_as: '',
-      })
+  const [f, setF] = useState(
+    inicial
+      ? {
+          name: inicial.name,
+          unit: inicial.unit,
+          unit_grams: inicial.unit_grams ?? '',
+          unit_label: inicial.unit_label || 'unidad',
+          kcal: String(Number(inicial.kcal)),
+          protein: String(Number(inicial.protein)),
+          carbs: String(Number(inicial.carbs)),
+          fat: String(Number(inicial.fat)),
+          category: inicial.category,
+          alcohol: !!inicial.alcohol,
+          same_as: inicial.same_as || '',
+        }
+      : {
+          name: nombreInicial,
+          unit: categoriaInicial === 'Bebidas' ? 'ml' : 'g',
+          unit_grams: '',
+          unit_label: 'unidad',
+          kcal: '',
+          protein: '',
+          carbs: '',
+          fat: '',
+          category: categoriaInicial || 'Otros',
+          alcohol: false,
+          same_as: '',
+        },
+  )
   const [guardando, setGuardando] = useState(false)
   const [intento, setIntento] = useState(false)
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }))
@@ -210,15 +300,18 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
     unit_label: f.unit === 'u' ? errTexto(f.unit_label, { max: 20 }) : null,
   }
   // Cada gramo de proteína aporta 4 kcal: no puede haber más proteína que la que entra en esas calorías
-  if (!errores.kcal && !errores.protein && Number(f.protein) * 4 > Number(f.kcal) + 10) errores.protein = 'Es mucha proteína para esas calorías: revisá la etiqueta.'
+  if (!errores.kcal && !errores.protein && Number(f.protein) * 4 > Number(f.kcal) + 10)
+    errores.protein = 'Es mucha proteína para esas calorías: revisá la etiqueta.'
   // 100 g de algo no pueden tener más de 100 g entre proteína, carbohidratos y grasa
   const suma = (Number(f.protein) || 0) + (Number(f.carbs) || 0) + (Number(f.fat) || 0)
-  if (!errores.protein && !errores.carbs && !errores.fat && suma > 100.5) errores.fat = 'Proteína, carbohidratos y grasas no pueden sumar más de 100.'
+  if (!errores.protein && !errores.carbs && !errores.fat && suma > 100.5)
+    errores.fat = 'Proteína, carbohidratos y grasas no pueden sumar más de 100.'
   const ver = (k) => (errores[k] && (intento || f[k] !== '') ? errores[k] : null)
 
   // El vínculo solo vale si las medidas se pueden pasar de una a otra (y si no hay otros que ya valgan por este)
   const medida = { unit: f.unit, unit_grams: f.unit === 'u' ? Number(f.unit_grams) || 0 : null }
-  const destino = f.same_as && !(inicial && equivalentes.has(inicial.id)) ? ingredientes.find((c) => c.id === f.same_as && c.id !== inicial?.id) : null
+  const destino =
+    f.same_as && !(inicial && equivalentes.has(inicial.id)) ? ingredientes.find((c) => c.id === f.same_as && c.id !== inicial?.id) : null
   const valePor = destino && sonCompatibles(medida, destino) ? destino.id : ''
 
   async function guardar() {
@@ -226,10 +319,15 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
     if (hayErrores(errores)) return
     setGuardando(true)
     const datos = {
-      name: f.name.trim(), unit: f.unit, category: f.category,
+      name: f.name.trim(),
+      unit: f.unit,
+      category: f.category,
       unit_grams: f.unit === 'u' ? Number(f.unit_grams) : null,
       unit_label: f.unit === 'u' ? f.unit_label.trim() : null,
-      kcal: Number(f.kcal), protein: Number(f.protein) || 0, carbs: Number(f.carbs) || 0, fat: Number(f.fat) || 0,
+      kcal: Number(f.kcal),
+      protein: Number(f.protein) || 0,
+      carbs: Number(f.carbs) || 0,
+      fat: Number(f.fat) || 0,
       alcohol: f.category === 'Bebidas' && f.alcohol,
       same_as: valePor || null,
     }
@@ -241,16 +339,29 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
   return (
     <div className="space-y-3">
       <p className="text-sm text-gris">
-        {inicial ? 'Los cambios valen de acá en adelante: lo que ya registraste queda como estaba.' : 'Copiá los valores de la etiqueta del producto, cada 100 g o 100 ml. Queda guardado para siempre.'}
+        {inicial
+          ? 'Los cambios valen de acá en adelante: lo que ya registraste queda como estaba.'
+          : 'Copiá los valores de la etiqueta del producto, cada 100 g o 100 ml. Queda guardado para siempre.'}
       </p>
       <div>
-        <label className="etiqueta" htmlFor="na-nombre">Nombre</label>
-        <input id="na-nombre" className="campo" maxLength={LIM.nombre} value={f.name} onChange={(e) => set('name')(e.target.value)} placeholder="Ej.: Galletitas de avena" />
+        <label className="etiqueta" htmlFor="na-nombre">
+          Nombre
+        </label>
+        <input
+          id="na-nombre"
+          className="campo"
+          maxLength={LIM.nombre}
+          value={f.name}
+          onChange={(e) => set('name')(e.target.value)}
+          placeholder="Ej.: Galletitas de avena"
+        />
         <Err>{ver('name')}</Err>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="etiqueta" htmlFor="na-unidad">Se mide en</label>
+          <label className="etiqueta" htmlFor="na-unidad">
+            Se mide en
+          </label>
           <select id="na-unidad" className="campo" value={f.unit} onChange={(e) => set('unit')(e.target.value)}>
             <option value="g">Gramos</option>
             <option value="ml">Mililitros</option>
@@ -258,44 +369,83 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
           </select>
         </div>
         <div>
-          <label className="etiqueta" htmlFor="na-cat">Categoría</label>
+          <label className="etiqueta" htmlFor="na-cat">
+            Categoría
+          </label>
           <select id="na-cat" className="campo" value={f.category} onChange={(e) => set('category')(e.target.value)}>
-            {[...new Set([...CATEGORIAS, f.category])].map((c) => <option key={c}>{c}</option>)}
+            {[...new Set([...CATEGORIAS, f.category])].map((c) => (
+              <option key={c}>{c}</option>
+            ))}
           </select>
         </div>
       </div>
       {f.unit === 'u' && (
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="etiqueta" htmlFor="na-etq">Cómo se llama la unidad</label>
-            <input id="na-etq" className="campo" maxLength={20} value={f.unit_label} onChange={(e) => set('unit_label')(e.target.value)} placeholder="unidad, lata, rodaja" />
+            <label className="etiqueta" htmlFor="na-etq">
+              Cómo se llama la unidad
+            </label>
+            <input
+              id="na-etq"
+              className="campo"
+              maxLength={20}
+              value={f.unit_label}
+              onChange={(e) => set('unit_label')(e.target.value)}
+              placeholder="unidad, lata, rodaja"
+            />
             <Err>{ver('unit_label')}</Err>
           </div>
           <div>
-            <label className="etiqueta" htmlFor="na-gr">Gramos por unidad</label>
-            <Numero id="na-gr" valor={f.unit_grams} onChange={set('unit_grams')} decimales={1} largo={6} placeholder="Ej.: 30" error={!!ver('unit_grams')} />
+            <label className="etiqueta" htmlFor="na-gr">
+              Gramos por unidad
+            </label>
+            <Numero
+              id="na-gr"
+              valor={f.unit_grams}
+              onChange={set('unit_grams')}
+              decimales={1}
+              largo={6}
+              placeholder="Ej.: 30"
+              error={!!ver('unit_grams')}
+            />
             <Err>{ver('unit_grams')}</Err>
           </div>
         </div>
       )}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="etiqueta" htmlFor="na-kcal">Calorías cada 100</label>
+          <label className="etiqueta" htmlFor="na-kcal">
+            Calorías cada 100
+          </label>
           <Numero id="na-kcal" valor={f.kcal} onChange={set('kcal')} decimales={1} largo={5} placeholder="kcal" error={!!ver('kcal')} />
           <Err>{ver('kcal')}</Err>
         </div>
         <div>
-          <label className="etiqueta" htmlFor="na-prot">Proteína cada 100</label>
-          <Numero id="na-prot" valor={f.protein} onChange={set('protein')} decimales={1} largo={5} placeholder="g" error={!!ver('protein')} />
+          <label className="etiqueta" htmlFor="na-prot">
+            Proteína cada 100
+          </label>
+          <Numero
+            id="na-prot"
+            valor={f.protein}
+            onChange={set('protein')}
+            decimales={1}
+            largo={5}
+            placeholder="g"
+            error={!!ver('protein')}
+          />
           <Err>{ver('protein')}</Err>
         </div>
         <div>
-          <label className="etiqueta" htmlFor="na-carb">Carbohidratos (opcional)</label>
+          <label className="etiqueta" htmlFor="na-carb">
+            Carbohidratos (opcional)
+          </label>
           <Numero id="na-carb" valor={f.carbs} onChange={set('carbs')} decimales={1} largo={5} placeholder="g" error={!!ver('carbs')} />
           <Err>{ver('carbs')}</Err>
         </div>
         <div>
-          <label className="etiqueta" htmlFor="na-grasa">Grasas (opcional)</label>
+          <label className="etiqueta" htmlFor="na-grasa">
+            Grasas (opcional)
+          </label>
           <Numero id="na-grasa" valor={f.fat} onChange={set('fat')} decimales={1} largo={5} placeholder="g" error={!!ver('fat')} />
           <Err>{ver('fat')}</Err>
         </div>
@@ -308,8 +458,12 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
         </label>
       )}
       <div className="flex gap-2 pt-2">
-        <button onClick={onCancelar} className="btn-suave flex-1">Volver</button>
-        <button onClick={guardar} disabled={guardando} className="btn-primario flex-1">Guardar</button>
+        <button onClick={onCancelar} className="btn-suave flex-1">
+          Volver
+        </button>
+        <button onClick={guardar} disabled={guardando} className="btn-primario flex-1">
+          Guardar
+        </button>
       </div>
     </div>
   )

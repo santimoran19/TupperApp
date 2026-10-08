@@ -116,7 +116,9 @@ export function gastar(cambios, base, cantidad, productos, stock) {
 const VACIAS = new Set(['de', 'del', 'la', 'el', 'los', 'las', 'en', 'con', 'sin', 'y', 'a', 'al', 'para', 'por', 'tipo'])
 function palabras(nombre) {
   return nombre
-    .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
     .replace(/\(.*?\)/g, ' ')
     .split(/[^a-z0-9]+/)
     .filter((p) => p && !VACIAS.has(p))
@@ -137,7 +139,16 @@ export function parecidoEnBase(producto, todos) {
   if (porNombre.length > 0) return porNombre[0].c
   // 2. Por sinónimo o marca: "Tirabuzón Matarazzo" -> fideos, "Salsa Lista Pomarola" -> salsa de tomate
   const porAlias = todos
-    .map((c) => ({ c, n: Math.max(0, ...(ALIAS[c.slug] || []).map((a) => { const p = palabras(a); return p.length > 0 && p.every((w) => tengo.has(w)) ? p.length : 0 })) }))
+    .map((c) => ({
+      c,
+      n: Math.max(
+        0,
+        ...(ALIAS[c.slug] || []).map((a) => {
+          const p = palabras(a)
+          return p.length > 0 && p.every((w) => tengo.has(w)) ? p.length : 0
+        }),
+      ),
+    }))
     .filter((x) => x.n > 0)
     .sort((x, y) => y.n - x.n)
   return porAlias.length > 0 ? porAlias[0].c : null
@@ -149,7 +160,10 @@ export function parecidoEnBase(producto, todos) {
 export function sugerirBase(producto, candidatos, todos = candidatos) {
   const sirve = (c) => c.id !== producto.id && sonCompatibles(producto, c)
   const esCandidato = new Set(candidatos.map((c) => c.id))
-  let mejor = parecidoEnBase(producto, todos.filter((c) => c.id !== producto.id))
+  let mejor = parecidoEnBase(
+    producto,
+    todos.filter((c) => c.id !== producto.id),
+  )
   if (mejor) {
     // "Leche descremada" no es ingrediente, pero vale por la leche de las recetas
     const familia = !esCandidato.has(mejor.id) && FAMILIA[mejor.slug] ? todos.find((c) => c.slug === FAMILIA[mejor.slug]) : null
@@ -165,12 +179,20 @@ export function sugerirBase(producto, candidatos, todos = candidatos) {
 // "No" a una sugerencia: se recuerda en el dispositivo para no volver a preguntar
 const CLAVE = 'tupper:equivalencias-no'
 export function descartadas() {
-  try { return new Set(JSON.parse(localStorage.getItem(CLAVE) || '[]')) } catch { return new Set() }
+  try {
+    return new Set(JSON.parse(localStorage.getItem(CLAVE) || '[]'))
+  } catch {
+    return new Set()
+  }
 }
 export function descartar(id) {
   const s = descartadas()
   s.add(id)
-  try { localStorage.setItem(CLAVE, JSON.stringify([...s].slice(-300))) } catch { /* sin almacenamiento, se vuelve a preguntar */ }
+  try {
+    localStorage.setItem(CLAVE, JSON.stringify([...s].slice(-300)))
+  } catch {
+    /* sin almacenamiento, se vuelve a preguntar */
+  }
   return s
 }
 

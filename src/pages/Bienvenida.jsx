@@ -7,7 +7,9 @@ import { hoy } from '../lib/fechas'
 
 export default function Bienvenida() {
   const { guardarPerfil, guardarMedida, salir } = useDatos()
-  useEffect(() => { document.title = 'Tu perfil · Tupper' }, [])
+  useEffect(() => {
+    document.title = 'Tu perfil · Tupper'
+  }, [])
 
   async function guardar(datos) {
     const listo = await guardarPerfil(datos)
@@ -27,7 +29,9 @@ export default function Bienvenida() {
         <div className="tarjeta p-5">
           <FormularioPerfil textoBoton="Empezar" onGuardar={guardar} />
         </div>
-        <button onClick={salir} className="block mx-auto mt-4 text-sm text-gris underline">Salir</button>
+        <button onClick={() => salir({ preguntar: false })} className="block mx-auto mt-4 text-sm text-gris underline">
+          Salir
+        </button>
       </div>
     </div>
   )

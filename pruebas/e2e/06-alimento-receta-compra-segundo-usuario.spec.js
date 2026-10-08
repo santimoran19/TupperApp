@@ -31,7 +31,10 @@ test('alimento nuevo, receta propia, compra con precio y segundo usuario', async
     await pg.goto(APP + '/recetas/nueva')
     await pg.waitForSelector('text=Ingredientes')
     await pg.fill('input[placeholder="Ej.: Pollo con arroz"]', 'Arroz con atún')
-    for (const [nombre] of [['arroz', '80'], ['atún', '1']]) {
+    for (const [nombre] of [
+      ['arroz', '80'],
+      ['atún', '1'],
+    ]) {
       await pg.click('button:has-text("Agregar")')
       await pg.fill('input[placeholder="Buscar alimento..."]', nombre)
       await pg.locator('div.divide-y button').first().click()

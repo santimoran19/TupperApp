@@ -8,8 +8,25 @@ export const ICONO_COMIDA = { desayuno: 'wb_twilight', almuerzo: 'restaurant', m
 // Reparto por defecto de las calorías del día cuando no hay nada planificado
 export const REPARTO = { desayuno: 0.22, almuerzo: 0.32, merienda: 0.16, cena: 0.3 }
 // Categorías por góndola, como se ordena una despensa
-export const CATEGORIAS = ['Carnes y huevos', 'Pescados', 'Lácteos', 'Verduras', 'Frutas', 'Pastas y arroz', 'Legumbres', 'Panadería', 'Cereales', 'Enlatados',
-  'Salsas y aderezos', 'Despensa', 'Snacks y dulces', 'Congelados', 'Comidas hechas', 'Bebidas', 'Otros']
+export const CATEGORIAS = [
+  'Carnes y huevos',
+  'Pescados',
+  'Lácteos',
+  'Verduras',
+  'Frutas',
+  'Pastas y arroz',
+  'Legumbres',
+  'Panadería',
+  'Cereales',
+  'Enlatados',
+  'Salsas y aderezos',
+  'Despensa',
+  'Snacks y dulces',
+  'Congelados',
+  'Comidas hechas',
+  'Bebidas',
+  'Otros',
+]
 
 export const CON_ARTICULO = { desayuno: 'el desayuno', almuerzo: 'el almuerzo', merienda: 'la merienda', cena: 'la cena' }
 
@@ -25,9 +42,36 @@ const GRUPOS = {
   vino: ['vino', 'vino-blanco', 'espumante'],
   medida: ['fernet', 'bebida-blanca', 'campari', 'vermut', 'licor'],
   trago: ['fernet-coca', 'gin-tonic', 'ron-cola', 'aperol-spritz', 'trago-dulce'],
-  cuchara: ['azucar', 'miel', 'mermelada', 'mermelada-light', 'cacao', 'aceite', 'queso-untable', 'crema', 'ketchup', 'salsa-soja',
-    'aceite-oliva', 'mayonesa', 'mayonesa-light', 'mostaza', 'salsa-golf', 'vinagre', 'aceto', 'jugo-limon', 'chimichurri', 'pesto', 'salsa-barbacoa',
-    'mani-pasta', 'leche-condensada', 'dulce-de-leche', 'cafe-polvo', 'queso-untable-clasico', 'chia', 'leche-polvo'],
+  cuchara: [
+    'azucar',
+    'miel',
+    'mermelada',
+    'mermelada-light',
+    'cacao',
+    'aceite',
+    'queso-untable',
+    'crema',
+    'ketchup',
+    'salsa-soja',
+    'aceite-oliva',
+    'mayonesa',
+    'mayonesa-light',
+    'mostaza',
+    'salsa-golf',
+    'vinagre',
+    'aceto',
+    'jugo-limon',
+    'chimichurri',
+    'pesto',
+    'salsa-barbacoa',
+    'mani-pasta',
+    'leche-condensada',
+    'dulce-de-leche',
+    'cafe-polvo',
+    'queso-untable-clasico',
+    'chia',
+    'leche-polvo',
+  ],
   punado: ['mani-cascara', 'mani', 'mani-pelado', 'nueces', 'almendras', 'aceitunas', 'mix-frutos-secos', 'pasas', 'granola'],
 }
 const GRUPO_DE = new Map(Object.entries(GRUPOS).flatMap(([g, slugs]) => slugs.map((s) => [s, g])))
@@ -36,18 +80,64 @@ export const grupoDe = (alimento) => GRUPO_DE.get(alimento?.slug) || null
 // Lista de [nombre, cantidad] para el alimento. `termo` es el tamaño del termo del usuario, en ml.
 export function medidasDe(alimento, termo = 1000) {
   switch (grupoDe(alimento)) {
-    case 'mate': return [['Un mate', 40], ['Medio termo', Math.round(termo / 2)], ['Un termo', termo]]
-    case 'infusion': return [['Pocillo', 80], ['Taza', 200], ['Jarro', 300]]
-    case 'cerveza': return [['Vaso', 250], ['Porrón', 330], ['Lata', 473], ['Botella', 1000]]
-    case 'vino': return [['Copa', 150], ['Vaso', 200], ['Botella', 750]]
-    case 'medida': return [['Medida', 50], ['Doble', 100]]
-    case 'trago': return [['Vaso', 250], ['Vaso grande', 400]]
-    case 'cuchara': return [['Cucharadita', 5], ['Cucharada', 15]]
-    case 'punado': return [['Un puñado', 30], ['Dos puñados', 60]]
-    default: return alimento?.unit === 'ml' ? [['Vaso', 250], ['Lata', 354], ['Botella', 500], ['1 litro', 1000]] : []
+    case 'mate':
+      return [
+        ['Un mate', 40],
+        ['Medio termo', Math.round(termo / 2)],
+        ['Un termo', termo],
+      ]
+    case 'infusion':
+      return [
+        ['Pocillo', 80],
+        ['Taza', 200],
+        ['Jarro', 300],
+      ]
+    case 'cerveza':
+      return [
+        ['Vaso', 250],
+        ['Porrón', 330],
+        ['Lata', 473],
+        ['Botella', 1000],
+      ]
+    case 'vino':
+      return [
+        ['Copa', 150],
+        ['Vaso', 200],
+        ['Botella', 750],
+      ]
+    case 'medida':
+      return [
+        ['Medida', 50],
+        ['Doble', 100],
+      ]
+    case 'trago':
+      return [
+        ['Vaso', 250],
+        ['Vaso grande', 400],
+      ]
+    case 'cuchara':
+      return [
+        ['Cucharadita', 5],
+        ['Cucharada', 15],
+      ]
+    case 'punado':
+      return [
+        ['Un puñado', 30],
+        ['Dos puñados', 60],
+      ]
+    default:
+      return alimento?.unit === 'ml'
+        ? [
+            ['Vaso', 250],
+            ['Lata', 354],
+            ['Botella', 500],
+            ['1 litro', 1000],
+          ]
+        : []
   }
 }
-export const textoMedida = (alimento, cantidad) => (cantidad >= 1000 ? `${String(cantidad / 1000).replace('.', ',')} ${alimento.unit === 'ml' ? 'L' : 'kg'}` : `${cantidad} ${alimento.unit}`)
+export const textoMedida = (alimento, cantidad) =>
+  cantidad >= 1000 ? `${String(cantidad / 1000).replace('.', ',')} ${alimento.unit === 'ml' ? 'L' : 'kg'}` : `${cantidad} ${alimento.unit}`
 
 // Infusiones: se les puede sumar azúcar o edulcorante al registrarlas
 export const seEndulza = (alimento) => ['mate', 'infusion'].includes(grupoDe(alimento))
@@ -55,7 +145,8 @@ export const GRAMOS_CUCHARADITA = 5
 
 // ---------- Líquido ----------
 // Cuenta para el objetivo todo lo que se mide en ml y no tiene alcohol: agua, mate, infusiones, gaseosas, leche.
-export const cuentaComoLiquido = (alimento) => alimento?.unit === 'ml' && ['Bebidas', 'Lácteos'].includes(alimento.category) && !alimento.alcohol
+export const cuentaComoLiquido = (alimento) =>
+  alimento?.unit === 'ml' && ['Bebidas', 'Lácteos'].includes(alimento.category) && !alimento.alcohol
 // Referencia habitual: unos 35 ml por kilo de peso, entre 1,5 y 4 litros
 export function liquidoSugerido(peso) {
   const p = Number(peso)
@@ -111,7 +202,13 @@ export function sumar(lista) {
 // `alimentos` es el Map de alimentos o una función que, para cada ingrediente, dice con qué alimento
 // y qué cantidad se cubre ({ a, qty }): así se usa el producto que realmente hay en la despensa.
 export function macrosReceta(receta, items, alimentos) {
-  const resolver = typeof alimentos === 'function' ? alimentos : (it) => { const a = alimentos.get(it.food_id); return a ? { a, qty: it.qty } : null }
+  const resolver =
+    typeof alimentos === 'function'
+      ? alimentos
+      : (it) => {
+          const a = alimentos.get(it.food_id)
+          return a ? { a, qty: it.qty } : null
+        }
   const total = sumar(
     items.map((it) => {
       const r = resolver(it)
@@ -192,12 +289,18 @@ export function consejoDelDia({ objetivoKcal, objetivoProt, total, registradas, 
     // Todavía no hay comidas, pero puede haber bebidas o algo picado entre horas
     const presupuesto = Math.max(150, Math.min(Math.round(previsto(pendientes[0])), restante))
     if (total.kcal >= 1) {
-      const texto = restante > 0
-        ? `Llevás ${miles(total.kcal)} kcal entre bebidas y extras. Te quedan ${miles(restante)} kcal para las comidas de hoy.`
-        : `Entre bebidas y extras ya llegaste al objetivo del día. En las comidas, algo liviano con proteína.`
+      const texto =
+        restante > 0
+          ? `Llevás ${miles(total.kcal)} kcal entre bebidas y extras. Te quedan ${miles(restante)} kcal para las comidas de hoy.`
+          : `Entre bebidas y extras ya llegaste al objetivo del día. En las comidas, algo liviano con proteína.`
       return { tono: restante > 0 ? 'info' : 'arriba', texto, siguiente: pendientes[0], presupuesto }
     }
-    return { tono: 'info', texto: `Tenés ${miles(objetivoKcal)} kcal y ${objetivoProt} g de proteína para hoy.`, siguiente: pendientes[0], presupuesto }
+    return {
+      tono: 'info',
+      texto: `Tenés ${miles(objetivoKcal)} kcal y ${objetivoProt} g de proteína para hoy.`,
+      siguiente: pendientes[0],
+      presupuesto,
+    }
   }
   if (pendientes.length === 0) {
     if (restante < -150) return { tono: 'arriba', texto: `Te pasaste ${miles(-restante)} kcal. Mañana seguí normal, sin saltear comidas.` }

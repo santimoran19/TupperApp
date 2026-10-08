@@ -29,11 +29,16 @@ Necesita un archivo `.env` con los datos del proyecto de Supabase (ver `.env.exa
 ## Pruebas
 
 ```bash
-npm test            # la lógica y la base de datos: un par de segundos, sin navegador
-npm run test:e2e    # la app entera en un navegador, contra un Supabase simulado: unos 3 minutos
+npm run lint        # busca errores en el código (variables sin usar, cosas mal escritas, reglas de React)
+npm test            # la lógica y la base de datos: unos segundos, sin navegador
+npm run test:e2e    # la app entera en un navegador, contra un Supabase simulado: unos 5 minutos
 ```
 
-Ninguna de las dos toca el proyecto real de Supabase. La primera vez, las de navegador piden bajar Chromium con `npx playwright install chromium`. El detalle está en `pruebas/LEEME.md`.
+Ninguna toca el proyecto real de Supabase. La primera vez, las de navegador piden bajar Chromium con `npx playwright install chromium`. El detalle está en `pruebas/LEEME.md`.
+
+## Formato del código
+
+El formato lo pone Prettier (`.prettierrc.json`): `npm run format` deja todo el código igual, lo escriba quien lo escriba. En VS Code, con la extensión de Prettier instalada (la propone solo al abrir el proyecto), se formatea al guardar; así el editor no cambia los archivos por su cuenta con otro criterio. Los archivos que se generan con un script (`supabase/seed.sql`, `src/components/iconos.js`) y los datos de `scripts/seed-data.mjs` no se formatean (`.prettierignore`).
 
 ## Deploy en Vercel
 
@@ -91,7 +96,23 @@ Los alimentos guardan calorías y macros cada 100 g (o 100 ml). Si se miden por 
 - Si una pantalla falla, se muestra un mensaje con el botón para recargar en vez de quedar en blanco (`src/components/Barrera.jsx`).
 - Cuando se publica una versión nueva, la app instalada muestra el aviso "Hay una versión nueva" con el botón Actualizar (`src/components/AvisoVersion.jsx`). La versión es la del `package.json` y se ve al pie del Perfil.
 - Al volver a la app después de un rato, trae los datos de nuevo sin mostrar "Cargando": lo que se cambió desde otro dispositivo aparece solo.
+- Funciona sin conexión (ver más abajo).
 - Modo oscuro: sigue al teléfono y se puede forzar desde Perfil > Apariencia. Los colores de los dos temas son variables en `src/index.css`; `public/tema.js` aplica la elección antes de pintar.
+
+## Sin conexión
+
+La app guarda en el teléfono (IndexedDB) la última foto de los datos. Al abrir muestra eso enseguida y después trae lo nuevo; si no hay conexión, se queda con la copia y avisa con una franja debajo del encabezado.
+
+Lo de todos los días se puede hacer igual: registrar comidas y agua, "no comí", borrar un registro, cocinar, comprar, la lista de compras y la despensa. Cada cambio se aplica en la copia, queda en una cola y se manda solo, en orden, cuando vuelve la conexión. Lo que es de configuración (perfil, medidas, recetas y alimentos propios, el plan, el análisis con IA, descargar los datos) necesita conexión y lo dice.
+
+Cómo está hecho, en `src/store/`:
+
+- `cambios.js` dice cómo queda cada cambio en la copia del teléfono y `envios.js`, cómo se manda a la base. `pruebas/unidad/sin-conexion.test.js` comprueba contra un Postgres de verdad que las dos cuentas den lo mismo.
+- `sincronizacion.js` decide cuándo se manda la cola y cuándo se trae todo. La cola vive en el teléfono y la comparten las pestañas abiertas; la manda una sola por vez.
+- Un cambio que la base rechaza por el dato en sí (una cantidad fuera de rango, un alimento que ya no existe) se saca de la cola y se avisa. Si el problema es otro (el servidor caído, un permiso), el cambio no se tira: queda en la cola, la franja lo dice y se prueba de nuevo cada minuto y cada vez que se abre la app. Recién se da por perdido cuando falló en 4 ocasiones separadas por al menos 12 horas (un día y medio como mínimo), y queda apartado en el teléfono (`descartados:<usuario>`) y anotado en `eventos`.
+- Para que un cambio no cuente dos veces si la conexión se corta justo después de que la base guardó, cocinar, registrar y comprar viajan con una clave que la base recuerda (tabla `operaciones`); el resto pisa o borra, que repetido da lo mismo. La excepción es el + y el - de la despensa, que suma y no lleva clave: con conexión, si el pedido salió y no se sabe si llegó, no se manda de nuevo (avisa y después muestra lo que quedó en la base). Queda un caso sin cubrir: un toque hecho sin conexión que, al mandarse, llega a la base justo antes de otro corte.
+- Los cambios se mandan con la app abierta; no hay envío en segundo plano.
+- La copia y la cola se borran al cerrar sesión. Si quedan cambios sin enviar, antes pregunta.
 
 ## Registro de errores
 
@@ -111,7 +132,9 @@ Cada usuario puede agregar y leer solo lo suyo (sale en "Descargar mis datos"), 
 ```
 src/
   lib/          cuentas de calorías, fechas, validaciones, el armado del plan, las equivalencias, los sinónimos (alias.js), la búsqueda en Open Food Facts y el registro de errores (eventos.js)
-  store/        Datos.jsx: carga todo de Supabase y tiene las acciones
+  store/        el estado de la app. Datos.jsx junta las piezas: la carga (carga.js), lo que se calcula con eso
+                (derivados.js), la sincronización y el modo sin conexión (sincronizacion.js, cambios.js, envios.js,
+                local.js), los avisos (avisos.jsx) y las acciones por tema (acciones/)
   components/   piezas de interfaz compartidas
   pages/        una por pantalla
 pruebas/

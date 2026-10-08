@@ -3,9 +3,27 @@ import { expect, test } from '@playwright/test'
 import { API, APP, captura, contexto, escuchar, guardarSesion, sinErrores } from './apoyo.js'
 
 const STOCK = {
-  'pata-muslo': 8, papa: 2000, batata: 1000, aceite: 500, arroz: 1000, fideos: 1000, 'atun-natural': 5, huevo: 24, 'pure-tomate': 1040,
-  'queso-rallado': 150, 'milanesa-pollo': 6, lechuga: 300, tomate: 5, 'pan-integral': 20, 'queso-cremoso': 400, banana: 6, leche: 2000,
-  'mani-cascara': 500, arvejas: 300, choclo: 300, avena: 500,
+  'pata-muslo': 8,
+  papa: 2000,
+  batata: 1000,
+  aceite: 500,
+  arroz: 1000,
+  fideos: 1000,
+  'atun-natural': 5,
+  huevo: 24,
+  'pure-tomate': 1040,
+  'queso-rallado': 150,
+  'milanesa-pollo': 6,
+  lechuga: 300,
+  tomate: 5,
+  'pan-integral': 20,
+  'queso-cremoso': 400,
+  banana: 6,
+  leche: 2000,
+  'mani-cascara': 500,
+  arvejas: 300,
+  choclo: 300,
+  avena: 500,
 }
 
 test('despensa, recetas, plan, compras y diario', async ({ browser }) => {
@@ -30,15 +48,22 @@ test('despensa, recetas, plan, compras y diario', async ({ browser }) => {
   })
 
   await test.step('despensa: el resto por REST', async () => {
-    await pg.evaluate(async ([api, stock]) => {
-      const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
-      const ses = JSON.parse(localStorage.getItem(k))
-      const h = { Authorization: 'Bearer ' + ses.access_token, 'Content-Type': 'application/json', apikey: 'test' }
-      const foods = await (await fetch(api + '/rest/v1/foods?select=*', { headers: h })).json()
-      const rows = Object.entries(stock).map(([slug, qty]) => ({ user_id: ses.user.id, food_id: foods.find((f) => f.slug === slug).id, qty }))
-      const r = await fetch(api + '/rest/v1/stock', { method: 'POST', headers: h, body: JSON.stringify(rows) })
-      return r.status
-    }, [API, STOCK])
+    await pg.evaluate(
+      async ([api, stock]) => {
+        const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
+        const ses = JSON.parse(localStorage.getItem(k))
+        const h = { Authorization: 'Bearer ' + ses.access_token, 'Content-Type': 'application/json', apikey: 'test' }
+        const foods = await (await fetch(api + '/rest/v1/foods?select=*', { headers: h })).json()
+        const rows = Object.entries(stock).map(([slug, qty]) => ({
+          user_id: ses.user.id,
+          food_id: foods.find((f) => f.slug === slug).id,
+          qty,
+        }))
+        const r = await fetch(api + '/rest/v1/stock', { method: 'POST', headers: h, body: JSON.stringify(rows) })
+        return r.status
+      },
+      [API, STOCK],
+    )
     await pg.reload()
     await pg.waitForSelector('input[placeholder="Buscar..."]')
     await captura(pg, 's12_despensa')

@@ -9,7 +9,18 @@ import { build } from 'vite'
 
 const PUERTO = 5300
 const SITIO = `http://localhost:${PUERTO}`
-const TIPOS = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.txt': 'text/plain', '.xml': 'application/xml' }
+const TIPOS = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.png': 'image/png',
+  '.svg': 'image/svg+xml',
+  '.woff2': 'font/woff2',
+  '.json': 'application/json',
+  '.webmanifest': 'application/manifest+json',
+  '.txt': 'text/plain',
+  '.xml': 'application/xml',
+}
 
 let carpeta // dónde quedan las dos compilaciones
 let publicada // la que está "en el servidor" en este momento
@@ -32,14 +43,25 @@ test.beforeAll(async () => {
   const vercel = JSON.parse(fs.readFileSync('vercel.json', 'utf8'))
   servidor = http.createServer((req, res) => {
     const ruta = new URL(req.url, SITIO).pathname
-    if (ruta === '/_publicar') { publicada = req.url.includes('v=a') ? a : b; return res.end('ok') }
+    if (ruta === '/_publicar') {
+      publicada = req.url.includes('v=a') ? a : b
+      return res.end('ok')
+    }
     // El contador de visitas de Vercel solo existe en Vercel
-    if (ruta.startsWith('/_vercel/')) { res.writeHead(200, { 'Content-Type': 'text/javascript' }); return res.end('') }
+    if (ruta.startsWith('/_vercel/')) {
+      res.writeHead(200, { 'Content-Type': 'text/javascript' })
+      return res.end('')
+    }
     const encabezados = {}
-    for (const regla of vercel.headers) if (new RegExp('^' + regla.source + '$').test(ruta)) for (const h of regla.headers) encabezados[h.key] = h.value
-    encabezados['Content-Security-Policy'] = encabezados['Content-Security-Policy'].replace("connect-src 'self'", "connect-src 'self' http://localhost:54321")
+    for (const regla of vercel.headers)
+      if (new RegExp('^' + regla.source + '$').test(ruta)) for (const h of regla.headers) encabezados[h.key] = h.value
+    encabezados['Content-Security-Policy'] = encabezados['Content-Security-Policy'].replace(
+      "connect-src 'self'",
+      "connect-src 'self' http://localhost:54321",
+    )
     let archivo = path.join(publicada, ruta)
-    if (!archivo.startsWith(publicada) || !fs.existsSync(archivo) || fs.statSync(archivo).isDirectory()) archivo = path.join(publicada, 'index.html') // la regla de "rewrites"
+    if (!archivo.startsWith(publicada) || !fs.existsSync(archivo) || fs.statSync(archivo).isDirectory())
+      archivo = path.join(publicada, 'index.html') // la regla de "rewrites"
     res.writeHead(200, { ...encabezados, 'Content-Type': TIPOS[path.extname(archivo)] || 'application/octet-stream' })
     res.end(fs.readFileSync(archivo))
   })
@@ -59,13 +81,21 @@ async function abrir(browser) {
   await ctx.route(/\.supabase\.co\//, (ruta) => ruta.abort())
   const pg = await ctx.newPage()
   const errores = []
-  pg.on('console', (m) => { if (m.type() === 'error') errores.push(m.text()) })
+  pg.on('console', (m) => {
+    if (m.type() === 'error') errores.push(m.text())
+  })
   pg.on('pageerror', (e) => errores.push(String(e)))
   return {
-    ctx, pg, errores,
+    ctx,
+    pg,
+    errores,
     // El archivo principal de la app cambia de nombre con cada versión: sirve para saber cuál está cargada
-    versionCargada: () => pg.evaluate(() => [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')).find((s) => s.includes('index-'))),
-    buscarVersion: () => pg.evaluate(async () => { await (await navigator.serviceWorker.getRegistration()).update() }),
+    versionCargada: () =>
+      pg.evaluate(() => [...document.querySelectorAll('script[src]')].map((s) => s.getAttribute('src')).find((s) => s.includes('index-'))),
+    buscarVersion: () =>
+      pg.evaluate(async () => {
+        await (await navigator.serviceWorker.getRegistration()).update()
+      }),
     aviso: pg.locator('text=Hay una versión nueva'),
   }
 }
@@ -75,7 +105,9 @@ test('cuando se publica una versión nueva, la app avisa y no se actualiza sola'
 
   await pg.goto(SITIO + '/')
   await pg.waitForSelector('text=Crear cuenta')
-  await pg.evaluate(async () => { await navigator.serviceWorker.ready })
+  await pg.evaluate(async () => {
+    await navigator.serviceWorker.ready
+  })
   await pg.waitForTimeout(1500)
   const primera = await versionCargada()
   expect(await aviso.count(), 'sin versión nueva no hay aviso').toBe(0)
@@ -90,7 +122,9 @@ test('cuando se publica una versión nueva, la app avisa y no se actualiza sola'
   await buscarVersion()
   await aviso.waitFor()
   expect(await versionCargada(), 'no tiene que cambiar sola').toBe(primera)
-  expect(await pg.inputValue('#email'), 'no tiene que recargar sola: se pierde lo que se estaba escribiendo').toBe('a-medio-escribir@test.com')
+  expect(await pg.inputValue('#email'), 'no tiene que recargar sola: se pierde lo que se estaba escribiendo').toBe(
+    'a-medio-escribir@test.com',
+  )
 
   // "Después": el aviso se va y todo sigue igual; al volver a abrir la app, avisa de nuevo
   await pg.click('button[aria-label="Después"]')
@@ -118,14 +152,21 @@ test('una pestaña recién abierta también llega a la versión nueva (el botón
   const { ctx, pg, errores, versionCargada, buscarVersion, aviso } = await abrir(browser)
   await pg.goto(SITIO + '/')
   await pg.waitForSelector('text=Crear cuenta')
-  await pg.evaluate(async () => { await navigator.serviceWorker.ready })
+  await pg.evaluate(async () => {
+    await navigator.serviceWorker.ready
+  })
   await pg.waitForTimeout(1500)
-  expect(await pg.evaluate(() => !!navigator.serviceWorker.controller), 'en la primera visita la copia guardada no maneja la pestaña').toBe(false)
+  expect(await pg.evaluate(() => !!navigator.serviceWorker.controller), 'en la primera visita la copia guardada no maneja la pestaña').toBe(
+    false,
+  )
   const primera = await versionCargada()
 
   await fetch(SITIO + '/_publicar')
   await buscarVersion()
-  const avisa = await aviso.waitFor({ timeout: 5000 }).then(() => true, () => false)
+  const avisa = await aviso.waitFor({ timeout: 5000 }).then(
+    () => true,
+    () => false,
+  )
   if (avisa) {
     await pg.click('button:has-text("Actualizar")')
     await expect.poll(() => versionCargada().catch(() => primera), { timeout: 10000 }).not.toBe(primera)

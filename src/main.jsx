@@ -18,7 +18,7 @@ escucharErrores()
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <Barrera>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <BrowserRouter>
         <App />
       </BrowserRouter>
     </Barrera>

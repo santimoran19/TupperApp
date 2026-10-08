@@ -1,0 +1,14 @@
+dist
+dev-dist
+test-results
+playwright-report
+pruebas/e2e/capturas
+pruebas/e2e/.estado
+package-lock.json
+# Lo que se genera con un script o se despliega aparte no se reformatea
+src/components/iconos.js
+supabase
+public
+index.html
+*.md
+scripts/seed-data.mjs

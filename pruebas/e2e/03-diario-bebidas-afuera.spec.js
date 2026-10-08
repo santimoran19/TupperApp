@@ -2,14 +2,28 @@
 import { expect, test } from '@playwright/test'
 import { API, APP, captura, contexto, escuchar, guardarSesion, hoyEnLaPagina, rest, sinErrores } from './apoyo.js'
 
-const OFF = { count: 4, products: [
-  { code: '7791337001234', product_name: 'Yogur bebible frutilla', brands: 'Ser, Danone', quantity: '185 g',
-    nutriments: { 'energy-kcal_100g': 38, proteins_100g: 3.1, carbohydrates_100g: 5.2, fat_100g: 0.1 } },
-  { code: '7790895000997', product_name: 'Coca-Cola Sabor Original', brands: 'Coca-Cola', quantity: '500 ml',
-    nutriments: { energy_100g: 176, proteins_100g: 0, carbohydrates_100g: 10.6, fat_100g: 0 }, categories_tags: ['en:beverages'] },
-  { code: '111', product_name: 'Producto sin datos', brands: 'X', nutriments: {} },
-  { code: '222', product_name: 'Producto mal cargado', brands: 'X', nutriments: { 'energy-kcal_100g': 38000, proteins_100g: 3 } },
-] }
+const OFF = {
+  count: 4,
+  products: [
+    {
+      code: '7791337001234',
+      product_name: 'Yogur bebible frutilla',
+      brands: 'Ser, Danone',
+      quantity: '185 g',
+      nutriments: { 'energy-kcal_100g': 38, proteins_100g: 3.1, carbohydrates_100g: 5.2, fat_100g: 0.1 },
+    },
+    {
+      code: '7790895000997',
+      product_name: 'Coca-Cola Sabor Original',
+      brands: 'Coca-Cola',
+      quantity: '500 ml',
+      nutriments: { energy_100g: 176, proteins_100g: 0, carbohydrates_100g: 10.6, fat_100g: 0 },
+      categories_tags: ['en:beverages'],
+    },
+    { code: '111', product_name: 'Producto sin datos', brands: 'X', nutriments: {} },
+    { code: '222', product_name: 'Producto mal cargado', brands: 'X', nutriments: { 'energy-kcal_100g': 38000, proteins_100g: 3 } },
+  ],
+}
 
 test('no comí, bebidas y extras, comidas afuera y validaciones', async ({ browser }) => {
   const ctx = await contexto(browser, { sesion: true })
@@ -18,7 +32,12 @@ test('no comí, bebidas y extras, comidas afuera y validaciones', async ({ brows
   const pedidos = []
   await pg.route('**/cgi/search.pl*', (route) => {
     pedidos.push(route.request().url())
-    return route.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(OFF) })
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      headers: { 'Access-Control-Allow-Origin': '*' },
+      body: JSON.stringify(OFF),
+    })
   })
   await pg.route('https://search.openfoodfacts.org/**', (route) => route.abort()) // el buscador nuevo, caído: tiene que responder el viejo
   await pg.goto(APP + '/')
@@ -168,19 +187,29 @@ test('no comí, bebidas y extras, comidas afuera y validaciones', async ({ brows
     // se borra la fila para que solo quede la regla
     const manana = new Date(hoy + 'T00:00:00Z')
     manana.setUTCDate(manana.getUTCDate() + 1)
-    await pg.evaluate(async ([api, f]) => {
-      const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
-      const ses = JSON.parse(localStorage.getItem(k))
-      await fetch(api + '/rest/v1/plan?meal=eq.almuerzo&date=eq.' + f, { method: 'DELETE', headers: { Authorization: 'Bearer ' + ses.access_token, apikey: 'test' } })
-    }, [API, manana.toISOString().slice(0, 10)])
+    await pg.evaluate(
+      async ([api, f]) => {
+        const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
+        const ses = JSON.parse(localStorage.getItem(k))
+        await fetch(api + '/rest/v1/plan?meal=eq.almuerzo&date=eq.' + f, {
+          method: 'DELETE',
+          headers: { Authorization: 'Bearer ' + ses.access_token, apikey: 'test' },
+        })
+      },
+      [API, manana.toISOString().slice(0, 10)],
+    )
     await pg.goto(APP + '/')
     await pg.waitForSelector('text=PARA LLEVAR')
-    expect(await pg.locator('section:has-text("PARA LLEVAR")').innerText()).toContain('no hay nada planificado')
+    // Al abrir se ve un instante lo que había guardado en el teléfono y enseguida lo que trae la base
+    await expect(pg.locator('section:has-text("PARA LLEVAR")')).toContainText('no hay nada planificado')
     await captura(pg, 'v23_diario_llevar')
     await pg.goto(APP + '/plan')
     await pg.waitForSelector('text=Esta semana')
     dom = pg.locator('section:has-text("Domingo")').first()
-    expect(await dom.locator('button[aria-label="Marcar en casa"]').count(), 'el plan tiene que mostrar afuera por la regla aunque no haya fila').toBe(1)
+    expect(
+      await dom.locator('button[aria-label="Marcar en casa"]').count(),
+      'el plan tiene que mostrar afuera por la regla aunque no haya fila',
+    ).toBe(1)
   })
 
   await test.step('recetas: buscador y filtro', async () => {

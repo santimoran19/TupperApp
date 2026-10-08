@@ -7,12 +7,30 @@ import { Barra, Chip, Err, Hoja, Icono, Numero } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { fechaLarga, hoy, sumarDias } from '../lib/fechas'
 import {
-  COMIDAS, EXTRA, GRAMOS_CUCHARADITA, NOMBRE_COMIDA, grupoDe, macrosDe, medidasDe, porcionSugerida, redondear, seEndulza, sumar, textoMedida, unidadDe,
+  COMIDAS,
+  EXTRA,
+  GRAMOS_CUCHARADITA,
+  NOMBRE_COMIDA,
+  grupoDe,
+  macrosDe,
+  medidasDe,
+  porcionSugerida,
+  redondear,
+  seEndulza,
+  sumar,
+  textoMedida,
+  unidadDe,
 } from '../lib/nutricion'
 import { LIM, errCantidad, errFecha, errNumero, maxPorComida, rangoDiario } from '../lib/validar'
 
 const MOMENTOS = [...COMIDAS, EXTRA]
-const BOTON = { desayuno: 'Agregar al desayuno', almuerzo: 'Agregar al almuerzo', merienda: 'Agregar a la merienda', cena: 'Agregar a la cena', extra: 'Agregar entre comidas' }
+const BOTON = {
+  desayuno: 'Agregar al desayuno',
+  almuerzo: 'Agregar al almuerzo',
+  merienda: 'Agregar a la merienda',
+  cena: 'Agregar a la cena',
+  extra: 'Agregar entre comidas',
+}
 const TERMOS = [500, 750, 1000, 1200, 1500, 2000]
 const MAX_CUCHARADITAS = 20
 
@@ -28,10 +46,18 @@ function comidaPorHora() {
 // Cómo endulza cada infusión la persona: se recuerda en el teléfono para no preguntarlo cada vez
 const CLAVE_DULCE = 'tupper:endulzado'
 function leerDulce() {
-  try { return JSON.parse(localStorage.getItem(CLAVE_DULCE)) || {} } catch { return {} }
+  try {
+    return JSON.parse(localStorage.getItem(CLAVE_DULCE)) || {}
+  } catch {
+    return {}
+  }
 }
 function guardarDulce(mapa) {
-  try { localStorage.setItem(CLAVE_DULCE, JSON.stringify(mapa)) } catch { /* sin almacenamiento: no pasa nada */ }
+  try {
+    localStorage.setItem(CLAVE_DULCE, JSON.stringify(mapa))
+  } catch {
+    /* sin almacenamiento: no pasa nada */
+  }
 }
 
 export default function Registrar() {
@@ -56,12 +82,21 @@ export default function Registrar() {
   const azucar = useMemo(() => d.alimentos.find((a) => a.slug === 'azucar'), [d.alimentos])
 
   const enDespensa = useMemo(
-    () => d.stock.filter((s) => Number(s.qty) > 0 && d.alimentosPorId.has(s.food_id)).map((s) => d.alimentosPorId.get(s.food_id)).sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    () =>
+      d.stock
+        .filter((s) => Number(s.qty) > 0 && d.alimentosPorId.has(s.food_id))
+        .map((s) => d.alimentosPorId.get(s.food_id))
+        .sort((a, b) => a.name.localeCompare(b.name, 'es')),
     [d.stock, d.alimentosPorId],
   )
   const recetasComida = useMemo(
-    () => [...d.recetas].sort((a, b) => Number(b.meal_types.includes(comida)) - Number(a.meal_types.includes(comida))
-      || Number(d.favoritas.has(b.id)) - Number(d.favoritas.has(a.id)) || a.name.localeCompare(b.name, 'es')),
+    () =>
+      [...d.recetas].sort(
+        (a, b) =>
+          Number(b.meal_types.includes(comida)) - Number(a.meal_types.includes(comida)) ||
+          Number(d.favoritas.has(b.id)) - Number(d.favoritas.has(a.id)) ||
+          a.name.localeCompare(b.name, 'es'),
+      ),
     [d.recetas, d.favoritas, comida],
   )
 
@@ -76,7 +111,10 @@ export default function Registrar() {
       const g = grupos.get(clave) || { clave, food_id: r.food_id, recipe_id: r.recipe_id, veces: 0, enEsta: 0, ultima: '', qty: 0 }
       g.veces += 1
       if (r.meal === comida) g.enEsta += 1
-      if (r.date >= g.ultima) { g.ultima = r.date; g.qty = Number(r.qty) }
+      if (r.date >= g.ultima) {
+        g.ultima = r.date
+        g.qty = Number(r.qty)
+      }
       grupos.set(clave, g)
     }
     return [...grupos.values()].sort((a, b) => b.enEsta - a.enEsta || b.veces - a.veces || b.ultima.localeCompare(a.ultima)).slice(0, 8)
@@ -85,13 +123,23 @@ export default function Registrar() {
   // Lo que se registró ayer en esta misma comida, para repetirlo de una
   const deAyer = useMemo(() => {
     const ayer = sumarDias(fecha, -1)
-    return d.registros.filter((r) => r.date === ayer && r.meal === comida && !r.skipped
-      && (r.food_id ? d.alimentosPorId.has(r.food_id) : r.recipe_id && d.recetasPorId.has(r.recipe_id)))
+    return d.registros.filter(
+      (r) =>
+        r.date === ayer &&
+        r.meal === comida &&
+        !r.skipped &&
+        (r.food_id ? d.alimentosPorId.has(r.food_id) : r.recipe_id && d.recetasPorId.has(r.recipe_id)),
+    )
   }, [d.registros, d.alimentosPorId, d.recetasPorId, fecha, comida])
 
   const platoDeAlimento = (a, qty) => {
     const recordado = seEndulza(a) ? leerDulce()[a.id] : null
-    return { food_id: a.id, qty: String(qty ?? porcionSugerida(a, termo)), dulce: recordado?.dulce || 'nada', cucharaditas: recordado?.cucharaditas || 1 }
+    return {
+      food_id: a.id,
+      qty: String(qty ?? porcionSugerida(a, termo)),
+      dulce: recordado?.dulce || 'nada',
+      cucharaditas: recordado?.cucharaditas || 1,
+    }
   }
   const agregarAlimento = (a, qty) => {
     setPlatos((p) => (p.some((x) => x.food_id === a.id) ? p : [...p, platoDeAlimento(a, qty)]))
@@ -101,13 +149,16 @@ export default function Registrar() {
     setPlatos((p) => (p.some((x) => x.recipe_id === r.id) ? p : [...p, { recipe_id: r.id, porciones: String(porciones) }]))
     setBuscando(null)
   }
-  const agregarFrecuente = (g) => (g.food_id ? agregarAlimento(d.alimentosPorId.get(g.food_id), g.qty) : agregarReceta(d.recetasPorId.get(g.recipe_id), g.qty))
+  const agregarFrecuente = (g) =>
+    g.food_id ? agregarAlimento(d.alimentosPorId.get(g.food_id), g.qty) : agregarReceta(d.recetasPorId.get(g.recipe_id), g.qty)
   const repetirAyer = () => {
     setPlatos((p) => {
       const nuevos = [...p]
       for (const r of deAyer) {
-        if (r.food_id && !nuevos.some((x) => x.food_id === r.food_id)) nuevos.push({ ...platoDeAlimento(d.alimentosPorId.get(r.food_id), Number(r.qty)), dulce: 'nada' })
-        if (r.recipe_id && !nuevos.some((x) => x.recipe_id === r.recipe_id)) nuevos.push({ recipe_id: r.recipe_id, porciones: String(Number(r.qty)) })
+        if (r.food_id && !nuevos.some((x) => x.food_id === r.food_id))
+          nuevos.push({ ...platoDeAlimento(d.alimentosPorId.get(r.food_id), Number(r.qty)), dulce: 'nada' })
+        if (r.recipe_id && !nuevos.some((x) => x.recipe_id === r.recipe_id))
+          nuevos.push({ recipe_id: r.recipe_id, porciones: String(Number(r.qty)) })
       }
       return nuevos
     })
@@ -117,21 +168,28 @@ export default function Registrar() {
 
   const gramosAzucar = (p) => (p.food_id && p.dulce === 'azucar' && azucar ? p.cucharaditas * GRAMOS_CUCHARADITA : 0)
   const macrosPlato = (p) => {
-    if (p.food_id) return sumar([macrosDe(d.alimentosPorId.get(p.food_id), Number(p.qty) || 0), gramosAzucar(p) ? macrosDe(azucar, gramosAzucar(p)) : {}])
+    if (p.food_id)
+      return sumar([
+        macrosDe(d.alimentosPorId.get(p.food_id), Number(p.qty) || 0),
+        gramosAzucar(p) ? macrosDe(azucar, gramosAzucar(p)) : {},
+      ])
     const m = d.macrosPorReceta.get(p.recipe_id)
     const n = Number(p.porciones) || 0
     return { kcal: m.kcal * n, protein: m.protein * n, carbs: m.carbs * n, fat: m.fat * n }
   }
   const total = sumar(platos.map(macrosPlato))
   const yaComido = sumar(d.registros.filter((r) => r.date === fecha))
-  const errorDe = (p) => (p.food_id
-    ? errCantidad(d.alimentosPorId.get(p.food_id), p.qty, maxPorComida(d.alimentosPorId.get(p.food_id)))
-    : errNumero(p.porciones, LIM.porciones))
+  const errorDe = (p) =>
+    p.food_id
+      ? errCantidad(d.alimentosPorId.get(p.food_id), p.qty, maxPorComida(d.alimentosPorId.get(p.food_id)))
+      : errNumero(p.porciones, LIM.porciones)
   const valido = platos.length > 0 && platos.every((p) => !errorDe(p))
 
   async function confirmar() {
     setGuardando(true)
-    const lista = platos.map((p) => (p.food_id ? { food_id: p.food_id, qty: Number(p.qty) } : { recipe_id: p.recipe_id, porciones: Number(p.porciones) }))
+    const lista = platos.map((p) =>
+      p.food_id ? { food_id: p.food_id, qty: Number(p.qty) } : { recipe_id: p.recipe_id, porciones: Number(p.porciones) },
+    )
     // El azúcar de las infusiones se anota como un alimento más, todo junto
     const totalAzucar = platos.reduce((t, p) => t + gramosAzucar(p), 0)
     if (totalAzucar > 0) {
@@ -140,11 +198,15 @@ export default function Registrar() {
       else lista.push({ food_id: azucar.id, qty: totalAzucar })
     }
     const recordado = leerDulce()
-    for (const p of platos) if (p.food_id && seEndulza(d.alimentosPorId.get(p.food_id))) recordado[p.food_id] = { dulce: p.dulce, cucharaditas: p.cucharaditas }
+    for (const p of platos)
+      if (p.food_id && seEndulza(d.alimentosPorId.get(p.food_id))) recordado[p.food_id] = { dulce: p.dulce, cucharaditas: p.cucharaditas }
     guardarDulce(recordado)
     const listo = await d.registrar({ date: fecha, meal: comida, descontar, platos: lista })
     setGuardando(false)
-    if (listo) { d.avisar(comida === EXTRA ? 'Registrado' : 'Comida registrada'); nav('/') }
+    if (listo) {
+      d.avisar(comida === EXTRA ? 'Registrado' : 'Comida registrada')
+      nav('/')
+    }
   }
 
   const yaEsta = (g) => platos.some((x) => (g.food_id ? x.food_id === g.food_id : x.recipe_id === g.recipe_id))
@@ -154,22 +216,32 @@ export default function Registrar() {
     <Marco titulo="Registrar" atras sinNav>
       {fecha !== hoy() && <p className="text-sm text-gris mb-2">{fechaLarga(fecha)}</p>}
       <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-4">
-        {MOMENTOS.map((c) => <Chip key={c} activo={c === comida} onClick={() => setComida(c)}>{NOMBRE_COMIDA[c]}</Chip>)}
+        {MOMENTOS.map((c) => (
+          <Chip key={c} activo={c === comida} onClick={() => setComida(c)}>
+            {NOMBRE_COMIDA[c]}
+          </Chip>
+        ))}
       </div>
 
       <div className="grid grid-cols-3 gap-2 mb-4">
         <button onClick={() => setBuscando('alimento')} className="tarjeta p-3 text-left">
-          <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2"><Icono n="search" /></div>
+          <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2">
+            <Icono n="search" />
+          </div>
           <p className="font-semibold">Alimento</p>
           <p className="text-xs text-gris">Buscá o creá uno</p>
         </button>
         <button onClick={() => setBuscando('bebida')} className="tarjeta p-3 text-left">
-          <div className="w-10 h-10 rounded-full bg-teal-suave text-teal-oscuro flex items-center justify-center mb-2"><Icono n="local_bar" /></div>
+          <div className="w-10 h-10 rounded-full bg-teal-suave text-teal-oscuro flex items-center justify-center mb-2">
+            <Icono n="local_bar" />
+          </div>
           <p className="font-semibold">Bebida</p>
           <p className="text-xs text-gris">Agua, mate, café, alcohol</p>
         </button>
         <button onClick={() => setBuscando('receta')} className="tarjeta p-3 text-left">
-          <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2"><Icono n="menu_book" /></div>
+          <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2">
+            <Icono n="menu_book" />
+          </div>
           <p className="font-semibold">Receta</p>
           <p className="text-xs text-gris">Una porción armada</p>
         </button>
@@ -177,7 +249,9 @@ export default function Registrar() {
 
       {platos.length === 0 && deAyer.length > 0 && (
         <button onClick={repetirAyer} className="w-full tarjeta p-3 mb-4 flex items-center gap-3 text-left">
-          <span className="w-10 h-10 rounded-full bg-naranja-suave text-naranja-oscuro flex items-center justify-center"><Icono n="replay" /></span>
+          <span className="w-10 h-10 rounded-full bg-naranja-suave text-naranja-oscuro flex items-center justify-center">
+            <Icono n="replay" />
+          </span>
           <span className="flex-1 min-w-0">
             <span className="block font-semibold">Repetir lo de ayer</span>
             <span className="block text-xs text-gris truncate">{deAyer.map((r) => r.name).join(', ')}</span>
@@ -187,13 +261,22 @@ export default function Registrar() {
 
       {chipsFrecuentes.length > 0 && (
         <>
-          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5"><Icono n="history" size={18} className="text-verde-texto" /> Lo que más registrás</p>
+          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+            <Icono n="history" size={18} className="text-verde-texto" /> Lo que más registrás
+          </p>
           <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-4">
             {chipsFrecuentes.map((g) => {
               const nombre = (g.food_id ? d.alimentosPorId.get(g.food_id) : d.recetasPorId.get(g.recipe_id)).name
               return (
-                <button key={g.clave} onClick={() => agregarFrecuente(g)} className="shrink-0 max-w-[220px] rounded-full bg-superficie shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium">
-                  <span className="truncate">{nombre.split(' (')[0]}</span> <span className="w-6 h-6 shrink-0 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center"><Icono n="add" size={16} /></span>
+                <button
+                  key={g.clave}
+                  onClick={() => agregarFrecuente(g)}
+                  className="shrink-0 max-w-[220px] rounded-full bg-superficie shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium"
+                >
+                  <span className="truncate">{nombre.split(' (')[0]}</span>{' '}
+                  <span className="w-6 h-6 shrink-0 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center">
+                    <Icono n="add" size={16} />
+                  </span>
                 </button>
               )
             })}
@@ -203,11 +286,20 @@ export default function Registrar() {
 
       {enDespensa.length > 0 && (
         <>
-          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5"><Icono n="kitchen" size={18} className="text-verde-texto" /> Desde tu despensa</p>
+          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+            <Icono n="kitchen" size={18} className="text-verde-texto" /> Desde tu despensa
+          </p>
           <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-5">
             {enDespensa.map((a) => (
-              <button key={a.id} onClick={() => agregarAlimento(a)} className="shrink-0 rounded-full bg-superficie shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium">
-                {a.name.split(' (')[0]} <span className="w-6 h-6 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center"><Icono n="add" size={16} /></span>
+              <button
+                key={a.id}
+                onClick={() => agregarAlimento(a)}
+                className="shrink-0 rounded-full bg-superficie shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium"
+              >
+                {a.name.split(' (')[0]}{' '}
+                <span className="w-6 h-6 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center">
+                  <Icono n="add" size={16} />
+                </span>
               </button>
             ))}
           </div>
@@ -216,11 +308,15 @@ export default function Registrar() {
 
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-lg font-semibold">Tu plato</h2>
-        <span className="pill bg-campo text-gris">{platos.length} {platos.length === 1 ? 'cosa' : 'cosas'}</span>
+        <span className="pill bg-campo text-gris">
+          {platos.length} {platos.length === 1 ? 'cosa' : 'cosas'}
+        </span>
       </div>
 
       {platos.length === 0 && (
-        <div className="tarjeta border-dashed border-linea shadow-none p-5 text-center text-sm text-gris">Agregá lo que comiste o tomaste: un alimento, una bebida, varios o una receta.</div>
+        <div className="tarjeta border-dashed border-linea shadow-none p-5 text-center text-sm text-gris">
+          Agregá lo que comiste o tomaste: un alimento, una bebida, varios o una receta.
+        </div>
       )}
 
       <div className="space-y-3">
@@ -235,12 +331,23 @@ export default function Registrar() {
               <div className="flex items-start gap-2">
                 <p className="flex-1 font-medium">{a ? a.name : r.name}</p>
                 <span className="font-bold text-verde-texto whitespace-nowrap">{redondear(m.kcal)} kcal</span>
-                <button onClick={() => quitar(i)} className="w-7 h-7 -mr-1 text-gris" aria-label="Quitar"><Icono n="close" size={20} /></button>
+                <button onClick={() => quitar(i)} className="w-7 h-7 -mr-1 text-gris" aria-label="Quitar">
+                  <Icono n="close" size={20} />
+                </button>
               </div>
               <div className="flex items-center gap-2 mt-2">
-                <Numero valor={a ? p.qty : p.porciones} onChange={(v) => cambiar(i, a ? { qty: v } : { porciones: v })} decimales={a && a.unit !== 'u' ? 0 : 2} largo={5}
-                  error={!!error} className="campo h-10 w-24 text-center font-semibold" aria-label="Cantidad" />
-                <span className="text-sm text-gris">{a ? unidadDe(a, Number(p.qty)) : Number(p.porciones) === 1 ? 'porción' : 'porciones'}</span>
+                <Numero
+                  valor={a ? p.qty : p.porciones}
+                  onChange={(v) => cambiar(i, a ? { qty: v } : { porciones: v })}
+                  decimales={a && a.unit !== 'u' ? 0 : 2}
+                  largo={5}
+                  error={!!error}
+                  className="campo h-10 w-24 text-center font-semibold"
+                  aria-label="Cantidad"
+                />
+                <span className="text-sm text-gris">
+                  {a ? unidadDe(a, Number(p.qty)) : Number(p.porciones) === 1 ? 'porción' : 'porciones'}
+                </span>
                 <span className="ml-auto pill bg-coral-suave text-coral-oscuro">{redondear(m.protein)} g prot.</span>
               </div>
               <Err>{error}</Err>
@@ -248,8 +355,11 @@ export default function Registrar() {
               {medidas.length > 0 && (
                 <div className="flex gap-1.5 overflow-x-auto sin-scroll mt-2.5">
                   {medidas.map(([nombre, cantidad]) => (
-                    <button key={nombre} onClick={() => cambiar(i, { qty: String(cantidad) })}
-                      className={`shrink-0 rounded-full px-3 h-8 text-xs font-semibold ${Number(p.qty) === cantidad ? 'bg-teal-fuerte text-white' : 'bg-teal-suave text-teal-oscuro'}`}>
+                    <button
+                      key={nombre}
+                      onClick={() => cambiar(i, { qty: String(cantidad) })}
+                      className={`shrink-0 rounded-full px-3 h-8 text-xs font-semibold ${Number(p.qty) === cantidad ? 'bg-teal-fuerte text-white' : 'bg-teal-suave text-teal-oscuro'}`}
+                    >
                       {nombre} · {textoMedida(a, cantidad)}
                     </button>
                   ))}
@@ -258,9 +368,17 @@ export default function Registrar() {
               {a && grupoDe(a) === 'mate' && (
                 <label className="flex items-center gap-2 mt-2.5 text-xs text-gris">
                   Tu termo es de
-                  <select className="rounded-lg bg-campo px-2 h-8 text-sm text-tinta font-semibold" value={termo} aria-label="Tamaño del termo"
-                    onChange={(e) => d.ajustarPerfil({ thermos_ml: Number(e.target.value) })}>
-                    {TERMOS.map((t) => <option key={t} value={t}>{t >= 1000 ? `${String(t / 1000).replace('.', ',')} L` : `${t} ml`}</option>)}
+                  <select
+                    className="rounded-lg bg-campo px-2 h-8 text-sm text-tinta font-semibold"
+                    value={termo}
+                    aria-label="Tamaño del termo"
+                    onChange={(e) => d.ajustarPerfil({ thermos_ml: Number(e.target.value) })}
+                  >
+                    {TERMOS.map((t) => (
+                      <option key={t} value={t}>
+                        {t >= 1000 ? `${String(t / 1000).replace('.', ',')} L` : `${t} ml`}
+                      </option>
+                    ))}
                   </select>
                 </label>
               )}
@@ -269,19 +387,45 @@ export default function Registrar() {
                 <div className="mt-3 pt-3 border-t border-linea">
                   <p className="text-xs font-semibold text-gris mb-1.5">Endulzado con</p>
                   <div className="flex gap-1.5">
-                    {[['nada', 'Nada'], ['azucar', 'Azúcar'], ['edulcorante', 'Edulcorante']].map(([k, t]) => (
-                      <button key={k} onClick={() => cambiar(i, { dulce: k })}
-                        className={`rounded-full px-3 h-8 text-xs font-semibold ${p.dulce === k ? 'bg-verde text-white' : 'bg-campo text-tinta'}`}>{t}</button>
+                    {[
+                      ['nada', 'Nada'],
+                      ['azucar', 'Azúcar'],
+                      ['edulcorante', 'Edulcorante'],
+                    ].map(([k, t]) => (
+                      <button
+                        key={k}
+                        onClick={() => cambiar(i, { dulce: k })}
+                        className={`rounded-full px-3 h-8 text-xs font-semibold ${p.dulce === k ? 'bg-verde text-white' : 'bg-campo text-tinta'}`}
+                      >
+                        {t}
+                      </button>
                     ))}
                   </div>
                   {p.dulce === 'azucar' && (
                     <div className="flex items-center gap-2 mt-2.5">
                       <div className="flex items-center rounded-full bg-campo">
-                        <button onClick={() => cambiar(i, { cucharaditas: Math.max(0.5, p.cucharaditas - 0.5) })} disabled={p.cucharaditas <= 0.5} className="w-9 h-9 flex items-center justify-center disabled:opacity-30" aria-label="Menos azúcar"><Icono n="remove" size={18} /></button>
+                        <button
+                          onClick={() => cambiar(i, { cucharaditas: Math.max(0.5, p.cucharaditas - 0.5) })}
+                          disabled={p.cucharaditas <= 0.5}
+                          className="w-9 h-9 flex items-center justify-center disabled:opacity-30"
+                          aria-label="Menos azúcar"
+                        >
+                          <Icono n="remove" size={18} />
+                        </button>
                         <span className="min-w-[30px] text-center text-sm font-semibold">{String(p.cucharaditas).replace('.', ',')}</span>
-                        <button onClick={() => cambiar(i, { cucharaditas: Math.min(MAX_CUCHARADITAS, p.cucharaditas + 0.5) })} disabled={p.cucharaditas >= MAX_CUCHARADITAS} className="w-9 h-9 flex items-center justify-center disabled:opacity-30" aria-label="Más azúcar"><Icono n="add" size={18} /></button>
+                        <button
+                          onClick={() => cambiar(i, { cucharaditas: Math.min(MAX_CUCHARADITAS, p.cucharaditas + 0.5) })}
+                          disabled={p.cucharaditas >= MAX_CUCHARADITAS}
+                          className="w-9 h-9 flex items-center justify-center disabled:opacity-30"
+                          aria-label="Más azúcar"
+                        >
+                          <Icono n="add" size={18} />
+                        </button>
                       </div>
-                      <span className="text-sm text-gris">{p.cucharaditas === 1 ? 'cucharadita' : 'cucharaditas'} en total · {redondear(macrosDe(azucar, gramosAzucar(p)).kcal)} kcal</span>
+                      <span className="text-sm text-gris">
+                        {p.cucharaditas === 1 ? 'cucharadita' : 'cucharaditas'} en total ·{' '}
+                        {redondear(macrosDe(azucar, gramosAzucar(p)).kcal)} kcal
+                      </span>
                     </div>
                   )}
                   {p.dulce === 'edulcorante' && <p className="text-xs text-gris mt-2">El edulcorante no suma calorías.</p>}
@@ -297,9 +441,17 @@ export default function Registrar() {
           <div className="flex items-end justify-between mb-4">
             <div>
               <p className="text-xs font-bold tracking-wider text-gris">TOTAL</p>
-              <p className="text-3xl font-bold text-verde-texto leading-none mt-1">{redondear(total.kcal)} <span className="text-sm">kcal</span></p>
+              <p className="text-3xl font-bold text-verde-texto leading-none mt-1">
+                {redondear(total.kcal)} <span className="text-sm">kcal</span>
+              </p>
             </div>
-            <p className="text-sm text-gris text-right">Con esto llevás<br /><b className="text-tinta">{redondear(yaComido.kcal + total.kcal)} de {d.perfil.kcal_target} kcal</b></p>
+            <p className="text-sm text-gris text-right">
+              Con esto llevás
+              <br />
+              <b className="text-tinta">
+                {redondear(yaComido.kcal + total.kcal)} de {d.perfil.kcal_target} kcal
+              </b>
+            </p>
           </div>
           <div className="space-y-3">
             <Barra nombre="Proteína del día" valor={yaComido.protein + total.protein} total={d.perfil.protein_target} color="bg-coral" />
@@ -334,7 +486,10 @@ export default function Registrar() {
               return (
                 <button key={r.id} onClick={() => agregarReceta(r)} className="w-full flex items-center gap-3 py-3 text-left">
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium truncate">{d.favoritas.has(r.id) && <Icono n="favorite" lleno size={14} className="text-coral-oscuro mr-1 align-[-2px]" />}{r.name}</p>
+                    <p className="font-medium truncate">
+                      {d.favoritas.has(r.id) && <Icono n="favorite" lleno size={14} className="text-coral-oscuro mr-1 align-[-2px]" />}
+                      {r.name}
+                    </p>
                     <p className="text-xs text-gris">
                       {redondear(m.kcal)} kcal y {redondear(m.protein)} g prot. por porción
                       {listas > 0 && <span className="text-verde-texto font-semibold"> · {redondear(listas, 1)} ya cocinadas</span>}

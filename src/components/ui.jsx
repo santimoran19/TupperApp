@@ -7,7 +7,14 @@ export function Icono({ n, className = '', lleno = false, size = 22 }) {
   const trazos = ICONOS[n]
   if (!trazos) return null
   return (
-    <svg viewBox="0 -960 960 960" width={size} height={size} fill="currentColor" className={`shrink-0 inline-block ${className}`} aria-hidden="true">
+    <svg
+      viewBox="0 -960 960 960"
+      width={size}
+      height={size}
+      fill="currentColor"
+      className={`shrink-0 inline-block ${className}`}
+      aria-hidden="true"
+    >
       <path d={trazos[lleno ? 1 : 0]} />
     </svg>
   )
@@ -17,7 +24,9 @@ export function Icono({ n, className = '', lleno = false, size = 22 }) {
 export function Hoja({ titulo, onCerrar, children }) {
   useEffect(() => {
     document.body.style.overflow = 'hidden'
-    return () => { document.body.style.overflow = '' }
+    return () => {
+      document.body.style.overflow = ''
+    }
   }, [])
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
@@ -45,8 +54,15 @@ export function Anillo({ valor, total, size = 132, grosor = 13, children }) {
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" className="stroke-pista" strokeWidth={grosor} />
         <circle
-          cx={size / 2} cy={size / 2} r={r} fill="none" className={pasado ? 'stroke-naranja' : 'stroke-verde'} strokeWidth={grosor}
-          strokeLinecap="round" strokeDasharray={largo} strokeDashoffset={largo * (1 - pct)}
+          cx={size / 2}
+          cy={size / 2}
+          r={r}
+          fill="none"
+          className={pasado ? 'stroke-naranja' : 'stroke-verde'}
+          strokeWidth={grosor}
+          strokeLinecap="round"
+          strokeDasharray={largo}
+          strokeDashoffset={largo * (1 - pct)}
           style={{ transition: 'stroke-dashoffset .4s' }}
         />
       </svg>
@@ -62,7 +78,10 @@ export function Barra({ nombre, valor, total, color = 'bg-verde', unidad = 'g' }
       <div className="flex items-center justify-between text-sm mb-1.5">
         <span className="font-medium">{nombre}</span>
         <span className="text-gris">
-          <b className="text-tinta">{redondear(valor)} {unidad}</b> / {total} {unidad}
+          <b className="text-tinta">
+            {redondear(valor)} {unidad}
+          </b>{' '}
+          / {total} {unidad}
         </span>
       </div>
       <div className="h-2 rounded-full bg-pista overflow-hidden">
@@ -118,7 +137,9 @@ export function Numero({ valor, onChange, className = 'campo', decimales = 2, la
   }
   return (
     <input
-      type="text" inputMode={decimales > 0 ? 'decimal' : 'numeric'} value={valor ?? ''}
+      type="text"
+      inputMode={decimales > 0 ? 'decimal' : 'numeric'}
+      value={valor ?? ''}
       className={`${className} ${error ? '!border-rojo-texto !bg-rojo-suave/40' : ''}`}
       onChange={(ev) => onChange(limpiar(ev.target.value))}
       {...resto}

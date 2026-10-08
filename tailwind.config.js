@@ -17,7 +17,14 @@ export default {
         tinta: v('tinta'),
         gris: v('gris'),
         // DEFAULT y "fuerte" son rellenos (llevan texto blanco); "texto" y "oscuro" son para letras e íconos
-        verde: { DEFAULT: v('verde'), texto: v('verde-texto'), medio: v('verde-medio'), tenue: v('verde-tenue'), suave: v('verde-suave'), claro: v('verde-claro') },
+        verde: {
+          DEFAULT: v('verde'),
+          texto: v('verde-texto'),
+          medio: v('verde-medio'),
+          tenue: v('verde-tenue'),
+          suave: v('verde-suave'),
+          claro: v('verde-claro'),
+        },
         naranja: { DEFAULT: v('naranja'), fuerte: v('naranja-fuerte'), oscuro: v('naranja-oscuro'), suave: v('naranja-suave') },
         coral: { DEFAULT: v('coral'), oscuro: v('coral-oscuro'), suave: v('coral-suave') },
         teal: { DEFAULT: v('teal'), fuerte: v('teal-fuerte'), oscuro: v('teal-oscuro'), suave: v('teal-suave') },

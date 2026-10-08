@@ -3,7 +3,24 @@
 // proponer por qué alimento de las recetas vale un producto ("Tirabuzón Matarazzo" cuenta como fideos).
 // Van por slug, en minúscula y sin tildes.
 export const ALIAS = {
-  fideos: ['fideo', 'spaghetti', 'espagueti', 'tallarin', 'tirabuzon', 'mostachol', 'moño', 'codito', 'penne', 'fusilli', 'rigatoni', 'macarron', 'cabello de angel', 'dedalito', 'municion', 'pasta seca'],
+  fideos: [
+    'fideo',
+    'spaghetti',
+    'espagueti',
+    'tallarin',
+    'tirabuzon',
+    'mostachol',
+    'moño',
+    'codito',
+    'penne',
+    'fusilli',
+    'rigatoni',
+    'macarron',
+    'cabello de angel',
+    'dedalito',
+    'municion',
+    'pasta seca',
+  ],
   polenta: ['presto pronta', 'polenta instantanea', 'harina de maiz'],
   'pure-tomate': ['pulpa de tomate', 'pure tomate'],
   'salsa-tomate': ['pomarola', 'filetto', 'salsa lista', 'tuco', 'salsa portuguesa', 'salsa de tomate'],
@@ -66,7 +83,7 @@ export const ALIAS = {
   'postre-lacteo': ['serenito', 'danette', 'sublime'],
   'dulce-membrillo': ['dulce de batata', 'dulce de membrillo', 'membrillo'],
   'yogur-proteico': ['yogur proteico', 'ser pro', 'yogur con proteina'],
-  'hamburguesa': ['hamburguesa de local', 'combo de hamburguesa'],
+  hamburguesa: ['hamburguesa de local', 'combo de hamburguesa'],
 }
 
 // Alimentos de la base que valen por otro de la base en las recetas, sin que haya que vincularlos:

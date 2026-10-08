@@ -17,11 +17,17 @@ test('confirmación antes de borrar, página que no existe y análisis con IA', 
     await captura(pg, 'x01_confirmar', false)
     await pg.click('[role=alertdialog] button:has-text("Cancelar")')
     await pg.waitForTimeout(300)
-    expect((await pg.locator('[role=alertdialog]').count()) === 0 && (await pg.locator('header .pill').innerText()) === antes, 'cancelar no tiene que borrar').toBe(true)
+    expect(
+      (await pg.locator('[role=alertdialog]').count()) === 0 && (await pg.locator('header .pill').innerText()) === antes,
+      'cancelar no tiene que borrar',
+    ).toBe(true)
     await pg.locator('button[aria-label^="Borrar "]').first().click()
     await pg.keyboard.press('Escape')
     await pg.waitForTimeout(300)
-    expect((await pg.locator('[role=alertdialog]').count()) === 0 && (await pg.locator('header .pill').innerText()) === antes, 'Escape tiene que cancelar').toBe(true)
+    expect(
+      (await pg.locator('[role=alertdialog]').count()) === 0 && (await pg.locator('header .pill').innerText()) === antes,
+      'Escape tiene que cancelar',
+    ).toBe(true)
     await pg.locator('button[aria-label^="Borrar "]').first().click()
     await pg.click('[role=alertdialog] button:has-text("Borrar")')
     await pg.waitForTimeout(500)
@@ -97,7 +103,12 @@ test('confirmación antes de borrar, página que no existe y análisis con IA', 
       await pg.evaluate(async (api) => {
         const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
         const ses = JSON.parse(localStorage.getItem(k))
-        return (await fetch(api + '/rest/v1/ai_analyses?user_id=eq.' + ses.user.id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + ses.access_token, apikey: 'test' } })).status
+        return (
+          await fetch(api + '/rest/v1/ai_analyses?user_id=eq.' + ses.user.id, {
+            method: 'DELETE',
+            headers: { Authorization: 'Bearer ' + ses.access_token, apikey: 'test' },
+          })
+        ).status
       }, API)
       // semana sin datos: el botón queda apagado
       await pg.click('button[aria-label="Semana anterior"]')
@@ -105,7 +116,17 @@ test('confirmación antes de borrar, página que no existe y análisis con IA', 
       expect(await pg.locator('button:has-text("Analizar mi semana")').isDisabled()).toBe(true)
       expect(await pg.locator('text=Registrá al menos 2 días').count()).toBe(1)
       // función sin sesión válida
-      const estado = await pg.evaluate(async (api) => (await fetch(api + '/functions/v1/analizar-semana', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ semana: '2026-09-28' }) })).status, API)
+      const estado = await pg.evaluate(
+        async (api) =>
+          (
+            await fetch(api + '/functions/v1/analizar-semana', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ semana: '2026-09-28' }),
+            })
+          ).status,
+        API,
+      )
       expect(estado).toBe(401)
     })
   } else {

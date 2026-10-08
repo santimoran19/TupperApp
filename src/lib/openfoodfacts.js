@@ -33,8 +33,16 @@ async function traer(url, ms) {
 
 // Buscador nuevo. El texto va sin los signos que usa su sintaxis de consultas.
 async function pedirNuevo(texto, soloArgentina, ms) {
-  const limpio = texto.replace(/["'()[\]{}:^~*?\\/+\-!&|<>=]/g, ' ').replace(/\s+/g, ' ').trim()
-  const p = new URLSearchParams({ q: soloArgentina ? `${limpio} countries_tags:"en:argentina"` : limpio, langs: 'es,en', page_size: '24', fields: CAMPOS })
+  const limpio = texto
+    .replace(/["'()[\]{}:^~*?\\/+\-!&|<>=]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const p = new URLSearchParams({
+    q: soloArgentina ? `${limpio} countries_tags:"en:argentina"` : limpio,
+    langs: 'es,en',
+    page_size: '24',
+    fields: CAMPOS,
+  })
   const datos = await traer(`${NUEVO}?${p}`, ms)
   if (!Array.isArray(datos?.hits)) throw new Error('respuesta inesperada del buscador nuevo')
   return datos.hits
@@ -43,8 +51,14 @@ async function pedirNuevo(texto, soloArgentina, ms) {
 // Buscador viejo
 async function pedirViejo(texto, soloArgentina, ms) {
   const p = new URLSearchParams({
-    search_terms: texto, search_simple: '1', action: 'process', json: '1',
-    page_size: '20', sort_by: 'unique_scans_n', lc: 'es', fields: `${CAMPOS},product_name_es`,
+    search_terms: texto,
+    search_simple: '1',
+    action: 'process',
+    json: '1',
+    page_size: '20',
+    sort_by: 'unique_scans_n',
+    lc: 'es',
+    fields: `${CAMPOS},product_name_es`,
   })
   if (soloArgentina) {
     p.set('tagtype_0', 'countries')
@@ -59,12 +73,23 @@ async function pedirViejo(texto, soloArgentina, ms) {
 const numero = (v) => (v === '' || v === null || v === undefined || !Number.isFinite(Number(v)) ? null : Number(v))
 const uno = (n) => Math.round(n * 10) / 10
 // Los dos buscadores no devuelven los textos igual: puede venir un texto, una lista o un objeto por idioma
-const texto = (v) => (typeof v === 'string' ? v
-  : Array.isArray(v) ? texto(v[0])
-    : v && typeof v === 'object' ? texto(v.es || v.main || v.en || Object.values(v)[0])
-      : '')
+const texto = (v) =>
+  typeof v === 'string'
+    ? v
+    : Array.isArray(v)
+      ? texto(v[0])
+      : v && typeof v === 'object'
+        ? texto(v.es || v.main || v.en || Object.values(v)[0])
+        : ''
 // "la-serenisima" o "en:arcor" -> "La Serenisima", "Arcor"
-const marcaLinda = (m) => (/^[a-z0-9:-]+$/.test(m) ? m.replace(/^[a-z]{2}:/, '').split('-').map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ') : m)
+const marcaLinda = (m) =>
+  /^[a-z0-9:-]+$/.test(m)
+    ? m
+        .replace(/^[a-z]{2}:/, '')
+        .split('-')
+        .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+        .join(' ')
+    : m
 
 // ---------- Categoría: por las etiquetas de Open Food Facts o, si no hay, por el nombre ----------
 const POR_ETIQUETA = [
@@ -77,20 +102,38 @@ const POR_ETIQUETA = [
   [/^en:(dairies|milks|cheeses|yogurts|butters|creams|fermented-milk-products)$/, 'Lácteos'],
   [/^en:(breakfast-cereals|cereal-flakes|mueslis|oat-flakes|seeds)$/, 'Cereales'],
   [/^en:(breads|crackers|toasts|viennoiseries|pizza-doughs|flatbreads|rusks)$/, 'Panadería'],
-  [/^en:(sauces|condiments|mayonnaises|mustards|ketchup|tomato-sauces|vinegars|salad-dressings|tomato-purees|groceries)$/, 'Salsas y aderezos'],
-  [/^en:(snacks|sweet-snacks|salty-snacks|chocolates|candies|confectioneries|biscuits|biscuits-and-cakes|cakes|desserts|nuts|dried-fruits|chewing-gum|chips-and-fries)$/, 'Snacks y dulces'],
+  [
+    /^en:(sauces|condiments|mayonnaises|mustards|ketchup|tomato-sauces|vinegars|salad-dressings|tomato-purees|groceries)$/,
+    'Salsas y aderezos',
+  ],
+  [
+    /^en:(snacks|sweet-snacks|salty-snacks|chocolates|candies|confectioneries|biscuits|biscuits-and-cakes|cakes|desserts|nuts|dried-fruits|chewing-gum|chips-and-fries)$/,
+    'Snacks y dulces',
+  ],
   [/^en:(meals|pizzas|sandwiches|soups|prepared-dishes)$/, 'Comidas hechas'],
-  [/^en:(fats|vegetable-oils|vegetable-fats|sugars|honeys|sweeteners|flours|broths|bouillons|spices|salts|spreads|sweet-spreads|jams|cocoa-and-its-products|coffees|teas|yerba-mate|baking-decorations|cooking-helpers)$/, 'Despensa'],
+  [
+    /^en:(fats|vegetable-oils|vegetable-fats|sugars|honeys|sweeteners|flours|broths|bouillons|spices|salts|spreads|sweet-spreads|jams|cocoa-and-its-products|coffees|teas|yerba-mate|baking-decorations|cooking-helpers)$/,
+    'Despensa',
+  ],
   [/^en:(beverages|waters|sodas|juices|fruit-juices|beers|wines|alcoholic-beverages|plant-based-beverages|energy-drinks)$/, 'Bebidas'],
   [/^en:(fruits|fresh-fruits|fruits-based-foods)$/, 'Frutas'],
   [/^en:(vegetables|fresh-vegetables|vegetables-based-foods)$/, 'Verduras'],
 ]
 const POR_NOMBRE = [
   [/\b(galletit|galleta|tostada|criollo|bizcocho|grisin|pan |pan$|prepizza|tapa de)/, 'Panadería'],
-  [/\b(alfajor|chocolate|caramelo|chicle|gomita|turron|golosina|bombon|papas fritas|chips|mani|barrita|budin|chizito|palito|pochoclo|mint)/, 'Snacks y dulces'],
+  [
+    /\b(alfajor|chocolate|caramelo|chicle|gomita|turron|golosina|bombon|papas fritas|chips|mani|barrita|budin|chizito|palito|pochoclo|mint)/,
+    'Snacks y dulces',
+  ],
   [/\b(atun|caballa|sardina|merluza|salmon|pescado)/, 'Pescados'],
-  [/\b(dulce de leche|mermelada|miel|aceite|azucar|harina|caldo|cafe|yerba|cacao|edulcorante|esencia|maicena|fecula|condimento|oregano|pimienta|pimenton|levadura|sal fina|sal gruesa)/, 'Despensa'],
-  [/\b(fideo|spaghetti|espagueti|tallarin|tirabuzon|mostachol|mono|codito|penne|fusilli|arroz|raviol|noqui|polenta|presto pronta|capelet|sorrentino)/, 'Pastas y arroz'],
+  [
+    /\b(dulce de leche|mermelada|miel|aceite|azucar|harina|caldo|cafe|yerba|cacao|edulcorante|esencia|maicena|fecula|condimento|oregano|pimienta|pimenton|levadura|sal fina|sal gruesa)/,
+    'Despensa',
+  ],
+  [
+    /\b(fideo|spaghetti|espagueti|tallarin|tirabuzon|mostachol|mono|codito|penne|fusilli|arroz|raviol|noqui|polenta|presto pronta|capelet|sorrentino)/,
+    'Pastas y arroz',
+  ],
   [/\b(salsa|mayonesa|mostaza|ketchup|vinagre|aceto|aderezo|pure de tomate|tomate triturado|chimichurri|pomarola)/, 'Salsas y aderezos'],
   [/\b(en lata|arveja|choclo|jardinera|palmito|aceituna|almibar|pate|picadillo)/, 'Enlatados'],
   [/\b(lenteja|poroto|garbanzo|soja texturizada)/, 'Legumbres'],
@@ -133,7 +176,10 @@ export function aAlimento(prod) {
     detalle: cantidad,
     unit: liquido ? 'ml' : 'g',
     category: adivinarCategoria(nombre, etiquetas, liquido),
-    kcal: Math.round(kcal), protein: uno(protein), carbs: uno(carbs), fat: uno(fat),
+    kcal: Math.round(kcal),
+    protein: uno(protein),
+    carbs: uno(carbs),
+    fat: uno(fat),
     alcohol: liquido && (numero(n.alcohol_100g) ?? 0) > 0.5,
     argentino: (Array.isArray(prod.countries_tags) ? prod.countries_tags : []).includes('en:argentina'),
   }
@@ -152,7 +198,10 @@ function unir(listas) {
 // Una vuelta: prueba el buscador nuevo y, si falla, el viejo. Primero lo que se vende en Argentina y, si hay poco, el resto.
 async function unaVuelta(texto, hasta) {
   let ultimo = null
-  for (const [fuente, pedir] of [['nuevo', pedirNuevo], ['viejo', pedirViejo]]) {
+  for (const [fuente, pedir] of [
+    ['nuevo', pedirNuevo],
+    ['viejo', pedirViejo],
+  ]) {
     const queda = () => Math.max(1000, Math.min(TIEMPO_PEDIDO, hasta - Date.now()))
     try {
       const deAca = (await pedir(texto, true, queda())).map(aAlimento).filter(Boolean)
@@ -176,7 +225,13 @@ const guardadas = new Map() // búsquedas ya hechas en esta sesión: no se vuelv
 // `alReintentar` avisa cuando arranca una vuelta nueva (para mostrar que sigue buscando).
 // `alTerminar` recibe cómo salió ({ resultado, fuente, vueltas, ms }), para poder medir si el servicio anda bien.
 export async function buscarProductos(texto, { alReintentar, alTerminar } = {}) {
-  const avisar = (como) => { try { alTerminar?.(como) } catch { /* medir no puede romper la búsqueda */ } }
+  const avisar = (como) => {
+    try {
+      alTerminar?.(como)
+    } catch {
+      /* medir no puede romper la búsqueda */
+    }
+  }
   const clave = normal(texto.trim())
   if (guardadas.has(clave)) return guardadas.get(clave)
   const inicio = Date.now()

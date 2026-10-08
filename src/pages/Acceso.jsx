@@ -13,7 +13,8 @@ const ESPERA_REENVIO = 60 // segundos entre un mail y otro (es el mínimo que de
 function traducir(err) {
   const m = err?.message || ''
   if (/Invalid login credentials/i.test(m)) return 'El email o la contraseña no coinciden.'
-  if (/already registered|already been registered/i.test(m)) return 'Ya hay una cuenta con ese email. Iniciá sesión o recuperá la contraseña.'
+  if (/already registered|already been registered/i.test(m))
+    return 'Ya hay una cuenta con ese email. Iniciá sesión o recuperá la contraseña.'
   if (/Email not confirmed/i.test(m)) return 'Falta confirmar el email.'
   if (/expired|invalid/i.test(m) && /token|otp|code/i.test(m)) return 'El código no es correcto o ya venció. Pedí uno nuevo.'
   if (/rate limit|too many/i.test(m)) return 'Se pidieron muchos mails seguidos. Esperá unos minutos y probá de nuevo.'
@@ -31,12 +32,29 @@ function Clave({ id, etiqueta, valor, onChange, autoComplete }) {
   const [visible, setVisible] = useState(false)
   return (
     <div>
-      <label className="etiqueta" htmlFor={id}>{etiqueta}</label>
+      <label className="etiqueta" htmlFor={id}>
+        {etiqueta}
+      </label>
       <div className="relative">
-        <input id={id} type={visible ? 'text' : 'password'} autoComplete={autoComplete} className="campo pr-12" maxLength={72}
-          value={valor} onChange={(e) => onChange(e.target.value)} autoCapitalize="none" autoCorrect="off" spellCheck={false} />
-        <button type="button" onClick={() => setVisible(!visible)} className="absolute right-1 top-1 w-10 h-10 flex items-center justify-center text-gris"
-          aria-label={visible ? 'Ocultar la contraseña' : 'Ver la contraseña'} aria-pressed={visible}>
+        <input
+          id={id}
+          type={visible ? 'text' : 'password'}
+          autoComplete={autoComplete}
+          className="campo pr-12"
+          maxLength={72}
+          value={valor}
+          onChange={(e) => onChange(e.target.value)}
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible(!visible)}
+          className="absolute right-1 top-1 w-10 h-10 flex items-center justify-center text-gris"
+          aria-label={visible ? 'Ocultar la contraseña' : 'Ver la contraseña'}
+          aria-pressed={visible}
+        >
           <Icono n={visible ? 'visibility_off' : 'visibility'} size={20} />
         </button>
       </div>
@@ -60,9 +78,20 @@ function Requisitos({ clave, email }) {
 function Codigo({ valor, onChange }) {
   return (
     <div>
-      <label className="etiqueta" htmlFor="codigo">Código de {LARGO_CODIGO} dígitos</label>
-      <input id="codigo" inputMode="numeric" autoComplete="one-time-code" className="campo text-center text-2xl font-bold tracking-[0.4em]" maxLength={LARGO_CODIGO}
-        placeholder={'•'.repeat(LARGO_CODIGO)} value={valor} onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, LARGO_CODIGO))} autoFocus />
+      <label className="etiqueta" htmlFor="codigo">
+        Código de {LARGO_CODIGO} dígitos
+      </label>
+      <input
+        id="codigo"
+        inputMode="numeric"
+        autoComplete="one-time-code"
+        className="campo text-center text-2xl font-bold tracking-[0.4em]"
+        maxLength={LARGO_CODIGO}
+        placeholder={'•'.repeat(LARGO_CODIGO)}
+        value={valor}
+        onChange={(e) => onChange(e.target.value.replace(/\D/g, '').slice(0, LARGO_CODIGO))}
+        autoFocus
+      />
     </div>
   )
 }
@@ -80,7 +109,9 @@ export default function Acceso() {
   const [espera, setEspera] = useState(0) // segundos que faltan para poder pedir otro mail
   const [verificado, setVerificado] = useState(false) // el código de recuperación ya se usó: solo falta guardar la contraseña
 
-  useEffect(() => { document.title = 'Tupper: despensa, recetas y registro de comidas' }, [])
+  useEffect(() => {
+    document.title = 'Tupper: despensa, recetas y registro de comidas'
+  }, [])
   useEffect(() => {
     if (espera <= 0) return
     const t = setTimeout(() => setEspera((s) => s - 1), 1000)
@@ -89,7 +120,15 @@ export default function Acceso() {
 
   const correo = email.trim().toLowerCase()
   const sugerencia = modo === 'crear' || modo === 'olvide' ? sugerirEmail(email) : null
-  const ir = (m) => { setModo(m); setError(''); setMensaje(''); setCodigo(''); setClave2(''); setVerificado(false); if (m !== 'entrar') setClave('') }
+  const ir = (m) => {
+    setModo(m)
+    setError('')
+    setMensaje('')
+    setCodigo('')
+    setClave2('')
+    setVerificado(false)
+    if (m !== 'entrar') setClave('')
+  }
 
   // Envuelve cada pedido: muestra el error traducido y maneja el "enviando"
   async function pedir(fn) {
@@ -98,7 +137,10 @@ export default function Acceso() {
     setEnviando(true)
     try {
       const { data, error: err } = await fn()
-      if (err) { setError(traducir(err)); return null }
+      if (err) {
+        setError(traducir(err))
+        return null
+      }
       return data || {}
     } catch (err) {
       setError(traducir(err))
@@ -111,7 +153,8 @@ export default function Acceso() {
   async function entrar() {
     if (errEmail(email)) return setError(errEmail(email))
     if (!clave) return setError('Escribí tu contraseña.')
-    setError(''); setEnviando(true)
+    setError('')
+    setEnviando(true)
     const { error: err } = await supabase.auth.signInWithPassword({ email: correo, password: clave })
     setEnviando(false)
     if (!err) return
@@ -132,9 +175,13 @@ export default function Acceso() {
     const data = await pedir(() => supabase.auth.signUp({ email: correo, password: clave }))
     if (!data) return
     // Si el email ya tenía cuenta, Supabase responde sin sesión y sin identidades
-    if (!data.session && data.user?.identities?.length === 0) return setError('Ya hay una cuenta con ese email. Iniciá sesión o recuperá la contraseña.')
+    if (!data.session && data.user?.identities?.length === 0)
+      return setError('Ya hay una cuenta con ese email. Iniciá sesión o recuperá la contraseña.')
     // Con la confirmación por mail apagada en Supabase la sesión llega directo; si no, falta el código
-    if (!data.session) { ir('codigo'); setEspera(ESPERA_REENVIO) }
+    if (!data.session) {
+      ir('codigo')
+      setEspera(ESPERA_REENVIO)
+    }
   }
 
   async function confirmar() {
@@ -144,14 +191,22 @@ export default function Acceso() {
   }
 
   async function reenviar() {
-    const data = await pedir(() => (modo === 'codigo' ? supabase.auth.resend({ type: 'signup', email: correo }) : supabase.auth.resetPasswordForEmail(correo)))
-    if (data) { setEspera(ESPERA_REENVIO); setMensaje('Te mandamos un código nuevo.') }
+    const data = await pedir(() =>
+      modo === 'codigo' ? supabase.auth.resend({ type: 'signup', email: correo }) : supabase.auth.resetPasswordForEmail(correo),
+    )
+    if (data) {
+      setEspera(ESPERA_REENVIO)
+      setMensaje('Te mandamos un código nuevo.')
+    }
   }
 
   async function pedirRecuperacion() {
     if (errEmail(email)) return setError(errEmail(email))
     const data = await pedir(() => supabase.auth.resetPasswordForEmail(correo))
-    if (data) { ir('nueva'); setEspera(ESPERA_REENVIO) }
+    if (data) {
+      ir('nueva')
+      setEspera(ESPERA_REENVIO)
+    }
   }
 
   async function guardarNueva() {
@@ -190,22 +245,45 @@ export default function Acceso() {
                 className={`absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-full bg-superficie shadow-tarjeta transition-transform duration-300 ease-out ${modo === 'crear' ? 'translate-x-full' : 'translate-x-0'}`}
                 aria-hidden="true"
               />
-              {[['entrar', 'Iniciar sesión'], ['crear', 'Crear cuenta']].map(([m, t]) => (
-                <button key={m} type="button" onClick={() => ir(m)}
-                  className={`relative z-10 h-10 rounded-full text-sm font-semibold transition-colors duration-300 ${modo === m ? 'text-verde-texto' : 'text-gris'}`}>
+              {[
+                ['entrar', 'Iniciar sesión'],
+                ['crear', 'Crear cuenta'],
+              ].map(([m, t]) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => ir(m)}
+                  className={`relative z-10 h-10 rounded-full text-sm font-semibold transition-colors duration-300 ${modo === m ? 'text-verde-texto' : 'text-gris'}`}
+                >
                   {t}
                 </button>
               ))}
             </div>
           ) : (
             <div className="mb-4">
-              <button type="button" onClick={() => ir('entrar')} className="text-sm font-semibold text-verde-texto flex items-center gap-1 mb-3"><Icono n="arrow_back" size={18} /> Volver</button>
+              <button
+                type="button"
+                onClick={() => ir('entrar')}
+                className="text-sm font-semibold text-verde-texto flex items-center gap-1 mb-3"
+              >
+                <Icono n="arrow_back" size={18} /> Volver
+              </button>
               <div className="flex items-center gap-3">
-                <span className="w-11 h-11 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center shrink-0"><Icono n={modo === 'codigo' ? 'mark_email_read' : 'lock_reset'} /></span>
+                <span className="w-11 h-11 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center shrink-0">
+                  <Icono n={modo === 'codigo' ? 'mark_email_read' : 'lock_reset'} />
+                </span>
                 <div className="min-w-0">
-                  <h2 className="font-semibold text-lg leading-tight">{modo === 'codigo' ? 'Confirmá tu email' : 'Recuperar contraseña'}</h2>
+                  <h2 className="font-semibold text-lg leading-tight">
+                    {modo === 'codigo' ? 'Confirmá tu email' : 'Recuperar contraseña'}
+                  </h2>
                   <p className="text-sm text-gris break-words">
-                    {modo === 'olvide' ? 'Te mandamos un código para poner una nueva.' : <>Te mandamos un código a <b className="text-tinta">{correo}</b></>}
+                    {modo === 'olvide' ? (
+                      'Te mandamos un código para poner una nueva.'
+                    ) : (
+                      <>
+                        Te mandamos un código a <b className="text-tinta">{correo}</b>
+                      </>
+                    )}
                   </p>
                 </div>
               </div>
@@ -215,8 +293,20 @@ export default function Acceso() {
           <form onSubmit={enviar} noValidate className="space-y-3">
             {(pestanas || modo === 'olvide') && (
               <div>
-                <label className="etiqueta" htmlFor="email">Email</label>
-                <input id="email" type="email" autoComplete="email" inputMode="email" autoCapitalize="none" className="campo" maxLength={120} value={email} onChange={(e) => setEmail(e.target.value)} />
+                <label className="etiqueta" htmlFor="email">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  inputMode="email"
+                  autoCapitalize="none"
+                  className="campo"
+                  maxLength={120}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
                 {sugerencia && (
                   <button type="button" onClick={() => setEmail(sugerencia)} className="text-xs text-left text-naranja-oscuro mt-1.5">
                     ¿Quisiste decir <b className="underline">{sugerencia}</b>?
@@ -227,37 +317,68 @@ export default function Acceso() {
 
             {(modo === 'codigo' || (modo === 'nueva' && !verificado)) && <Codigo valor={codigo} onChange={setCodigo} />}
 
-            {modo === 'entrar' && <Clave id="clave" etiqueta="Contraseña" valor={clave} onChange={setClave} autoComplete="current-password" />}
+            {modo === 'entrar' && (
+              <Clave id="clave" etiqueta="Contraseña" valor={clave} onChange={setClave} autoComplete="current-password" />
+            )}
             {(modo === 'crear' || modo === 'nueva') && (
               <>
-                <Clave id="clave" etiqueta={modo === 'nueva' ? 'Contraseña nueva' : 'Contraseña'} valor={clave} onChange={setClave} autoComplete="new-password" />
+                <Clave
+                  id="clave"
+                  etiqueta={modo === 'nueva' ? 'Contraseña nueva' : 'Contraseña'}
+                  valor={clave}
+                  onChange={setClave}
+                  autoComplete="new-password"
+                />
                 <Requisitos clave={clave} email={email} />
                 <Clave id="clave2" etiqueta="Repetí la contraseña" valor={clave2} onChange={setClave2} autoComplete="new-password" />
                 {clave2 && clave !== clave2 && <p className="text-xs text-rojo-texto -mt-1.5">Todavía no coinciden.</p>}
               </>
             )}
 
-            {error && <p className="text-sm text-rojo-texto" role="alert">{error}</p>}
+            {error && (
+              <p className="text-sm text-rojo-texto" role="alert">
+                {error}
+              </p>
+            )}
             {mensaje && <p className="text-sm text-verde-texto font-medium">{mensaje}</p>}
 
             <button type="submit" disabled={enviando} className="btn-primario w-full">
-              {{ entrar: 'Entrar', crear: 'Crear cuenta', codigo: 'Confirmar', olvide: 'Mandarme el código', nueva: 'Guardar y entrar' }[modo]}
+              {
+                { entrar: 'Entrar', crear: 'Crear cuenta', codigo: 'Confirmar', olvide: 'Mandarme el código', nueva: 'Guardar y entrar' }[
+                  modo
+                ]
+              }
             </button>
 
             {modo === 'entrar' && (
-              <button type="button" onClick={() => ir('olvide')} className="block mx-auto text-sm font-semibold text-verde-texto">Olvidé mi contraseña</button>
+              <button type="button" onClick={() => ir('olvide')} className="block mx-auto text-sm font-semibold text-verde-texto">
+                Olvidé mi contraseña
+              </button>
             )}
             {(modo === 'codigo' || (modo === 'nueva' && !verificado)) && (
               <div className="text-center text-sm text-gris">
                 <p>¿No llegó? Fijate en spam o correo no deseado.</p>
-                <button type="button" onClick={reenviar} disabled={espera > 0 || enviando} className="font-semibold text-verde-texto disabled:text-gris mt-1">
+                <button
+                  type="button"
+                  onClick={reenviar}
+                  disabled={espera > 0 || enviando}
+                  className="font-semibold text-verde-texto disabled:text-gris mt-1"
+                >
                   {espera > 0 ? `Podés pedir otro en ${espera} s` : 'Mandarme otro código'}
                 </button>
               </div>
             )}
             {modo === 'crear' && (
               <p className="text-xs text-gris text-center">
-                Al crear la cuenta aceptás los <Link to="/terminos" className="underline font-semibold">Términos</Link> y la <Link to="/privacidad" className="underline font-semibold">Política de privacidad</Link>.
+                Al crear la cuenta aceptás los{' '}
+                <Link to="/terminos" className="underline font-semibold">
+                  Términos
+                </Link>{' '}
+                y la{' '}
+                <Link to="/privacidad" className="underline font-semibold">
+                  Política de privacidad
+                </Link>
+                .
               </p>
             )}
           </form>
