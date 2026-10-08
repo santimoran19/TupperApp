@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { PGlite } from '@electric-sql/pglite'
 
 const SQL = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../supabase')
-// Si agregás una actualización de la base (supabase/actualizacion-8.sql), sumala acá
+// Si agregás una actualización de la base (supabase/actualizacion-9.sql), sumala acá
 const ARCHIVOS = [
   'schema.sql',
   'actualizacion-2.sql',
@@ -15,6 +15,7 @@ const ARCHIVOS = [
   'actualizacion-5.sql',
   'actualizacion-6.sql',
   'actualizacion-7.sql',
+  'actualizacion-8.sql',
   'seed.sql',
 ]
 
@@ -57,6 +58,8 @@ export async function abrirBase() {
       return await fn()
     } finally {
       await db.exec('reset role')
+      // El administrador no es ningún usuario: auth.uid() vuelve a dar null, como en el SQL Editor de Supabase
+      await db.query(`select set_config('request.jwt.claim.sub', '', false)`)
     }
   }
   const rpc = async (nombre, args) => (await una(`select public.${nombre}(${args.map((_, i) => '$' + (i + 1)).join(', ')}) as r`, args)).r

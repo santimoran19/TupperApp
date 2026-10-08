@@ -230,6 +230,8 @@ const FUNCIONES = {
 const users = new Map() // email -> {id, email, password, confirmado}
 const mails = [] // mails "enviados"
 const verificaciones = []
+const captchasUsados = new Set() // cada comprobación de "no soy un robot" sirve una sola vez
+const ultimoMail = new Map() // email -> cuándo se le mandó el último mail de recuperación o de confirmación
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
 function sesion(u) {
   const exp = Math.floor(Date.now() / 1000) + 3600
@@ -298,6 +300,17 @@ const server = http.createServer(async (req, res) => {
   try {
     // Para que las pruebas (y Playwright) sepan cuándo está todo listo y si hay función de IA
     if (url.pathname === '/_pruebas/estado') return listo ? send(200, { funcion: funcion.activa }) : send(503, { message: 'arrancando' })
+    // Captcha, como en Supabase con la protección prendida: crear cuenta, entrar con contraseña y pedir mails exigen
+    // una comprobación, y cada una sirve una sola vez. (Renovar la sesión no la pide.)
+    const pideCaptcha =
+      ['/auth/v1/signup', '/auth/v1/resend', '/auth/v1/recover'].includes(url.pathname) ||
+      (url.pathname === '/auth/v1/token' && url.searchParams.get('grant_type') === 'password')
+    if (pideCaptcha) {
+      const captcha = String(body?.gotrue_meta_security?.captcha_token || '')
+      if (!captcha.startsWith('captcha-de-prueba-') || captchasUsados.has(captcha))
+        return send(400, { code: 400, error_code: 'captcha_failed', msg: 'captcha protection: request disallowed (timeout-or-duplicate)' })
+      captchasUsados.add(captcha)
+    }
     if (url.pathname === '/auth/v1/signup') {
       // Los mails @codigo.test simulan el proyecto con "Confirm email" activado: sin sesión hasta poner el código 123456
       const conCodigo = body.email.endsWith('@codigo.test')
@@ -324,7 +337,18 @@ const server = http.createServer(async (req, res) => {
       return send(200, sesion(u))
     }
     if (url.pathname === '/auth/v1/resend' || url.pathname === '/auth/v1/recover') {
-      mails.push({ tipo: url.pathname.split('/').pop(), email: body.email })
+      // Como Supabase: a un email sin cuenta no se le manda nada (y contesta bien igual), y a uno con cuenta no se le
+      // mandan dos mails en menos de un minuto: el segundo pedido sale con error
+      if (users.has(body.email)) {
+        if (Date.now() - (ultimoMail.get(body.email) || 0) < 60000)
+          return send(429, {
+            code: 429,
+            error_code: 'over_email_send_rate_limit',
+            msg: 'For security purposes, you can only request this after 60 seconds.',
+          })
+        ultimoMail.set(body.email, Date.now())
+        mails.push({ tipo: url.pathname.split('/').pop(), email: body.email })
+      }
       return send(200, {})
     }
     if (url.pathname === '/auth/v1/_mock')

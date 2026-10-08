@@ -33,6 +33,8 @@ Para sumar otro proveedor, se agrega en `analizar-semana/proveedores.ts`.
 | `ANTHROPIC_MODEL` | Qué modelo de Claude usar | `claude-haiku-4-5-20251001` |
 | `IA_LIMITE_DIARIO` | Cuántos análisis puede pedir cada usuario cada 24 horas | `3` |
 
+La base tiene sus propios topes por cuenta (`supabase/actualizacion-8.sql`): no guarda más de 10 análisis por día ni más de 500 en total. Por eso `IA_LIMITE_DIARIO` no pasa de 10 aunque le pongas más; para subirlo hay que cambiar los dos lugares (la base y `TOPE_DIARIO_BASE` en `index.ts`).
+
 ## Qué se manda
 
 Sexo, edad, altura, peso, objetivos, totales de cada día, los alimentos registrados y las medidas de peso. No se manda el nombre ni el email.

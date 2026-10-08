@@ -13,9 +13,11 @@ Tarda unos segundos y no abre ningún navegador. Corre todo lo que hay en `prueb
 | `openfoodfacts.test.js` | La búsqueda: los dos buscadores, la memoria por búsqueda y los reintentos (con la red y el reloj simulados). |
 | `analisis.test.js` | El análisis con IA: los datos que se le mandan al modelo, la lectura de la respuesta y la elección del proveedor. |
 | `base-de-datos.test.js` | La base de verdad: arma un Postgres en memoria, le aplica los `.sql` de `supabase/` en orden y prueba las funciones (cocinar, registrar, comprar, guardar receta), que nada quede a medias cuando algo falla, los permisos por usuario y el registro de errores. |
+| `topes.test.js` | Los topes de la base: textos con largo máximo, filas que no pesan de más y el máximo de filas por usuario. |
+| `filtradas.test.js` | La consulta de contraseñas filtradas: qué se le manda al servicio, cómo se lee la respuesta y qué pasa si no contesta. |
 | `sin-conexion.test.js` | Lo que la app hace en el teléfono cuando no hay conexión contra lo que hace la base cuando el cambio llega: tienen que dar lo mismo (stock, comida lista, registros, lista y compras). |
 
-Si agregás una actualización de la base (`supabase/actualizacion-8.sql`), sumala a la lista `ARCHIVOS` de `postgres.js` (el Postgres en memoria que comparten las dos pruebas de la base).
+Si agregás una actualización de la base (`supabase/actualizacion-9.sql`), sumala a la lista `ARCHIVOS` de `postgres.js` (el Postgres en memoria que comparten las pruebas de la base).
 
 ## `npm run test:e2e`: la app entera en un navegador
 
@@ -38,7 +40,7 @@ Cosas a saber:
 
   ```bash
   node pruebas/e2e/servidor/supabase-simulado.mjs
-  VITE_SUPABASE_URL=http://localhost:54321 VITE_SUPABASE_KEY=test npx vite --port 5199 --strictPort
+  VITE_SUPABASE_URL=http://localhost:54321 VITE_SUPABASE_KEY=test VITE_TURNSTILE_SITEKEY=clave-de-prueba npx vite --port 5199 --strictPort
   REUSAR=1 npx playwright test          # una vez entero, para dejar los datos cargados
   REUSAR=1 npx playwright test 08-      # y después el que quieras
   ```
@@ -47,6 +49,7 @@ Cosas a saber:
 
 - **El navegador cree que siempre es sábado 3/10/2026 a las 21:30.** Varias pruebas dependen del día de la semana; así dan lo mismo cualquier día.
 - **Al abrir, la app muestra un instante lo que tenía guardado en el teléfono y enseguida lo que trae la base.** Para que ninguna prueba lea lo viejo, `goto` y `reload` esperan solos a que estén los datos de la base (`apoyo.js`; la app lo deja marcado en `<html data-datos="base">`). Cuando la prueba sabe que eso no va a pasar (sin conexión, o con la base rechazando un cambio), se apaga con `ctx.sinEsperarDatos = true`.
+- **El captcha va prendido, con un Turnstile de mentira** (`apoyo.js`): el simulador exige una comprobación nueva en cada pedido de acceso, como Supabase con la protección activada. El servicio de contraseñas filtradas también está reemplazado: las pruebas no salen a internet.
 - **Capturas:** con `CAPTURAS=1` se guardan las pantallas en `pruebas/e2e/capturas/` (no se suben al repo). Sirve para mirar cómo quedó algo.
 - **Análisis con IA:** la función corre de verdad si tenés [Deno](https://deno.com) instalado; si no, esa parte se saltea y el resto corre igual. La lógica de la función se prueba siempre en `npm test`.
 - Si una prueba falla, las siguientes probablemente también: mirá la primera que falló.

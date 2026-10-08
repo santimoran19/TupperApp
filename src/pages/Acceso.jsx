@@ -1,9 +1,11 @@
 // Acceso: iniciar sesión, crear cuenta con código de confirmación por mail y recuperar la contraseña.
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import Captcha from '../components/Captcha'
 import { Logo } from '../components/Marco'
 import { Icono } from '../components/ui'
+import { AVISO_FILTRADA, claveFiltrada } from '../lib/filtradas'
 import { errClave, errEmail, requisitosClave, sugerirEmail } from '../lib/validar'
 
 const LARGO_CODIGO = 6
@@ -12,9 +14,8 @@ const ESPERA_REENVIO = 60 // segundos entre un mail y otro (es el mínimo que de
 // Los errores de Supabase llegan en inglés: se traducen por el texto que traen
 function traducir(err) {
   const m = err?.message || ''
+  if (/captcha/i.test(m)) return 'No pudimos comprobar que no sos un robot. Recargá la página y probá de nuevo.'
   if (/Invalid login credentials/i.test(m)) return 'El email o la contraseña no coinciden.'
-  if (/already registered|already been registered/i.test(m))
-    return 'Ya hay una cuenta con ese email. Iniciá sesión o recuperá la contraseña.'
   if (/Email not confirmed/i.test(m)) return 'Falta confirmar el email.'
   if (/expired|invalid/i.test(m) && /token|otp|code/i.test(m)) return 'El código no es correcto o ya venció. Pedí uno nuevo.'
   if (/rate limit|too many/i.test(m)) return 'Se pidieron muchos mails seguidos. Esperá unos minutos y probá de nuevo.'
@@ -25,6 +26,17 @@ function traducir(err) {
   if (/signups? not allowed|disabled/i.test(m)) return 'Por ahora no se pueden crear cuentas nuevas.'
   if (/fetch|network|abort/i.test(m)) return 'No hay conexión. Revisá internet y probá de nuevo.'
   return 'Algo salió mal. Probá de nuevo.'
+}
+
+// Supabase no manda dos mails seguidos a la misma casilla: al segundo pedido contesta con un error. Pero ese error sale
+// solo si la casilla tiene cuenta, así que mostrarlo delataría quién usa la app. Se lo trata como si hubiera salido bien
+// (el mail anterior sigue sirviendo). `otros` suma algún otro error que tampoco hay que mostrar.
+// Ojo: el otro error de mails ("email rate limit exceeded": el proyecto llegó a su cupo por hora) sí se muestra, porque
+// ahí no salió ningún mail y la persona se quedaría esperando un código que no va a llegar.
+const SIN_OTRO_MAIL = /only request this after/i
+function sinDelatar(respuesta, otros) {
+  const texto = respuesta.error?.message || ''
+  return respuesta.error && (SIN_OTRO_MAIL.test(texto) || otros?.test(texto)) ? { data: {}, error: null } : respuesta
 }
 
 // Campo de contraseña con el ojito para verla
@@ -108,6 +120,7 @@ export default function Acceso() {
   const [enviando, setEnviando] = useState(false)
   const [espera, setEspera] = useState(0) // segundos que faltan para poder pedir otro mail
   const [verificado, setVerificado] = useState(false) // el código de recuperación ya se usó: solo falta guardar la contraseña
+  const captcha = useRef(null)
 
   useEffect(() => {
     document.title = 'Tupper: despensa, recetas y registro de comidas'
@@ -130,13 +143,25 @@ export default function Acceso() {
     if (m !== 'entrar') setClave('')
   }
 
-  // Envuelve cada pedido: muestra el error traducido y maneja el "enviando"
-  async function pedir(fn) {
+  // Cada pedido de acceso va con su comprobación de "no soy un robot" (si está configurada; ver components/Captcha).
+  // Sirve una sola vez, así que al terminar se prepara otra para el pedido siguiente.
+  async function conCaptcha(fn) {
+    const captchaToken = (await captcha.current?.pedir()) || undefined
+    try {
+      return await fn(captchaToken)
+    } finally {
+      captcha.current?.renovar()
+    }
+  }
+
+  // Envuelve cada pedido: muestra el error traducido y maneja el "enviando".
+  // Con `conCodigo` no lleva captcha: son los pedidos que ya van con el código del mail o con la sesión iniciada.
+  async function pedir(fn, { conCodigo = false } = {}) {
     setError('')
     setMensaje('')
     setEnviando(true)
     try {
-      const { data, error: err } = await fn()
+      const { data, error: err } = await (conCodigo ? fn() : conCaptcha(fn))
       if (err) {
         setError(traducir(err))
         return null
@@ -150,33 +175,56 @@ export default function Acceso() {
     }
   }
 
+  // Antes de mandar una contraseña nueva: si apareció en filtraciones de otros sitios, se pide otra
+  async function filtrada() {
+    setError('')
+    setEnviando(true)
+    const si = await claveFiltrada(clave)
+    setEnviando(false)
+    if (si) setError(AVISO_FILTRADA)
+    return si
+  }
+
   async function entrar() {
     if (errEmail(email)) return setError(errEmail(email))
     if (!clave) return setError('Escribí tu contraseña.')
     setError('')
     setEnviando(true)
-    const { error: err } = await supabase.auth.signInWithPassword({ email: correo, password: clave })
-    setEnviando(false)
-    if (!err) return
-    // Cuenta creada pero sin confirmar: se manda otro código y se pasa a esa pantalla
-    if (/Email not confirmed/i.test(err.message)) {
-      await supabase.auth.resend({ type: 'signup', email: correo })
-      ir('codigo')
-      setEspera(ESPERA_REENVIO)
-      return setMensaje('Te falta confirmar el email. Te mandamos un código nuevo.')
+    try {
+      const { error: err } = await conCaptcha((captchaToken) =>
+        supabase.auth.signInWithPassword({ email: correo, password: clave, options: { captchaToken } }),
+      )
+      if (!err) return
+      // Cuenta creada pero sin confirmar: se manda otro código y se pasa a esa pantalla
+      if (/Email not confirmed/i.test(err.message)) {
+        const { error: sinMandar } = await conCaptcha((captchaToken) =>
+          supabase.auth.resend({ type: 'signup', email: correo, options: { captchaToken } }),
+        )
+        ir('codigo')
+        setEspera(ESPERA_REENVIO)
+        if (!sinMandar) return setMensaje('Te falta confirmar el email. Te mandamos un código nuevo.')
+        // No salió otro mail (por ejemplo, porque recién se mandó uno): sirve el que ya tiene
+        return setMensaje('Te falta confirmar el email. Usá el código que te mandamos o pedí otro en un minuto.')
+      }
+      setError(traducir(err))
+    } catch (err) {
+      setError(traducir(err))
+    } finally {
+      setEnviando(false)
     }
-    setError(traducir(err))
   }
 
   async function crear() {
     if (errEmail(email)) return setError(errEmail(email))
     if (errClave(clave, email)) return setError(errClave(clave, email))
     if (clave !== clave2) return setError('Las dos contraseñas no coinciden.')
-    const data = await pedir(() => supabase.auth.signUp({ email: correo, password: clave }))
+    if (await filtrada()) return
+    // Si el email ya tenía cuenta no se dice: la pantalla sigue igual que con una cuenta nueva (si no, cualquiera
+    // podría averiguar quién usa la app probando emails).
+    const data = await pedir(async (captchaToken) =>
+      sinDelatar(await supabase.auth.signUp({ email: correo, password: clave, options: { captchaToken } }), /already (been )?registered/i),
+    )
     if (!data) return
-    // Si el email ya tenía cuenta, Supabase responde sin sesión y sin identidades
-    if (!data.session && data.user?.identities?.length === 0)
-      return setError('Ya hay una cuenta con ese email. Iniciá sesión o recuperá la contraseña.')
     // Con la confirmación por mail apagada en Supabase la sesión llega directo; si no, falta el código
     if (!data.session) {
       ir('codigo')
@@ -186,13 +234,17 @@ export default function Acceso() {
 
   async function confirmar() {
     if (codigo.length !== LARGO_CODIGO) return setError(`El código tiene ${LARGO_CODIGO} dígitos.`)
-    await pedir(() => supabase.auth.verifyOtp({ email: correo, token: codigo, type: 'email' }))
+    await pedir(() => supabase.auth.verifyOtp({ email: correo, token: codigo, type: 'email' }), { conCodigo: true })
     // Si salió bien, la sesión queda iniciada y la app entra sola
   }
 
   async function reenviar() {
-    const data = await pedir(() =>
-      modo === 'codigo' ? supabase.auth.resend({ type: 'signup', email: correo }) : supabase.auth.resetPasswordForEmail(correo),
+    const data = await pedir(async (captchaToken) =>
+      sinDelatar(
+        await (modo === 'codigo'
+          ? supabase.auth.resend({ type: 'signup', email: correo, options: { captchaToken } })
+          : supabase.auth.resetPasswordForEmail(correo, { captchaToken })),
+      ),
     )
     if (data) {
       setEspera(ESPERA_REENVIO)
@@ -202,7 +254,7 @@ export default function Acceso() {
 
   async function pedirRecuperacion() {
     if (errEmail(email)) return setError(errEmail(email))
-    const data = await pedir(() => supabase.auth.resetPasswordForEmail(correo))
+    const data = await pedir(async (captchaToken) => sinDelatar(await supabase.auth.resetPasswordForEmail(correo, { captchaToken })))
     if (data) {
       ir('nueva')
       setEspera(ESPERA_REENVIO)
@@ -213,13 +265,14 @@ export default function Acceso() {
     if (!verificado && codigo.length !== LARGO_CODIGO) return setError(`El código tiene ${LARGO_CODIGO} dígitos.`)
     if (errClave(clave, email)) return setError(errClave(clave, email))
     if (clave !== clave2) return setError('Las dos contraseñas no coinciden.')
+    if (await filtrada()) return
     if (!verificado) {
       // El código inicia la sesión, pero la app espera a que se guarde la contraseña para entrar (ver App.jsx)
-      const data = await pedir(() => supabase.auth.verifyOtp({ email: correo, token: codigo, type: 'recovery' }))
+      const data = await pedir(() => supabase.auth.verifyOtp({ email: correo, token: codigo, type: 'recovery' }), { conCodigo: true })
       if (!data) return
       setVerificado(true)
     }
-    await pedir(() => supabase.auth.updateUser({ password: clave }))
+    await pedir(() => supabase.auth.updateUser({ password: clave }), { conCodigo: true })
   }
 
   const enviar = (ev) => {
@@ -342,6 +395,11 @@ export default function Acceso() {
             )}
             {mensaje && <p className="text-sm text-verde-texto font-medium">{mensaje}</p>}
 
+            {/* Sin lugar propio: solo ocupa espacio si hace falta que la persona toque algo */}
+            <div className="!mt-0 [&_iframe]:mt-3">
+              <Captcha ref={captcha} />
+            </div>
+
             <button type="submit" disabled={enviando} className="btn-primario w-full">
               {
                 { entrar: 'Entrar', crear: 'Crear cuenta', codigo: 'Confirmar', olvide: 'Mandarme el código', nueva: 'Guardar y entrar' }[
@@ -358,6 +416,11 @@ export default function Acceso() {
             {(modo === 'codigo' || (modo === 'nueva' && !verificado)) && (
               <div className="text-center text-sm text-gris">
                 <p>¿No llegó? Fijate en spam o correo no deseado.</p>
+                {modo === 'codigo' && (
+                  <p className="mt-1">
+                    Si ya tenías una cuenta con ese email, no te va a llegar: volvé e iniciá sesión o recuperá la contraseña.
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={reenviar}

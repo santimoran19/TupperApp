@@ -32,6 +32,13 @@ export async function contexto(browser, { sesion = false, ...opciones } = {}) {
   await ctx.clock.setFixedTime(new Date(AHORA))
   // Por las dudas: nada de esto tiene que llegar nunca al proyecto real
   await ctx.route(/\.supabase\.co\//, (ruta) => ruta.abort())
+  // Los dos servicios de afuera que usa la pantalla de acceso se reemplazan por unos de mentira: las pruebas no salen a internet
+  await ctx.route('https://challenges.cloudflare.com/**', (ruta) =>
+    ruta.fulfill({ status: 200, contentType: 'text/javascript', body: TURNSTILE_DE_PRUEBA }),
+  )
+  await ctx.route('https://api.pwnedpasswords.com/**', (ruta) =>
+    ruta.fulfill({ status: 200, contentType: 'text/plain', headers: { 'Access-Control-Allow-Origin': '*' }, body: '' }),
+  )
   // Al abrir, la app muestra un instante lo que tenía guardado en el teléfono y enseguida lo que trae la base. Para que
   // ninguna prueba lea lo viejo, abrir o recargar una página espera a que estén los datos de la base.
   const nueva = ctx.newPage.bind(ctx)
@@ -49,6 +56,26 @@ export async function contexto(browser, { sesion = false, ...opciones } = {}) {
   }
   return ctx
 }
+
+// Un Turnstile (el captcha de Cloudflare) de mentira: da una comprobación nueva apenas se lo pide, como hace el de
+// verdad cuando no necesita que la persona toque nada. El simulador las acepta una sola vez cada una.
+const TURNSTILE_DE_PRUEBA = `
+  window.turnstile = {
+    recuadros: {},
+    render(lugar, opciones) {
+      const id = 'r' + Math.random().toString(36).slice(2)
+      this.recuadros[id] = opciones
+      this.reset(id)
+      return id
+    },
+    reset(id) {
+      setTimeout(() => this.recuadros[id]?.callback('captcha-de-prueba-' + Math.random().toString(36).slice(2)), 20)
+    },
+    remove(id) {
+      delete this.recuadros[id]
+    },
+  }
+`
 
 // Espera a que lo que muestra la app sea lo de la base (si hay sesión; en la pantalla de acceso no hay nada que esperar).
 // Cuando la prueba sabe que eso no va a pasar (sin conexión, o con la base rechazando), pone `ctx.sinEsperarDatos = true`.

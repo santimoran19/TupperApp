@@ -21,9 +21,10 @@ export default defineConfig({
       timeout: 60000,
     },
     {
-      // Las variables del entorno le ganan al archivo .env: la app de las pruebas siempre habla con el simulador
+      // Las variables del entorno le ganan al archivo .env: la app de las pruebas siempre habla con el simulador.
+      // El captcha va prendido (con un Turnstile de mentira, ver apoyo.js) para probar que cada pedido de acceso lo manda.
       command: 'npx vite --port 5199 --strictPort',
-      env: { VITE_SUPABASE_URL: 'http://localhost:54321', VITE_SUPABASE_KEY: 'test' },
+      env: { VITE_SUPABASE_URL: 'http://localhost:54321', VITE_SUPABASE_KEY: 'test', VITE_TURNSTILE_SITEKEY: 'clave-de-prueba' },
       url: 'http://localhost:5199',
       reuseExistingServer: reusar,
       timeout: 60000,

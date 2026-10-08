@@ -1,5 +1,6 @@
 // Acceso con código, contraseñas, recuperar, descargar datos y borrar cuenta (con una cuenta aparte). Después, con la sesión de las pruebas anteriores:
 // bebidas con medidas y azúcar, líquido, recetas (favoritas/ocultas/editar), mis alimentos, recientes y resumen. Deja la sesión para las que siguen.
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import { expect, test } from '@playwright/test'
 import { API, APP, aviso, captura, contexto, escuchar, guardarSesion, hoyEnLaPagina, rest, simulador, sinErrores } from './apoyo.js'
@@ -102,17 +103,98 @@ test('cuenta con código, bebidas, recetas y resumen', async ({ browser }) => {
     await pg.waitForSelector('text=¡Hola, Ana!')
   })
 
-  await test.step('acceso: cuenta ya registrada', async () => {
-    // cuenta ya registrada
+  await test.step('acceso: con un email que ya tiene cuenta no se dice que la tiene', async () => {
+    // Si lo dijera, cualquiera podría averiguar quién usa la app probando emails. La pantalla sigue igual que con una
+    // cuenta nueva; el mail no llega, y abajo se explica qué hacer en ese caso.
     await pg.goto(APP + '/perfil')
     await pg.click('button:has-text("Cerrar sesión")')
     await pg.waitForSelector('text=Iniciar sesión')
+    const { mails } = await simulador('/auth/v1/_mock')
+    // 'ana@codigo.test' es del proyecto con confirmación por mail; 'santi@test.com', del que no la tiene (ahí Supabase contesta con un error)
+    for (const email of ['ana@codigo.test', 'santi@test.com']) {
+      await pg.click('button:has-text("Crear cuenta") >> nth=0')
+      await pg.fill('#email', email)
+      await pg.fill('#clave', 'OtraClave9z')
+      await pg.fill('#clave2', 'OtraClave9z')
+      await pg.click('form button[type=submit]')
+      await pg.waitForSelector('text=Confirmá tu email')
+      await pg.waitForSelector('text=Si ya tenías una cuenta con ese email, no te va a llegar')
+      expect(await pg.locator('text=/Ya hay una cuenta|already/i').count()).toBe(0)
+      await pg.click('button:has-text("Volver")')
+    }
+    await captura(pg, 'w04b_cuenta_existente', false)
+    expect((await simulador('/auth/v1/_mock')).mails.length, 'no se manda ningún mail').toBe(mails.length)
+    // La contraseña de la cuenta que ya existía no cambió
+    expect((await simulador('/auth/v1/_mock')).usuarios.find((u) => u.email === 'ana@codigo.test').password).toBe('MiTupper7x')
+  })
+
+  await test.step('acceso: una contraseña que apareció en filtraciones no se acepta', async () => {
+    // El servicio de contraseñas filtradas contesta con las huellas que empiezan igual: acá, la de esta contraseña
+    const huella = crypto.createHash('sha1').update('Filtrada7Kq').digest('hex').toUpperCase()
+    const consultas = []
+    const altas = []
+    pg.on('request', (r) => {
+      if (r.url().includes('/auth/v1/signup')) altas.push(r.url())
+    })
+    await pg.route('https://api.pwnedpasswords.com/**', (r) => {
+      consultas.push(r.request().url())
+      return r.fulfill({
+        status: 200,
+        contentType: 'text/plain',
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        body: `0018A45C4D1DEF81644B54AB7F969B88D65:3\r\n${huella.slice(5)}:1204\r\n00D4F6E8FA6EECAD2A3AA415EEC418D38EC:2`,
+      })
+    })
     await pg.click('button:has-text("Crear cuenta") >> nth=0')
-    await pg.fill('#email', 'ana@codigo.test')
-    await pg.fill('#clave', 'OtraClave9z')
-    await pg.fill('#clave2', 'OtraClave9z')
+    await pg.fill('#email', 'carla@codigo.test')
+    await pg.fill('#clave', 'Filtrada7Kq')
+    await pg.fill('#clave2', 'Filtrada7Kq')
     await pg.click('form button[type=submit]')
-    await pg.waitForSelector('text=Ya hay una cuenta con ese email')
+    await pg.waitForSelector('text=Esa contraseña apareció en filtraciones de otros sitios')
+    await captura(pg, 'w04c_clave_filtrada', false)
+    expect(altas, 'la cuenta no se llega a crear').toEqual([])
+    // Al servicio le llega solo el comienzo de la huella (5 letras de 40), nunca la contraseña
+    expect(consultas).toEqual(['https://api.pwnedpasswords.com/range/' + huella.slice(0, 5)])
+    // Si el servicio no contesta, no se le traba el registro a nadie: con otra contraseña (o con el servicio caído) sigue
+    await pg.unroute('https://api.pwnedpasswords.com/**')
+    await pg.route('https://api.pwnedpasswords.com/**', (r) => r.abort())
+    await pg.click('form button[type=submit]')
+    await pg.waitForSelector('text=Confirmá tu email')
+    await pg.unroute('https://api.pwnedpasswords.com/**')
+    await pg.click('button:has-text("Volver")')
+  })
+
+  await test.step('acceso: pedir dos veces seguidas el mail de recuperación tampoco delata si el email tiene cuenta', async () => {
+    // Supabase no manda dos mails seguidos a la misma casilla y al segundo pedido contesta con un error, pero solo si
+    // la casilla tiene cuenta. La app sigue igual en los dos casos.
+    for (const email of ['ana@codigo.test', 'nadie@codigo.test']) {
+      for (let vez = 0; vez < 2; vez++) {
+        await pg.click('button:has-text("Olvidé mi contraseña")')
+        await pg.fill('#email', email)
+        await pg.click('form button[type=submit]')
+        await pg.waitForSelector('text=Contraseña nueva')
+        expect(await pg.locator('form [role=alert]').count()).toBe(0)
+        await pg.click('button:has-text("Volver")')
+      }
+    }
+  })
+
+  await test.step('acceso: si el captcha no cargó al abrir (sin conexión), al intentar de nuevo se arma solo', async () => {
+    const ctx2 = await contexto(browser)
+    const otra = await ctx2.newPage()
+    escuchar(otra, errores)
+    await otra.route('https://challenges.cloudflare.com/**', (r) => r.abort())
+    await otra.goto(APP + '/')
+    await otra.fill('#email', 'santi@test.com')
+    await otra.fill('#clave', 'Secreto1x')
+    await otra.click('form button[type=submit]')
+    // Sin la comprobación, Supabase rechaza el pedido: se avisa en castellano
+    await otra.waitForSelector('text=No pudimos comprobar que no sos un robot')
+    // Vuelve la conexión: no hace falta recargar ni cerrar la app
+    await otra.unroute('https://challenges.cloudflare.com/**')
+    await otra.click('form button[type=submit]')
+    await otra.waitForSelector('text=¡Hola, Santi!')
+    await ctx2.close()
   })
 
   await test.step('acceso: recuperar contraseña', async () => {

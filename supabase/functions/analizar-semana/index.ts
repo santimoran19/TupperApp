@@ -12,7 +12,11 @@ const CORS = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
-const LIMITE_DIARIO = Number(Deno.env.get('IA_LIMITE_DIARIO')) || 3
+// Los dos topes que pone la base (supabase/actualizacion-8.sql): cuántos análisis guarda por cuenta, por día y en total.
+// Acá se corta antes de consultar al modelo; si no, se pagaría la consulta y después la base no dejaría guardarla.
+const TOPE_DIARIO_BASE = 10
+const TOPE_GUARDADOS = 500
+const LIMITE_DIARIO = Math.min(Number(Deno.env.get('IA_LIMITE_DIARIO')) || 3, TOPE_DIARIO_BASE)
 const MINIMO_DIAS = 2
 
 const responder = (estado: number, cuerpo: unknown) =>
@@ -54,6 +58,10 @@ Deno.serve(async (req) => {
     if (usos.data.length >= LIMITE_DIARIO) {
       return fallo(429, 'limite', `Ya pediste ${LIMITE_DIARIO} análisis en las últimas 24 horas. Probá de nuevo mañana.`)
     }
+    // La base guarda hasta TOPE_GUARDADOS por cuenta: si ya no entra otro, se avisa antes de consultar al modelo (que cuesta)
+    const guardados = await db.from('ai_analyses').select('id').eq('user_id', usuario.id).limit(TOPE_GUARDADOS)
+    if (guardados.error) throw new Error('guardados: ' + guardados.error.message)
+    if (guardados.data.length >= TOPE_GUARDADOS) return fallo(429, 'limite', 'Llegaste al máximo de análisis que se pueden guardar.')
 
     // ---- Datos de la semana (los permisos de la base dejan leer solo lo propio)
     const [perfil, registros, medidas] = await Promise.all([

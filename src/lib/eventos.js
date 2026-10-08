@@ -7,7 +7,7 @@ import { supabase } from './supabase'
 /* global __APP_VERSION__ */
 export const VERSION = typeof __APP_VERSION__ === 'undefined' ? '' : __APP_VERSION__
 
-// Cupo por sesión, separado: muchas búsquedas no le sacan lugar a los errores (la base además corta en 300 por día)
+// Cupo por sesión, separado: muchas búsquedas no le sacan lugar a los errores (la base además corta en 100 por día)
 const TOPE_POR_SESION = { error: 40, evento: 40 }
 const anotados = { error: 0, evento: 0 }
 const yaVistos = new Set() // el mismo error no se anota dos veces seguidas

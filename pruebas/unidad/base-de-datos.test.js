@@ -406,7 +406,7 @@ test('eventos: cada uno agrega y lee lo suyo; nadie modifica ni borra', async ()
   expect((await una('select count(*)::int as n from public.eventos')).n).toBe(2)
 })
 
-test('eventos: tope de 300 por usuario por día (200 para los comunes) y limpieza a los 90 días', async () => {
+test('eventos: tope de 100 por usuario por día (70 para los comunes) y limpieza a los 90 días', async () => {
   // Uno viejo de Ana, puesto a mano con fecha de hace 100 días (el disparador pisa la fecha, así que se corrige después)
   await db.exec(`alter table public.eventos disable trigger eventos_antes`)
   await db.query(
@@ -415,9 +415,9 @@ test('eventos: tope de 300 por usuario por día (200 para los comunes) y limpiez
   )
   await db.exec(`alter table public.eventos enable trigger eventos_antes`)
   expect((await una(`select count(*)::int as n from public.eventos where nombre = 'viejo'`)).n).toBe(1)
-  // Los eventos comunes cortan en 200: aunque haya muchas búsquedas, queda lugar para los errores
+  // Los eventos comunes cortan en 70: aunque haya muchas búsquedas, queda lugar para los errores
   await como(BETO, () => db.query(`insert into public.eventos (tipo, nombre) select 'evento', 'ruido' from generate_series(1, 350)`))
-  expect((await una(`select count(*)::int as n from public.eventos where user_id = $1`, [BETO])).n).toBe(200)
+  expect((await una(`select count(*)::int as n from public.eventos where user_id = $1`, [BETO])).n).toBe(70)
   expect((await una(`select count(*)::int as n from public.eventos where nombre = 'viejo'`)).n).toBe(0)
   await como(BETO, () => db.query(`insert into public.eventos (tipo, nombre) select 'error', 'pantalla' from generate_series(1, 150)`))
   expect(
@@ -425,7 +425,7 @@ test('eventos: tope de 300 por usuario por día (200 para los comunes) y limpiez
       `select count(*)::int as n, (count(*) filter (where tipo = 'error'))::int as errores from public.eventos where user_id = $1`,
       [BETO],
     ),
-  ).toEqual({ n: 300, errores: 100 })
+  ).toEqual({ n: 100, errores: 30 })
   // El tope de uno no le saca lugar al otro
   await como(ANA, () => db.query(`insert into public.eventos (tipo, nombre) values ('evento', 'sigue andando')`))
   expect((await una('select count(*)::int as n from public.eventos where user_id = $1', [ANA])).n).toBe(2)

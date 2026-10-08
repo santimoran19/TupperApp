@@ -96,6 +96,8 @@ const TEXTOS = {
           'En tu teléfono o computadora se guarda la sesión iniciada y alguna preferencia, como la forma en que endulzás las infusiones. La app no usa cookies de publicidad ni de seguimiento.',
           'Para que la app abra rápido y se pueda usar sin conexión, en ese mismo dispositivo también queda una copia de tus datos y de los cambios que todavía no se enviaron. Esa copia se borra cuando cerrás sesión; si el dispositivo lo usa otra persona, cerrá sesión al terminar.',
           'Para saber qué pantallas se usan, contamos las visitas de forma anónima con Vercel Web Analytics: no usa cookies y no permite identificarte.',
+          'Para frenar a los programas que crean cuentas falsas, la pantalla de acceso puede usar Turnstile, un servicio de Cloudflare que comprueba que del otro lado hay una persona. Para eso recibe datos técnicos de tu navegador, como la dirección IP. No recibe tu contraseña ni lo que cargás en la app.',
+          'Cuando elegís una contraseña, se consulta un servicio público (Have I Been Pwned) para saber si apareció en filtraciones de otros sitios. La contraseña no sale de tu dispositivo: se manda solo un fragmento de su huella, que no alcanza para reconstruirla.',
         ],
       ],
       ['Cómo los protegemos', ['La conexión va cifrada y cada cuenta puede leer y modificar únicamente sus propios datos.']],
