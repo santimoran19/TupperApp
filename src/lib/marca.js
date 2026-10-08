@@ -3,7 +3,7 @@
 export const MARCA = {
   nombre: 'Tupper',
   sitio: 'tupperapp.vercel.app',
-  responsable: '', // nombre y apellido o razón social de quien responde por la app
-  contacto: '', // email para consultas y pedidos sobre datos personales
+  responsable: 'Santiago Morán', // nombre y apellido o razón social de quien responde por la app
+  contacto: 'santimorann19@gmail.com', // email para consultas y pedidos sobre datos personales
   vigencia: 'octubre de 2026',
 }
