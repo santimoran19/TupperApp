@@ -28,57 +28,56 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 **Primero (P1)**
 1. S-01 · Copias de seguridad propias (falta la prueba de restauración)
-2. V-02 · Análisis con IA (verificar)
-3. C-03 · Mails propios (SMTP)
-4. L-01 · Edad mínima
-5. L-02 · Revisión de los textos legales
-6. L-03 · Registro de la base de datos
-7. C-01 · Planes y cobro (para empezar a cobrar)
-8. S-04 · Repo privado (al terminar)
+2. C-03 · Mails propios (SMTP)
+3. L-01 · Edad mínima
+4. L-02 · Revisión de los textos legales
+5. L-03 · Registro de la base de datos
+6. C-01 · Planes y cobro (para empezar a cobrar)
+7. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-9. D-01 · Hojas que suben desde abajo (va junto con D-02)
-10. D-02 · Botones del tamaño del dedo
-11. D-05 · Recorrido inicial
-12. F-07 · Ajustar las porciones de una receta
-13. F-05 · Compartir la lista de compras por WhatsApp
-14. S-02 · CORS de la función de IA
-15. T-02 · Pruebas automáticas en cada push
-16. T-06 · Aviso de errores (va junto con S-05)
-17. S-05 · Revisión periódica
-18. F-01 · Escanear el código de barras (va junto con F-02)
-19. F-02 · Catálogo compartido de productos
-20. F-12 · Base propia de alimentos más grande
-21. IA-01 · Chat con IA (va junto con IA-02)
-22. IA-02 · Proveedor de respaldo
-23. F-04 · Vencimientos en la despensa
-24. D-07 · Revisión completa de accesibilidad
-25. L-04 · Consentimiento al registrarse
-26. C-02 · Dominio propio y página de presentación
-27. C-05 · Opiniones desde la app
-28. T-03 · Pruebas en Safari
-29. T-04 · Base de pruebas aparte
-30. T-01 · Actualizar las herramientas
-31. F-03 · Despensa compartida entre los de una misma casa
-32. F-06 · Recordatorios
+8. D-01 · Hojas que suben desde abajo (va junto con D-02)
+9. D-02 · Botones del tamaño del dedo
+10. D-05 · Recorrido inicial
+11. F-07 · Ajustar las porciones de una receta
+12. F-05 · Compartir la lista de compras por WhatsApp
+13. S-02 · CORS de la función de IA
+14. T-02 · Pruebas automáticas en cada push
+15. T-06 · Aviso de errores (va junto con S-05)
+16. S-05 · Revisión periódica
+17. F-01 · Escanear el código de barras (va junto con F-02)
+18. F-02 · Catálogo compartido de productos
+19. F-12 · Base propia de alimentos más grande
+20. IA-01 · Chat con IA (va junto con IA-02)
+21. IA-02 · Proveedor de respaldo
+22. F-04 · Vencimientos en la despensa
+23. D-07 · Revisión completa de accesibilidad
+24. L-04 · Consentimiento al registrarse
+25. C-02 · Dominio propio y página de presentación
+26. C-05 · Opiniones desde la app
+27. T-03 · Pruebas en Safari
+28. T-04 · Base de pruebas aparte
+29. T-01 · Actualizar las herramientas
+30. F-03 · Despensa compartida entre los de una misma casa
+31. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-33. F-08 · Copiar un día entero
-34. D-06 · Deshacer en más lugares
-35. D-04 · Esqueletos de carga
-36. F-10 · Peso: gráfico y fecha estimada
-37. F-11 · Exportar el registro a planilla
-38. F-09 · Combos frecuentes
-39. F-13 · Categorías editables por el usuario
-40. D-08 · Revisión de los textos
-41. IA-04 · Cargar una receta desde un texto
-42. IA-03 · Foto de un plato
-43. C-06 · Métricas de uso
-44. C-04 · Play Store
-45. T-05 · Partir `sincronizacion.js`
-46. T-07 · Mandar lo cargado sin conexión con la app cerrada
-47. S-06 · Verificación en dos pasos
-48. S-03 · Contraseñas filtradas también del lado de Supabase
+32. F-08 · Copiar un día entero
+33. D-06 · Deshacer en más lugares
+34. D-04 · Esqueletos de carga
+35. F-10 · Peso: gráfico y fecha estimada
+36. F-11 · Exportar el registro a planilla
+37. F-09 · Combos frecuentes
+38. F-13 · Categorías editables por el usuario
+39. D-08 · Revisión de los textos
+40. IA-04 · Cargar una receta desde un texto
+41. IA-03 · Foto de un plato
+42. C-06 · Métricas de uso
+43. C-04 · Play Store
+44. T-05 · Partir `sincronizacion.js`
+45. T-07 · Mandar lo cargado sin conexión con la app cerrada
+46. S-06 · Verificación en dos pasos
+47. S-03 · Contraseñas filtradas también del lado de Supabase
 
 ---
 
@@ -86,7 +85,7 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 ## 0. Para verificar ahora
 
-- [ ] **V-02 · Análisis con IA** · P1 · S. Pedir un análisis desde la app para confirmar que la versión 4 de la función (`analizar-semana`) anda.
+Nada por ahora.
 
 ## 1. Funciones
 
@@ -171,12 +170,13 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 ## Hecho
 
+- **Verificado el 13/10/2026:** el análisis con IA anda (V-02, función `analizar-semana` versión 4) y `actualizacion-9.sql` está aplicada en Supabase.
 - **1.11.0**:
   - D-03: diseño para computadora desde 1024 px de ancho. Barra de navegación al costado (con Registrar, todas las pantallas y el perfil), varias columnas en diario, despensa, recetas, plan, compras, resumen, perfil, receta y registrar, y las ventanas (hojas) como recuadro centrado en vez de subir desde abajo.
   - Hasta 1023 px (celulares y tablets) el diseño es el de siempre: comparado píxel a píxel con la versión anterior a 390 y 412 px, sin diferencias.
   - Pantallas de acceso y textos legales: ya eran una columna centrada y quedan así.
   - Prueba nueva de navegador (`14-escritorio`): barra, columnas, ventanas, cambio al achicar la ventana y que nada se salga de 360 a 2560 px.
-- **1.10.0** (falta aplicar `actualizacion-9.sql` y publicar):
+- **1.10.0** (`actualizacion-9.sql` aplicada):
   - F-14: cada registro del diario muestra su cantidad y se puede cambiar; calorías y macros se recalculan.
   - La despensa se ajusta sola al cambiar la cantidad o borrar un registro (con cartel de confirmación cuando la toca, y aviso si no alcanza o el producto ya no está).
   - Anda sin conexión. Los registros anteriores solo corrigen el diario.
