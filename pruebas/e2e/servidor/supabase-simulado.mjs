@@ -140,9 +140,34 @@ const FUNCIONES = {
       throw errorPg('23514', 'new row for relation "log_entries" violates check constraint "log_entries_meal_check"')
     if (repetido(uid, a.p_clave)) return { repetida: true }
     db.log_entries = db.log_entries.filter((l) => !(l.user_id === uid && l.date === a.p_fecha && l.meal === a.p_comida && l.skipped))
+    const tocadas = new Set()
+    const listas = new Set()
     const registros = a.p_filas.map((f) => {
       if (!(f.qty >= 0) || !(Number(f.kcal || 0) <= 20000))
         throw errorPg('23514', 'new row for relation "log_entries" violates check constraint "log_entries_valores_chk"')
+      // Desde la 1.10 cada fila trae lo que quiere descontar (`s` y `p`): se descuenta de lo que hay y se anota lo que salió
+      let descontado = null
+      if (f.s !== undefined || f.p !== undefined) {
+        descontado = { s: [], p: 0, pn: 0 }
+        for (const x of f.s || []) {
+          const fila = db.stock.find((s) => s.user_id === uid && s.food_id === x.f)
+          if (!fila) continue
+          const toma = redondo(Math.min(Number(x.q), Number(fila.qty)), 2)
+          if (toma > 0) {
+            fila.qty = entre(Number(fila.qty) - toma, 1000000, 2)
+            fila.updated_at = ahora()
+            tocadas.add(fila)
+          }
+          descontado.s.push({ f: x.f, q: toma, n: redondo(Number(x.q), 2) })
+        }
+        const lista = f.recipe_id && Number(f.p) > 0 ? db.prepared.find((q) => q.user_id === uid && q.recipe_id === f.recipe_id) : null
+        if (lista) {
+          descontado.p = redondo(Math.min(Number(f.p), Number(lista.portions)), 1)
+          descontado.pn = redondo(Number(f.p), 1)
+          lista.portions = entre(Number(lista.portions) - descontado.p, 1000, 1)
+          if (descontado.p > 0) listas.add(lista)
+        }
+      }
       return {
         id: randomUUID(),
         user_id: uid,
@@ -157,12 +182,13 @@ const FUNCIONES = {
         carbs: f.carbs ?? 0,
         fat: f.fat ?? 0,
         skipped: false,
+        descontado,
         created_at: ahora(),
       }
     })
     db.log_entries.push(...registros)
-    const stock = moverStock(uid, a.p_stock, true)
-    const preparado = []
+    const stock = [...tocadas, ...moverStock(uid, a.p_stock, true)]
+    const preparado = [...listas]
     for (const c of Array.isArray(a.p_preparado) ? a.p_preparado : []) {
       const fila = db.prepared.find((p) => p.user_id === uid && p.recipe_id === c.recipe_id)
       if (!fila) continue
@@ -170,6 +196,95 @@ const FUNCIONES = {
       preparado.push(fila)
     }
     return { registros, stock, preparado }
+  },
+
+  // Cambiar la cantidad de un registro (supabase/actualizacion-9.sql). Las de verdad se prueban en editar-registros.test.js.
+  editar_registro(uid, a) {
+    const r = db.log_entries.find((l) => l.id === a.p_id && l.user_id === uid)
+    if (!r) throw errorPg('P0001', 'Ese registro ya no existe.')
+    const qty = redondo(Number(a.p_qty), 2)
+    if (!(qty > 0 && qty <= 1000000)) throw errorPg('P0001', 'La cantidad no es válida.')
+    if (r.skipped || Number(r.qty) <= 0) throw errorPg('P0001', 'Ese registro no se puede editar.')
+    if (Number(r.qty) === qty) return { registro: r, stock: [], preparado: [], avisos: { sin_datos: false } }
+    const razon = qty / Number(r.qty)
+    if (Number(r.kcal) * razon > 20000) throw errorPg('P0001', 'Esa cantidad tiene demasiadas calorías.')
+    const stock = []
+    const preparado = []
+    let descontado = null
+    if (r.descontado) {
+      descontado = { s: [], p: 0, pn: 0 }
+      for (const x of r.descontado.s) {
+        const objetivo = redondo(Number(x.n ?? x.q) * razon, 2)
+        let hecho = Number(x.q)
+        const fila = db.stock.find((s) => s.user_id === uid && s.food_id === x.f)
+        if (objetivo > hecho) {
+          if (fila) {
+            const toma = redondo(Math.min(objetivo - hecho, Number(fila.qty)), 2)
+            fila.qty = entre(Number(fila.qty) - toma, 1000000, 2)
+            stock.push(fila)
+            hecho = redondo(hecho + toma, 2)
+          }
+        } else if (objetivo < hecho) {
+          if (fila) {
+            fila.qty = entre(Number(fila.qty) + (hecho - objetivo), 1000000, 2)
+            stock.push(fila)
+          }
+          hecho = objetivo
+        }
+        descontado.s.push({ f: x.f, q: hecho, n: objetivo })
+      }
+      let p = Number(r.descontado.p) || 0
+      const pn = Number(r.descontado.pn ?? p) || 0
+      if (pn > 0 && r.recipe_id) {
+        const objetivo = redondo(pn * razon, 1)
+        const lista = db.prepared.find((q) => q.user_id === uid && q.recipe_id === r.recipe_id)
+        if (objetivo > p && lista) {
+          const toma = redondo(Math.min(objetivo - p, Number(lista.portions)), 1)
+          lista.portions = entre(Number(lista.portions) - toma, 1000, 1)
+          p = redondo(p + toma, 1)
+          preparado.push(lista)
+        } else if (objetivo < p) {
+          if (lista) {
+            lista.portions = entre(Number(lista.portions) + (p - objetivo), 1000, 1)
+            preparado.push(lista)
+          }
+          p = objetivo
+        }
+        descontado.pn = objetivo
+      }
+      descontado.p = p
+    }
+    Object.assign(r, {
+      qty,
+      kcal: redondo(Number(r.kcal) * razon, 4),
+      protein: redondo(Number(r.protein) * razon, 4),
+      carbs: redondo(Number(r.carbs) * razon, 4),
+      fat: redondo(Number(r.fat) * razon, 4),
+      descontado,
+    })
+    return { registro: r, stock, preparado, avisos: { sin_datos: !descontado } }
+  },
+
+  borrar_registro(uid, a) {
+    const r = db.log_entries.find((l) => l.id === a.p_id && l.user_id === uid)
+    const stock = []
+    const preparado = []
+    if (r?.descontado) {
+      for (const x of r.descontado.s) {
+        const fila = db.stock.find((s) => s.user_id === uid && s.food_id === x.f)
+        if (!fila) continue
+        fila.qty = entre(Number(fila.qty) + Number(x.q), 1000000, 2)
+        stock.push(fila)
+      }
+      const lista =
+        Number(r.descontado.p) > 0 && r.recipe_id ? db.prepared.find((p) => p.user_id === uid && p.recipe_id === r.recipe_id) : null
+      if (lista) {
+        lista.portions = entre(Number(lista.portions) + Number(r.descontado.p), 1000, 1)
+        preparado.push(lista)
+      }
+    }
+    db.log_entries = db.log_entries.filter((l) => l !== r)
+    return { id: a.p_id, stock, preparado, avisos: {} }
   },
 
   comprar(uid, a) {

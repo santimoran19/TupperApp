@@ -6,6 +6,7 @@
 // `datos` es lo que viaja a la base (ver envios.js) y se guarda en la cola tal cual: tiene que alcanzar para las dos cosas.
 // Son funciones puras: no tocan la red ni el reloj (por eso los identificadores y la hora vienen adentro de `datos`).
 // Las filas que se crean acá llevan `pendiente: true` hasta que la base las devuelva.
+import { ajustarRegistro, descontarFilas, devolverRegistro } from '../lib/ajuste'
 import { redondear } from '../lib/nutricion'
 import { conFilas, entre, reemplazar } from './listas'
 
@@ -39,7 +40,19 @@ export const GUARDADO = {
     preparado: conFilas(s.preparado, r.preparado, 'recipe_id'),
   }),
   saltear: (s, [fila]) => ({ ...s, registros: [...sinFila(s.registros, 'id', fila.id), fila] }),
-  borrarRegistro: (s, _r, d) => ({ ...s, registros: sinFila(s.registros, 'id', d.id) }),
+  // La base devuelve lo que volvió a la despensa (los pedidos de una versión anterior no traen nada)
+  borrarRegistro: (s, r, d) => ({
+    ...s,
+    registros: sinFila(s.registros, 'id', d.id),
+    stock: conFilas(s.stock, r?.stock, 'food_id'),
+    preparado: conFilas(s.preparado, r?.preparado, 'recipe_id'),
+  }),
+  editarRegistro: (s, r) => ({
+    ...s,
+    registros: r.registro ? reemplazar(s.registros, r.registro, (x) => x.id === r.registro.id) : s.registros,
+    stock: conFilas(s.stock, r.stock, 'food_id'),
+    preparado: conFilas(s.preparado, r.preparado, 'recipe_id'),
+  }),
   cocinar: (s, r) => ({ ...s, stock: conFilas(s.stock, r.stock, 'food_id'), preparado: conFilas(s.preparado, [r.preparado], 'recipe_id') }),
   fijarPreparado: (s, [fila]) => ({ ...s, preparado: reemplazar(s.preparado, fila, (x) => x.recipe_id === fila.recipe_id) }),
   ajustarStock: (s, filas) => ({ ...s, stock: conFilas(s.stock, filas, 'food_id') }),
@@ -59,6 +72,9 @@ export const LOCAL = {
   registrar: (s, d, uid) => {
     const usadas = new Map()
     for (const c of d.preparado || []) usadas.set(c.recipe_id, (usadas.get(c.recipe_id) || 0) + Number(c.delta))
+    // Cada fila lleva lo que quiere descontar (`s` y `p`); los pedidos de antes de la versión 1.10 traen el total en `stock`
+    const { descontados, stock, preparado } = descontarFilas(d.filas, s.stock, s.preparado)
+    for (const c of preparado) usadas.set(c.recipe_id, (usadas.get(c.recipe_id) || 0) + Number(c.delta))
     return {
       ...s,
       registros: [
@@ -77,11 +93,12 @@ export const LOCAL = {
           carbs: f.carbs ?? 0,
           fat: f.fat ?? 0,
           skipped: false,
+          descontado: descontados[i],
           created_at: d.cuando,
           pendiente: true,
         })),
       ],
-      stock: moverStock(s.stock, d.stock, uid, true),
+      stock: moverStock(s.stock, [...(d.stock || []), ...stock], uid, true),
       preparado: s.preparado.map((p) =>
         usadas.has(p.recipe_id) ? { ...p, portions: porciones(Number(p.portions) + usadas.get(p.recipe_id)) } : p,
       ),
@@ -91,7 +108,34 @@ export const LOCAL = {
     ...s,
     registros: [...sinFila(s.registros, 'id', d.fila.id), { ...d.fila, created_at: d.cuando, pendiente: true }],
   }),
-  borrarRegistro: (s, d) => GUARDADO.borrarRegistro(s, null, d),
+  // Borrar devuelve a la despensa lo que el registro había descontado (lo que ya no está, no se vuelve a agregar)
+  borrarRegistro: (s, d, uid) => {
+    const fila = s.registros.find((x) => x.id === d.id)
+    const vuelve = fila ? devolverRegistro(fila, s.stock, s.preparado) : { stock: [], preparado: [] }
+    return {
+      ...s,
+      registros: sinFila(s.registros, 'id', d.id),
+      stock: moverStock(s.stock, vuelve.stock, uid, true),
+      preparado: s.preparado.map((p) => {
+        const c = vuelve.preparado.find((x) => x.recipe_id === p.recipe_id)
+        return c ? { ...p, portions: porciones(Number(p.portions) + c.delta) } : p
+      }),
+    }
+  },
+  editarRegistro: (s, d, uid) => {
+    const fila = s.registros.find((x) => x.id === d.id)
+    if (!fila) return s
+    const r = ajustarRegistro(fila, d.qty, s.stock, s.preparado)
+    return {
+      ...s,
+      registros: s.registros.map((x) => (x.id === d.id ? r.registro : x)),
+      stock: moverStock(s.stock, r.stock, uid, true),
+      preparado: s.preparado.map((p) => {
+        const c = r.preparado.find((x) => x.recipe_id === p.recipe_id)
+        return c ? { ...p, portions: porciones(Number(p.portions) + c.delta) } : p
+      }),
+    }
+  },
   cocinar: (s, d, uid) => {
     const lista = s.preparado.find((p) => p.recipe_id === d.receta)
     const fila = lista

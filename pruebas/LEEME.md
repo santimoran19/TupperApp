@@ -14,10 +14,12 @@ Tarda unos segundos y no abre ningún navegador. Corre todo lo que hay en `prueb
 | `analisis.test.js` | El análisis con IA: los datos que se le mandan al modelo, la lectura de la respuesta y la elección del proveedor. |
 | `base-de-datos.test.js` | La base de verdad: arma un Postgres en memoria, le aplica los `.sql` de `supabase/` en orden y prueba las funciones (cocinar, registrar, comprar, guardar receta), que nada quede a medias cuando algo falla, los permisos por usuario y el registro de errores. |
 | `topes.test.js` | Los topes de la base: textos con largo máximo, filas que no pesan de más y el máximo de filas por usuario. |
+| `editar-registros.test.js` | Cambiar la cantidad de un registro y borrarlo con la despensa al día, contra la base de verdad: stock que no alcanza, producto que ya no está, registros viejos, recetas con comida lista, otra cuenta. |
+| `ajuste.test.js` | La cuenta y los textos de esos cambios en la app (`src/lib/ajuste.js`). |
 | `filtradas.test.js` | La consulta de contraseñas filtradas: qué se le manda al servicio, cómo se lee la respuesta y qué pasa si no contesta. |
 | `sin-conexion.test.js` | Lo que la app hace en el teléfono cuando no hay conexión contra lo que hace la base cuando el cambio llega: tienen que dar lo mismo (stock, comida lista, registros, lista y compras). |
 
-Si agregás una actualización de la base (`supabase/actualizacion-9.sql`), sumala a la lista `ARCHIVOS` de `postgres.js` (el Postgres en memoria que comparten las pruebas de la base).
+Si agregás una actualización de la base (`supabase/actualizacion-10.sql`, por ejemplo), sumala a la lista `ARCHIVOS` de `postgres.js` (el Postgres en memoria que comparten las pruebas de la base).
 
 ## `npm run test:e2e`: la app entera en un navegador
 

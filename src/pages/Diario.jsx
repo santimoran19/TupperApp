@@ -1,9 +1,11 @@
 // Diario: lo comido en el día contra el objetivo, con el consejo para cerrar el día.
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import EditarRegistro from '../components/EditarRegistro'
 import Marco from '../components/Marco'
 import { Anillo, Barra, Icono } from '../components/ui'
 import { useDatos } from '../store/Datos'
+import { cantidadDeRegistro, describirAjuste, devolverRegistro } from '../lib/ajuste'
 import { diaCorto, diaSemana, fechaLarga, hoy, numeroDia, semanaDe, sumarDias } from '../lib/fechas'
 import {
   COMIDAS,
@@ -31,6 +33,8 @@ export default function Diario() {
   const d = useDatos()
   const nav = useNavigate()
   const [fecha, setFecha] = useState(hoy())
+  // El registro que se está editando (guarda el id: la fila se busca de nuevo para ver siempre la última versión)
+  const [editandoId, setEditandoId] = useState(null)
   const esHoy = fecha === hoy()
   const rango = rangoDiario()
   // Mueve una semana sin salirse del rango que la app maneja
@@ -123,13 +127,30 @@ export default function Diario() {
     }
   }
   const quitarRegistro = async (r) => {
+    // Si el registro descontó de la despensa, al borrarlo vuelve (ver lib/ajuste.js)
+    const vuelve = devolverRegistro(r, d.stock, d.preparado)
+    const { efectos, avisos } = describirAjuste(vuelve, {
+      alimento: (id) => d.alimentosPorId.get(id),
+      receta: (id) => d.recetasPorId.get(id),
+    })
+    const sinDatos = !r.descontado
     if (
       await d.confirmar({
         titulo: `¿Borrar ${r.name}?`,
-        texto: 'Se saca de lo registrado ese día. Lo que se descontó de la despensa no vuelve solo.',
+        texto: [
+          'Se saca de lo registrado ese día.',
+          ...efectos,
+          ...(sinDatos ? ['La despensa no cambia: este registro es de antes de que la app llevara esa cuenta.'] : avisos),
+        ].join(' '),
       })
-    )
-      d.borrarRegistro(r.id)
+    ) {
+      const listo = await d.borrarRegistro(r.id)
+      if (listo && !sinDatos && avisos.length) d.avisar(avisos.join(' '), 'aviso')
+    }
+  }
+  const abrirEdicion = (r) => {
+    if (r.pendiente) d.avisar('Todavía no se terminó de guardar. Probá de nuevo cuando vuelva la conexión.', 'error')
+    else setEditandoId(r.id)
   }
   const tomeAgua = async () => {
     const listo = await d.registrar({ date: fecha, meal: EXTRA, platos: [{ food_id: agua.id, qty: 250 }], descontar: false })
@@ -355,7 +376,14 @@ export default function Diario() {
                 <div className="mt-3 pt-1 border-t border-linea divide-y divide-linea">
                   {entradas.map((r) => (
                     <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
-                      <span className="flex-1 min-w-0 truncate">{r.name}</span>
+                      <button
+                        onClick={() => abrirEdicion(r)}
+                        className="flex-1 min-w-0 truncate text-left"
+                        aria-label={`Cambiar la cantidad de ${r.name}`}
+                      >
+                        {r.name}
+                        <span className="text-gris"> · {cantidadDeRegistro(r, d.alimentosPorId.get(r.food_id))}</span>
+                      </button>
                       <span className="text-gris">{redondear(r.kcal)} kcal</span>
                       <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
                         <Icono n="close" size={18} />
@@ -430,10 +458,14 @@ export default function Diario() {
                 const a = d.alimentosPorId.get(r.food_id)
                 return (
                   <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
-                    <span className="flex-1 min-w-0 truncate">
+                    <button
+                      onClick={() => abrirEdicion(r)}
+                      className="flex-1 min-w-0 truncate text-left"
+                      aria-label={`Cambiar la cantidad de ${r.name}`}
+                    >
                       {r.name}
-                      {a?.unit === 'ml' ? ` · ${redondear(r.qty)} ml` : ''}
-                    </span>
+                      <span className="text-gris"> · {cantidadDeRegistro(r, a)}</span>
+                    </button>
                     <span className="text-gris">{redondear(r.kcal)} kcal</span>
                     <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
                       <Icono n="close" size={18} />
@@ -459,6 +491,9 @@ export default function Diario() {
           </div>
         </section>
       </div>
+      {editandoId && d.registros.some((r) => r.id === editandoId) && (
+        <EditarRegistro registro={d.registros.find((r) => r.id === editandoId)} onCerrar={() => setEditandoId(null)} />
+      )}
     </Marco>
   )
 }

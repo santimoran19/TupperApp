@@ -29,6 +29,11 @@ async function estado() {
 
 // Lo que importa comparar, sin lo que pone la base por su cuenta (identificadores, horas) y con los números como números
 const n = (v) => Number(v)
+// Lo que descontó un registro, en un texto igual para la copia y para la base
+const descontado = (r) =>
+  r.descontado
+    ? JSON.stringify({ s: [...r.descontado.s].map((x) => [x.f, n(x.q), n(x.n)]).sort(), p: n(r.descontado.p), pn: n(r.descontado.pn) })
+    : 'sin dato'
 function comparable(s) {
   const porClave = (lista, clave, valor) => Object.fromEntries(lista.map((x) => [x[clave], n(x[valor])]).sort())
   return {
@@ -36,7 +41,20 @@ function comparable(s) {
     preparado: porClave(s.preparado, 'recipe_id', 'portions'),
     registros: s.registros
       .map((r) =>
-        [r.date, r.meal, r.name, r.food_id, r.recipe_id, n(r.qty), n(r.kcal), n(r.protein), n(r.carbs), n(r.fat), r.skipped].join('|'),
+        [
+          r.date,
+          r.meal,
+          r.name,
+          r.food_id,
+          r.recipe_id,
+          n(r.qty),
+          n(r.kcal),
+          n(r.protein),
+          n(r.carbs),
+          n(r.fat),
+          r.skipped,
+          descontado(r),
+        ].join('|'),
       )
       .sort(),
     lista: porClave(s.lista, 'food_id', 'qty'),
@@ -263,9 +281,7 @@ test('"no comí", borrar un registro, poner la cantidad exacta y sacar de la des
       ]),
     ),
   ).rejects.toMatchObject({ code: '23505' })
-  await lasDos('borrarRegistro', { id: fila.id }, async () => {
-    await filas('delete from public.log_entries where id = $1', [fila.id])
-  })
+  await lasDos('borrarRegistro', { id: fila.id }, () => rpc('borrar_registro', [fila.id]))
 
   const exacta = { user_id: ANA, food_id: id.huevo, qty: 30, updated_at: '2026-10-04T21:00:00Z' }
   await lasDos('fijarStock', { fila: exacta }, () =>
@@ -284,4 +300,202 @@ test('"no comí", borrar un registro, poner la cantidad exacta y sacar de la des
       [ANA, lista.recipe_id, 4],
     ),
   )
+})
+
+test('registrar con el descuento en cada fila: la copia y la base anotan lo mismo', async () => {
+  await mover(id['pechuga-cruda'], 300)
+  await mover(id['queso-cremoso'], 100)
+  await db.query(`insert into public.prepared (user_id, recipe_id, portions) values ($1, $2, 2) on conflict do nothing`, [
+    ANA,
+    receta['omelette-queso'],
+  ])
+  const datos = {
+    fecha: '2026-10-05',
+    comida: 'cena',
+    filas: [
+      // de pechuga hay 300 y se piden 250 + 100: la segunda fila se queda con lo que sobra
+      {
+        name: 'Pechuga',
+        food_id: id['pechuga-cruda'],
+        qty: 250,
+        kcal: 400,
+        protein: 60,
+        carbs: 0,
+        fat: 8,
+        s: [{ f: id['pechuga-cruda'], q: 250 }],
+        p: 0,
+      },
+      {
+        name: 'Pechuga',
+        food_id: id['pechuga-cruda'],
+        qty: 100,
+        kcal: 160,
+        protein: 24,
+        carbs: 0,
+        fat: 3,
+        s: [{ f: id['pechuga-cruda'], q: 100 }],
+        p: 0,
+      },
+      // la receta usa 3 porciones cocinadas (hay 2) y queso; el pan no está en la despensa
+      {
+        name: 'Omelette',
+        recipe_id: receta['omelette-queso'],
+        qty: 3,
+        kcal: 600,
+        protein: 40,
+        carbs: 5,
+        fat: 45,
+        s: [
+          { f: id['queso-cremoso'], q: 40 },
+          { f: id['pan-integral'], q: 2 },
+        ],
+        p: 3,
+      },
+      // sin descontar: no toca nada
+      { name: 'Fideos', food_id: id.fideos, qty: 100, kcal: 350, protein: 12, carbs: 70, fat: 1.5, s: [], p: 0 },
+    ],
+    stock: [],
+    preparado: [],
+    ids: ['a', 'b', 'c', 'd'],
+    cuando: '2026-10-05T21:00:00Z',
+  }
+  const s = comparable(await lasDos('registrar', datos, () => rpc('registrar_comida', ['2026-10-05', 'cena', j(datos.filas), '[]', '[]'])))
+  expect(s.stock[id['pechuga-cruda']]).toBe(0)
+  expect(s.stock[id['queso-cremoso']]).toBe(60)
+  expect(s.preparado[receta['omelette-queso']]).toBe(0)
+  const anotados = s.registros.filter((r) => r.includes('|2026-10-05|') || r.startsWith('2026-10-05')).map((r) => r.split('|').pop())
+  expect(anotados.length).toBe(4)
+  expect(anotados.filter((x) => x.includes(',50,100]')).length, 'la segunda fila descontó solo lo que quedaba').toBe(1)
+})
+
+test('cambiar la cantidad de un registro: la copia y la base ajustan igual la despensa', async () => {
+  const ultimo = async (nombre) =>
+    (
+      await filas(`select * from public.log_entries where user_id = $1 and name = $2 order by created_at desc, id limit 1`, [ANA, nombre])
+    )[0]
+  const editar = (r, qty) => lasDos('editarRegistro', { id: r.id, qty }, () => rpc('editar_registro', [r.id, qty]))
+  await mover(id['pechuga-cruda'], 500)
+  await mover(id['queso-cremoso'], 100)
+  const pedido = {
+    fecha: '2026-10-06',
+    comida: 'almuerzo',
+    filas: [
+      {
+        name: 'Pollo editable',
+        food_id: id['pechuga-cruda'],
+        qty: 200,
+        kcal: 320,
+        protein: 48,
+        carbs: 0,
+        fat: 6,
+        s: [{ f: id['pechuga-cruda'], q: 200 }],
+        p: 0,
+      },
+      {
+        name: 'Omelette editable',
+        recipe_id: receta['omelette-queso'],
+        qty: 2,
+        kcal: 400,
+        protein: 27,
+        carbs: 3,
+        fat: 30,
+        s: [{ f: id['queso-cremoso'], q: 60 }],
+        p: 1,
+      },
+    ],
+    stock: [],
+    preparado: [],
+    ids: ['p', 'o'],
+    cuando: '2026-10-06T13:00:00Z',
+  }
+  await db.query(
+    `insert into public.prepared (user_id, recipe_id, portions) values ($1, $2, 3) on conflict (user_id, recipe_id) do update set portions = 3`,
+    [ANA, receta['omelette-queso']],
+  )
+  await lasDos('registrar', pedido, () => rpc('registrar_comida', ['2026-10-06', 'almuerzo', j(pedido.filas), '[]', '[]']))
+  const pollo = await ultimo('Pollo editable')
+  const omelette = await ultimo('Omelette editable')
+  // Bajar devuelve; subir descuenta; subir de más deja en cero lo que se acaba
+  let s = comparable(await editar(pollo, 150))
+  expect(s.stock[id['pechuga-cruda']]).toBe(350)
+  s = comparable(await editar(pollo, 400))
+  expect(s.stock[id['pechuga-cruda']]).toBe(100)
+  s = comparable(await editar(pollo, 2000))
+  expect(s.stock[id['pechuga-cruda']]).toBe(0)
+  // Recetas: ingredientes y porciones cocinadas juntos
+  s = comparable(await editar(omelette, 1))
+  expect(s.stock[id['queso-cremoso']]).toBe(130)
+  expect(s.preparado[receta['omelette-queso']]).toBe(2.5)
+  s = comparable(await editar(omelette, 6))
+  expect(s.preparado[receta['omelette-queso']]).toBe(0)
+  // Un producto que ya no está en la despensa no se vuelve a crear
+  await lasDos('quitarDeDespensa', { food_id: id['queso-cremoso'] }, async () => {
+    await filas('delete from public.stock where user_id = $1 and food_id = $2', [ANA, id['queso-cremoso']])
+  })
+  s = comparable(await editar(omelette, 2))
+  expect(s.stock[id['queso-cremoso']]).toBeUndefined()
+  // Un registro de antes (sin dato) solo cambia el diario
+  const viejo = (
+    await filas(
+      `insert into public.log_entries (user_id, date, meal, name, food_id, qty, kcal, protein) values ($1, '2026-09-01', 'cena', 'Viejo', $2, 100, 160, 24) returning *`,
+      [ANA, id['pechuga-cruda']],
+    )
+  )[0]
+  await mover(id['pechuga-cruda'], 50)
+  s = comparable(await editar(viejo, 50))
+  expect(s.stock[id['pechuga-cruda']]).toBe(50)
+})
+
+test('borrar un registro devuelve lo que había descontado (y no agrega lo que ya no está)', async () => {
+  await mover(id['pechuga-cruda'], 400)
+  await mover(id.fideos, 500)
+  const pedido = {
+    fecha: '2026-10-07',
+    comida: 'cena',
+    filas: [
+      {
+        name: 'Para borrar',
+        food_id: id['pechuga-cruda'],
+        qty: 300,
+        kcal: 480,
+        protein: 72,
+        carbs: 0,
+        fat: 9,
+        s: [{ f: id['pechuga-cruda'], q: 300 }],
+        p: 0,
+      },
+      {
+        name: 'Fideos para borrar',
+        food_id: id.fideos,
+        qty: 200,
+        kcal: 700,
+        protein: 24,
+        carbs: 140,
+        fat: 3,
+        s: [{ f: id.fideos, q: 200 }],
+        p: 0,
+      },
+    ],
+    stock: [],
+    preparado: [],
+    ids: ['x', 'y'],
+    cuando: '2026-10-07T21:00:00Z',
+  }
+  await lasDos('registrar', pedido, () => rpc('registrar_comida', ['2026-10-07', 'cena', j(pedido.filas), '[]', '[]']))
+  const ids = (
+    await filas(
+      `select id, name from public.log_entries where user_id = $1 and name like '%para borrar' or name = 'Para borrar' order by name`,
+      [ANA],
+    )
+  ).map((x) => x.id)
+  expect(ids.length).toBe(2)
+  const antes = comparable(await estado())
+  // Uno de los dos productos ya no está en la despensa
+  await lasDos('quitarDeDespensa', { food_id: id.fideos }, async () => {
+    await filas('delete from public.stock where user_id = $1 and food_id = $2', [ANA, id.fideos])
+  })
+  for (const idRegistro of ids) await lasDos('borrarRegistro', { id: idRegistro }, () => rpc('borrar_registro', [idRegistro]))
+  const despues = comparable(await estado())
+  expect(despues.stock[id['pechuga-cruda']]).toBe(antes.stock[id['pechuga-cruda']] + 300)
+  expect(despues.stock[id.fideos]).toBeUndefined()
 })

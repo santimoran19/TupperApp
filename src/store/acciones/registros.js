@@ -1,9 +1,10 @@
 // Registros: lo que se comió cada día, el "no comí" y el análisis de la semana con IA.
+import { pasaDeCalorias } from '../../lib/ajuste'
 import { anotarEvento } from '../../lib/eventos'
 import { hoy } from '../../lib/fechas'
-import { macrosDe } from '../../lib/nutricion'
+import { macrosDe, redondear } from '../../lib/nutricion'
 import { supabase } from '../base'
-import { comoCambios, invalido, nuevaClave } from '../listas'
+import { invalido, nuevaClave } from '../listas'
 import { gastoDeReceta } from './despensa'
 
 export const accionesDeRegistros = (k) => ({
@@ -20,15 +21,20 @@ export const accionesDeRegistros = (k) => ({
       const cambios = new Map()
       const usadas = new Map() // receta -> porciones de comida lista que se usan
       for (const p of platos) {
+        // Lo que descuenta este plato: la diferencia que deja en `cambios` y en `usadas`. Se anota en la fila, así después
+        // se puede devolver a la despensa lo mismo que salió (ver ajuste.js).
+        const antes = new Map(cambios)
+        const usadasAntes = new Map(usadas)
+        let fila
         if (p.food_id) {
           const a = v.alimentosPorId.get(p.food_id)
           const m = macrosDe(a, p.qty)
-          filas.push({ name: a.name, food_id: a.id, qty: p.qty, ...m })
+          fila = { name: a.name, food_id: a.id, qty: p.qty, ...m }
           cambios.set(a.id, (cambios.get(a.id) || 0) - p.qty)
         } else {
           const r = v.recetasPorId.get(p.recipe_id)
           const m = v.macrosPorReceta.get(r.id)
-          filas.push({
+          fila = {
             name: r.name,
             recipe_id: r.id,
             qty: p.porciones,
@@ -36,7 +42,7 @@ export const accionesDeRegistros = (k) => ({
             protein: m.protein * p.porciones,
             carbs: m.carbs * p.porciones,
             fat: m.fat * p.porciones,
-          })
+          }
           // Primero se usan las porciones ya cocinadas; lo que no alcanza sale de los ingredientes.
           const listas = (v.preparadoMap.get(r.id) || 0) - (usadas.get(r.id) || 0)
           const usa = Math.min(listas, p.porciones)
@@ -44,13 +50,27 @@ export const accionesDeRegistros = (k) => ({
           const resto = p.porciones - Math.max(0, usa)
           if (resto > 0) gastoDeReceta(v, cambios, r, resto)
         }
+        if (descontar) {
+          fila.s = [...cambios].map(([f, c]) => ({ f, q: redondear((antes.get(f) || 0) - c, 2) })).filter((x) => x.q > 0)
+          fila.p = fila.recipe_id ? redondear((usadas.get(fila.recipe_id) || 0) - (usadasAntes.get(fila.recipe_id) || 0), 1) : 0
+        } else {
+          // Sin descontar: este plato no cuenta para lo que queda en la despensa
+          fila.s = []
+          fila.p = 0
+          cambios.clear()
+          for (const [k, c] of antes) cambios.set(k, c)
+          usadas.clear()
+          for (const [k, c] of usadasAntes) usadas.set(k, c)
+        }
+        filas.push(fila)
       }
+      // El descuento viaja en cada fila (`s` y `p`): la base descuenta fila por fila, solo de lo que hay, y anota lo que sacó
       return k.operar('registrar', {
         fecha: date,
         comida: meal,
         filas,
-        stock: descontar ? comoCambios(cambios) : [],
-        preparado: descontar ? [...usadas].map(([recipe_id, n]) => ({ recipe_id, delta: -n })) : [],
+        stock: [],
+        preparado: [],
         clave: nuevaClave(),
         // Para mostrarlo sin conexión: los identificadores de las filas y la hora
         ids: filas.map(() => nuevaClave()),
@@ -83,6 +103,7 @@ export const accionesDeRegistros = (k) => ({
     { unica: true, enCola: true },
   ),
 
+  // Borra el registro y devuelve a la despensa lo que había descontado.
   borrarRegistro: k.accion(
     'borrarRegistro',
     (id) => {
@@ -90,6 +111,22 @@ export const accionesDeRegistros = (k) => ({
       const fila = k.ver().e.registros.find((x) => x.id === id)
       if (fila?.pendiente && !fila.skipped) throw invalido('Todavía no se terminó de guardar. Probá de nuevo cuando vuelva la conexión.')
       return k.operar('borrarRegistro', { id })
+    },
+    { enCola: true },
+  ),
+
+  // Cambia la cantidad de un registro: recalcula calorías y macros y ajusta la despensa por la diferencia (ver ajuste.js).
+  editarRegistro: k.accion(
+    'editarRegistro',
+    (id, qty) => {
+      const fila = k.ver().e.registros.find((x) => x.id === id)
+      if (!fila) throw invalido('Ese registro ya no existe.')
+      if (fila.skipped || !(Number(fila.qty) > 0)) throw invalido('Ese registro no se puede editar.')
+      if (fila.pendiente) throw invalido('Todavía no se terminó de guardar. Probá de nuevo cuando vuelva la conexión.')
+      const n = redondear(qty, 2)
+      if (!(n > 0 && n <= 1000000)) throw invalido('La cantidad no es válida.')
+      if (pasaDeCalorias(fila, n)) throw invalido('Esa cantidad tiene demasiadas calorías.')
+      return k.operar('editarRegistro', { id, qty: n })
     },
     { enCola: true },
   ),

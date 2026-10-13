@@ -16,6 +16,7 @@ const ARCHIVOS = [
   'actualizacion-6.sql',
   'actualizacion-7.sql',
   'actualizacion-8.sql',
+  'actualizacion-9.sql',
   'seed.sql',
 ]
 

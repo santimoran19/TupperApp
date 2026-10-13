@@ -29,7 +29,7 @@ export function ProveedorAvisos({ children }) {
 
   useEffect(() => {
     if (!aviso) return
-    const t = setTimeout(() => setAviso(null), aviso.tipo === 'error' ? 5000 : 2500)
+    const t = setTimeout(() => setAviso(null), aviso.tipo === 'error' || aviso.tipo === 'aviso' ? 6000 : 2500)
     return () => clearTimeout(t)
   }, [aviso])
 

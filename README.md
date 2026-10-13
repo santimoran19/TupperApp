@@ -95,17 +95,24 @@ Para crear la base desde cero, se ejecutan en este orden:
 6. `supabase/actualizacion-6.sql`: las categorías por góndola de los alimentos que ya estaban.
 7. `supabase/actualizacion-7.sql`: las funciones que cocinan, registran y compran en un solo paso, la tabla de pedidos ya atendidos y la del registro de errores. Tiene que estar aplicada antes de publicar la versión 1.7 de la app.
 8. `supabase/actualizacion-8.sql`: los topes para que una cuenta no pueda llenar la base: máximo de filas por usuario, textos con largo máximo y filas que no pesan de más. No depende de ninguna versión de la app.
-9. `supabase/seed.sql`: los 274 alimentos y las 88 recetas base, comunes a todos. Se puede ejecutar de nuevo: agrega solo lo que falta.
+9. `supabase/actualizacion-9.sql`: cuánto descontó de la despensa cada registro, y las funciones para cambiar la cantidad de un registro o borrarlo dejando la despensa al día. Tiene que estar aplicada antes de publicar la versión 1.10 de la app.
+10. `supabase/seed.sql`: los 274 alimentos y las 88 recetas base, comunes a todos. Se puede ejecutar de nuevo: agrega solo lo que falta.
 
 La función que consulta a la IA está en `supabase/functions/analizar-semana/`; cómo activarla, en `supabase/functions/LEEME.md`.
 
 `scripts/seed-data.mjs` es de donde sale el seed. Para sumar alimentos o recetas base, editá ese archivo, corré `npm run seed` y ejecutá el SQL en Supabase.
+
+Cada registro del diario guarda cuánto descontó de la despensa (columna `descontado`, ver `src/lib/ajuste.js`): así, al cambiar la cantidad o borrarlo, la despensa se ajusta por la diferencia en un solo paso (`editar_registro` y `borrar_registro`). Los registros anteriores a la versión 1.10 no tienen ese dato: al editarlos solo se corrige el diario.
 
 Cocinar, registrar una comida, comprar y guardar una receta tocan varias tablas: cada una es una función de la base (`cocinar`, `registrar_comida`, `comprar`, `guardar_receta`) que hace todo junto o no hace nada, así un corte de conexión no deja nada a medias. El stock se mueve por diferencias ("restá 2"), no pisando el total, para que dos teléfonos con la misma cuenta no se pisen. Como sumar o restar dos veces no es lo mismo que una, cocinar, registrar y comprar viajan con una clave: si la conexión se corta justo después de que la base guardó y la persona toca de nuevo, el segundo pedido no se aplica (tabla `operaciones`).
 
 Los topes de cada dato (altura, peso, calorías, cantidades) están en `src/lib/validar.js` y repetidos como restricciones en la base, así que un valor fuera de rango no entra aunque se saltee el formulario.
 
 Los alimentos guardan calorías y macros cada 100 g (o 100 ml). Si se miden por unidad, `unit_grams` dice cuánto pesa una.
+
+### Copias de seguridad
+
+El plan gratis de Supabase no deja bajar copias. Hay una por día, cifrada, en el repo privado `tupper-respaldos` (GitHub Actions, se guardan 90 días). Cómo se configura, cómo se abre y cómo se restaura está en el `LEEME.md` de ese repo.
 
 ## Antes de ofrecerla al público
 
@@ -135,7 +142,7 @@ Los alimentos guardan calorías y macros cada 100 g (o 100 ml). Si se miden por 
 
 La app guarda en el teléfono (IndexedDB) la última foto de los datos. Al abrir muestra eso enseguida y después trae lo nuevo; si no hay conexión, se queda con la copia y avisa con una franja debajo del encabezado.
 
-Lo de todos los días se puede hacer igual: registrar comidas y agua, "no comí", borrar un registro, cocinar, comprar, la lista de compras y la despensa. Cada cambio se aplica en la copia, queda en una cola y se manda solo, en orden, cuando vuelve la conexión. Lo que es de configuración (perfil, medidas, recetas y alimentos propios, el plan, el análisis con IA, descargar los datos) necesita conexión y lo dice.
+Lo de todos los días se puede hacer igual: registrar comidas y agua, "no comí", cambiar la cantidad de un registro o borrarlo (la despensa se ajusta sola), cocinar, comprar, la lista de compras y la despensa. Cada cambio se aplica en la copia, queda en una cola y se manda solo, en orden, cuando vuelve la conexión. Lo que es de configuración (perfil, medidas, recetas y alimentos propios, el plan, el análisis con IA, descargar los datos) necesita conexión y lo dice.
 
 Cómo está hecho, en `src/store/`:
 

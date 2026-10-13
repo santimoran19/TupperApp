@@ -27,7 +27,11 @@ export const ENVIOS = {
     return ok(respuesta)
   },
 
-  borrarRegistro: async (d) => ok(await supabase.from('log_entries').delete().eq('id', d.id)),
+  // Borra el registro y devuelve a la despensa lo que había descontado. Si ya no existe (el pedido llegó dos veces), no hace nada.
+  borrarRegistro: async (d) => ok(await supabase.rpc('borrar_registro', { p_id: d.id })),
+
+  // Cambia la cantidad, recalcula calorías y macros y ajusta la despensa. Pedir dos veces la misma cantidad da lo mismo.
+  editarRegistro: async (d) => ok(await supabase.rpc('editar_registro', { p_id: d.id, p_qty: d.qty })),
 
   cocinar: async (d) =>
     ok(await supabase.rpc('cocinar', { p_receta: d.receta, p_porciones: d.porciones, p_stock: d.stock, p_clave: d.clave })),
