@@ -82,40 +82,44 @@ export default function Recetas() {
 
   return (
     <Marco titulo="Recetas">
-      <section className="rounded-3xl bg-verde text-white p-5 mb-4">
-        <p className="text-[11px] font-bold tracking-wider opacity-80 flex items-center gap-1.5">
-          <Icono n="kitchen" size={16} /> CON TU DESPENSA
-        </p>
-        <p className="text-2xl font-bold mt-1">
-          {listas} {listas === 1 ? 'receta lista' : 'recetas listas'} para cocinar
-        </p>
-        <p className="text-sm opacity-85 mt-1">Se actualiza sola cada vez que cambia tu stock.</p>
-      </section>
+      <div className="lg:flex lg:gap-6 lg:items-start lg:mb-2">
+        <section className="rounded-3xl bg-verde text-white p-5 mb-4 lg:w-[22rem] lg:shrink-0">
+          <p className="text-[11px] font-bold tracking-wider opacity-80 flex items-center gap-1.5">
+            <Icono n="kitchen" size={16} /> CON TU DESPENSA
+          </p>
+          <p className="text-2xl font-bold mt-1">
+            {listas} {listas === 1 ? 'receta lista' : 'recetas listas'} para cocinar
+          </p>
+          <p className="text-sm opacity-85 mt-1">Se actualiza sola cada vez que cambia tu stock.</p>
+        </section>
 
-      <div className="flex gap-2 mb-3">
-        <div className="relative flex-1 min-w-0">
-          <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
-          <input
-            className="campo pl-11 bg-superficie shadow-tarjeta"
-            maxLength={60}
-            placeholder="Buscar receta..."
-            value={texto}
-            onChange={(e) => setTexto(e.target.value)}
-          />
+        <div className="lg:flex-1 lg:min-w-0">
+          <div className="flex gap-2 mb-3">
+            <div className="relative flex-1 min-w-0">
+              <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
+              <input
+                className="campo pl-11 bg-superficie shadow-tarjeta"
+                maxLength={60}
+                placeholder="Buscar receta..."
+                value={texto}
+                onChange={(e) => setTexto(e.target.value)}
+              />
+            </div>
+            <Link to="/recetas/nueva" className="btn-primario px-4 shrink-0">
+              <Icono n="add" size={20} /> Nueva
+            </Link>
+          </div>
+          <div className="chips-hilera sin-scroll mb-4">
+            {filtros.map(([k, t]) => (
+              <Chip key={k} activo={filtro === k} onClick={() => setFiltro(k)}>
+                {t}
+              </Chip>
+            ))}
+          </div>
         </div>
-        <Link to="/recetas/nueva" className="btn-primario px-4 shrink-0">
-          <Icono n="add" size={20} /> Nueva
-        </Link>
-      </div>
-      <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-4">
-        {filtros.map(([k, t]) => (
-          <Chip key={k} activo={filtro === k} onClick={() => setFiltro(k)}>
-            {t}
-          </Chip>
-        ))}
       </div>
 
-      <div className="space-y-3">
+      <div className="grilla-tarjetas">
         {visibles.map(({ r, m, cocinadas, disp, posibles, total }) => (
           <Link key={r.id} to={`/recetas/${r.id}`} className="tarjeta p-4 block">
             <div className="flex flex-wrap gap-1.5 mb-2">

@@ -49,6 +49,7 @@ Cosas a saber:
 
   En Windows (PowerShell) las variables se ponen antes: `$env:REUSAR=1; npx playwright test 08-`.
 
+- **Anchos de pantalla:** todas las pruebas corren con pantalla de celular (412 px), salvo `14-escritorio`, que prueba la compu: barra lateral, columnas, ventanas centradas y que nada se salga de la pantalla de 360 a 2560 px.
 - **El navegador cree que siempre es sábado 3/10/2026 a las 21:30.** Varias pruebas dependen del día de la semana; así dan lo mismo cualquier día.
 - **Al abrir, la app muestra un instante lo que tenía guardado en el teléfono y enseguida lo que trae la base.** Para que ninguna prueba lea lo viejo, `goto` y `reload` esperan solos a que estén los datos de la base (`apoyo.js`; la app lo deja marcado en `<html data-datos="base">`). Cuando la prueba sabe que eso no va a pasar (sin conexión, o con la base rechazando un cambio), se apaga con `ctx.sinEsperarDatos = true`.
 - **El captcha va prendido, con un Turnstile de mentira** (`apoyo.js`): el simulador exige una comprobación nueva en cada pedido de acceso, como Supabase con la protección activada. El servicio de contraseñas filtradas también está reemplazado: las pruebas no salen a internet.

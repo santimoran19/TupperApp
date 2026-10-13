@@ -85,68 +85,72 @@ export default function Compras() {
 
   return (
     <Marco titulo="Lista de compras" atras>
-      <section className="rounded-3xl bg-verde text-white p-5 mb-4">
-        <p className="text-xs font-semibold opacity-80">Gastaste en {nombreMes(hoy())}</p>
-        <p className="text-3xl font-bold mt-1">{pesos(gasto)}</p>
-        <p className="text-sm opacity-80 mt-1">
-          {comprasMes.length} {comprasMes.length === 1 ? 'compra anotada' : 'compras anotadas'}
-        </p>
-      </section>
+      <div className="lg:max-w-[760px] lg:mx-auto xl:max-w-none xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-x-6 xl:items-start">
+        <section className="rounded-3xl bg-verde text-white p-5 mb-4 xl:col-start-2 xl:row-start-1">
+          <p className="text-xs font-semibold opacity-80">Gastaste en {nombreMes(hoy())}</p>
+          <p className="text-3xl font-bold mt-1">{pesos(gasto)}</p>
+          <p className="text-sm opacity-80 mt-1">
+            {comprasMes.length} {comprasMes.length === 1 ? 'compra anotada' : 'compras anotadas'}
+          </p>
+        </section>
 
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold">Para comprar</h2>
-        <button onClick={() => setAgregando(true)} className="btn-chico bg-verde-suave text-verde-texto">
-          <Icono n="add" size={16} /> Anotar
-        </button>
-      </div>
-      {delPlan.length + manuales.length === 0 ? (
-        <Vacio icono="shopping_cart" titulo="No falta nada" texto="Cuando al plan le falte un ingrediente, aparece acá solo." />
-      ) : (
-        <div className="tarjeta px-4 divide-y divide-linea">
-          {delPlan.map((x) => (
-            <Fila key={x.a.id} a={x.a} qty={x.qty} origen="falta para el plan" />
-          ))}
-          {manuales.map((x) => (
-            <Fila key={x.id} a={x.a} qty={x.qty} origen="anotado por vos" id={x.id} />
-          ))}
-        </div>
-      )}
-
-      {comprasMes.length > 0 && (
-        <>
-          <h2 className="text-lg font-semibold mt-6 mb-2">Compras del mes</h2>
-          <div className="tarjeta px-4 divide-y divide-linea">
-            {comprasMes.map((c) => {
-              const a = c.food_id && d.alimentosPorId.get(c.food_id)
-              return (
-                <div key={c.id} className="flex items-center gap-2 py-3 text-sm">
-                  <span className="w-11 text-gris">{fechaCorta(c.date)}</span>
-                  <span className="flex-1 min-w-0 truncate">
-                    {c.name}
-                    {a ? ` · ${cantidadTexto(a, Number(c.qty))}` : ''}
-                  </span>
-                  <span className="font-semibold">{pesos(c.price)}</span>
-                  <button
-                    onClick={async () => {
-                      if (
-                        await d.confirmar({
-                          titulo: `¿Borrar la compra de ${c.name}?`,
-                          texto: 'Se descuenta del gasto del mes. Lo que se sumó a la despensa queda como está.',
-                        })
-                      )
-                        d.borrarCompra(c.id)
-                    }}
-                    className="w-7 h-7 text-gris"
-                    aria-label="Borrar compra"
-                  >
-                    <Icono n="delete" size={18} />
-                  </button>
-                </div>
-              )
-            })}
+        <div className="xl:col-start-1 xl:row-start-1 xl:row-span-2 min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold">Para comprar</h2>
+            <button onClick={() => setAgregando(true)} className="btn-chico bg-verde-suave text-verde-texto">
+              <Icono n="add" size={16} /> Anotar
+            </button>
           </div>
-        </>
-      )}
+          {delPlan.length + manuales.length === 0 ? (
+            <Vacio icono="shopping_cart" titulo="No falta nada" texto="Cuando al plan le falte un ingrediente, aparece acá solo." />
+          ) : (
+            <div className="tarjeta px-4 divide-y divide-linea">
+              {delPlan.map((x) => (
+                <Fila key={x.a.id} a={x.a} qty={x.qty} origen="falta para el plan" />
+              ))}
+              {manuales.map((x) => (
+                <Fila key={x.id} a={x.a} qty={x.qty} origen="anotado por vos" id={x.id} />
+              ))}
+            </div>
+          )}
+        </div>
+
+        {comprasMes.length > 0 && (
+          <div className="xl:col-start-2 xl:row-start-2">
+            <h2 className="text-lg font-semibold mt-6 xl:mt-0 mb-2">Compras del mes</h2>
+            <div className="tarjeta px-4 divide-y divide-linea">
+              {comprasMes.map((c) => {
+                const a = c.food_id && d.alimentosPorId.get(c.food_id)
+                return (
+                  <div key={c.id} className="flex items-center gap-2 py-3 text-sm">
+                    <span className="w-11 text-gris">{fechaCorta(c.date)}</span>
+                    <span className="flex-1 min-w-0 truncate">
+                      {c.name}
+                      {a ? ` · ${cantidadTexto(a, Number(c.qty))}` : ''}
+                    </span>
+                    <span className="font-semibold">{pesos(c.price)}</span>
+                    <button
+                      onClick={async () => {
+                        if (
+                          await d.confirmar({
+                            titulo: `¿Borrar la compra de ${c.name}?`,
+                            texto: 'Se descuenta del gasto del mes. Lo que se sumó a la despensa queda como está.',
+                          })
+                        )
+                          d.borrarCompra(c.id)
+                      }}
+                      className="w-7 h-7 text-gris"
+                      aria-label="Borrar compra"
+                    >
+                      <Icono n="delete" size={18} />
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
 
       {agregando && (
         <Hoja titulo="Anotar para comprar" onCerrar={() => setAgregando(false)}>

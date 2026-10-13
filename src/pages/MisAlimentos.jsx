@@ -25,45 +25,47 @@ export default function MisAlimentos() {
 
   return (
     <Marco titulo="Mis alimentos" atras>
-      <p className="text-sm text-gris mb-4">
-        Los alimentos que cargaste vos. Los de la base no se pueden tocar, pero podés crear tu versión.
-      </p>
-      {propios.length === 0 ? (
-        <Vacio
-          icono="eco"
-          titulo="Todavía no creaste ninguno"
-          texto="Cuando no encuentres algo en el buscador, lo creás con los datos de la etiqueta y queda guardado."
-        >
-          <button onClick={() => setEditando('nuevo')} className="btn-primario">
-            <Icono n="add" /> Crear alimento
-          </button>
-        </Vacio>
-      ) : (
-        <>
-          <div className="tarjeta px-4 divide-y divide-linea">
-            {propios.map((a) => (
-              <div key={a.id} className="flex items-center gap-1 py-3">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium truncate">{a.name}</p>
-                  <p className="text-xs text-gris">
-                    {redondear(a.kcal)} kcal y {redondear(a.protein, 1)} g prot. cada 100 {a.unit === 'ml' ? 'ml' : 'g'} · {a.category}
-                    {d.base(a).id !== a.id && <span className="text-teal-oscuro"> · cuenta como {nombreCorto(d.base(a))}</span>}
-                  </p>
+      <div className="una-columna">
+        <p className="text-sm text-gris mb-4">
+          Los alimentos que cargaste vos. Los de la base no se pueden tocar, pero podés crear tu versión.
+        </p>
+        {propios.length === 0 ? (
+          <Vacio
+            icono="eco"
+            titulo="Todavía no creaste ninguno"
+            texto="Cuando no encuentres algo en el buscador, lo creás con los datos de la etiqueta y queda guardado."
+          >
+            <button onClick={() => setEditando('nuevo')} className="btn-primario">
+              <Icono n="add" /> Crear alimento
+            </button>
+          </Vacio>
+        ) : (
+          <>
+            <div className="tarjeta px-4 divide-y divide-linea">
+              {propios.map((a) => (
+                <div key={a.id} className="flex items-center gap-1 py-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{a.name}</p>
+                    <p className="text-xs text-gris">
+                      {redondear(a.kcal)} kcal y {redondear(a.protein, 1)} g prot. cada 100 {a.unit === 'ml' ? 'ml' : 'g'} · {a.category}
+                      {d.base(a).id !== a.id && <span className="text-teal-oscuro"> · cuenta como {nombreCorto(d.base(a))}</span>}
+                    </p>
+                  </div>
+                  <button onClick={() => setEditando(a)} className="w-9 h-9 text-verde-texto" aria-label={`Editar ${a.name}`}>
+                    <Icono n="edit" size={20} />
+                  </button>
+                  <button onClick={() => borrar(a)} className="w-9 h-9 text-gris" aria-label={`Borrar ${a.name}`}>
+                    <Icono n="delete" size={20} />
+                  </button>
                 </div>
-                <button onClick={() => setEditando(a)} className="w-9 h-9 text-verde-texto" aria-label={`Editar ${a.name}`}>
-                  <Icono n="edit" size={20} />
-                </button>
-                <button onClick={() => borrar(a)} className="w-9 h-9 text-gris" aria-label={`Borrar ${a.name}`}>
-                  <Icono n="delete" size={20} />
-                </button>
-              </div>
-            ))}
-          </div>
-          <button onClick={() => setEditando('nuevo')} className="btn-suave w-full mt-4">
-            <Icono n="add" size={20} /> Crear alimento
-          </button>
-        </>
-      )}
+              ))}
+            </div>
+            <button onClick={() => setEditando('nuevo')} className="btn-suave w-full mt-4">
+              <Icono n="add" size={20} /> Crear alimento
+            </button>
+          </>
+        )}
+      </div>
 
       {editando && (
         <Hoja titulo={editando === 'nuevo' ? 'Nuevo alimento' : 'Editar alimento'} onCerrar={() => setEditando(null)}>

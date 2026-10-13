@@ -49,7 +49,7 @@ export default function AvisoVersion() {
 
   if (!hayNueva) return null
   return (
-    <div className="fixed top-[72px] left-0 right-0 z-[65] flex justify-center px-4 pointer-events-none">
+    <div className="fixed top-[72px] left-0 right-0 lg:left-64 z-[65] flex justify-center px-4 pointer-events-none">
       <div
         role="status"
         className="pointer-events-auto flex items-center gap-2 rounded-full bg-tinta text-fondo shadow-flotante pl-4 pr-1.5 py-1.5 text-sm font-medium"

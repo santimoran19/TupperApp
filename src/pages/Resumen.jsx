@@ -247,7 +247,7 @@ export default function Resumen() {
 
   return (
     <Marco titulo="Resumen semanal" atras>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 lg:max-w-[26rem] lg:mx-auto">
         <button
           onClick={() => {
             setLunes(sumarDias(lunes, -7))
@@ -280,80 +280,90 @@ export default function Resumen() {
         </button>
       </div>
 
-      <section className="rounded-2xl bg-verde-claro p-4 mb-4">
-        <p className="text-[11px] font-bold tracking-wider text-verde-texto flex items-center gap-1.5">
-          <Icono n="bar_chart" size={16} /> CÓMO VENÍS
-        </p>
-        <p className="text-sm mt-1.5">{lectura}</p>
-      </section>
+      <div className="dos-columnas">
+        <div className="min-w-0">
+          <section className="rounded-2xl bg-verde-claro p-4 mb-4">
+            <p className="text-[11px] font-bold tracking-wider text-verde-texto flex items-center gap-1.5">
+              <Icono n="bar_chart" size={16} /> CÓMO VENÍS
+            </p>
+            <p className="text-sm mt-1.5">{lectura}</p>
+          </section>
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <Dato titulo="Calorías por día" valor={n ? miles(kcalProm) : '—'} detalle={`objetivo ${miles(kcalObj)}`} />
-        <Dato titulo="Proteína por día" valor={n ? `${redondear(protProm)} g` : '—'} detalle={`objetivo ${protObj} g`} />
-        <Dato
-          titulo="Días en objetivo"
-          valor={n ? `${enObjetivo} de ${n}` : '—'}
-          detalle={n ? `${n} ${n === 1 ? 'día registrado' : 'días registrados'}` : 'sin registros'}
-        />
-        <Dato titulo="Líquido por día" valor={conLiquido.length ? `${litros(liqProm)} L` : '—'} detalle={`objetivo ${litros(liqObj)} L`} />
-      </div>
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <Dato titulo="Calorías por día" valor={n ? miles(kcalProm) : '—'} detalle={`objetivo ${miles(kcalObj)}`} />
+            <Dato titulo="Proteína por día" valor={n ? `${redondear(protProm)} g` : '—'} detalle={`objetivo ${protObj} g`} />
+            <Dato
+              titulo="Días en objetivo"
+              valor={n ? `${enObjetivo} de ${n}` : '—'}
+              detalle={n ? `${n} ${n === 1 ? 'día registrado' : 'días registrados'}` : 'sin registros'}
+            />
+            <Dato
+              titulo="Líquido por día"
+              valor={conLiquido.length ? `${litros(liqProm)} L` : '—'}
+              detalle={`objetivo ${litros(liqObj)} L`}
+            />
+          </div>
 
-      <AnalisisIA key={lunes} lunes={lunes} diasRegistrados={n} />
-
-      <section className="tarjeta p-4 mb-4">
-        <h2 className="font-semibold mb-1">Calorías por día</h2>
-        <Barras dias={dias} objetivo={kcalObj} elegido={sel.f} onElegir={setElegido} />
-        <div className="mt-2 rounded-xl bg-campo px-3 py-2.5 text-sm">
-          <b>
-            {nombreDia(sel.f)} {fechaCorta(sel.f)}:
-          </b>{' '}
-          {sel.kcal > 0 || sel.liquido > 0
-            ? `${miles(sel.kcal)} kcal · ${redondear(sel.protein)} g de proteína · ${litros(sel.liquido)} L de líquido`
-            : 'sin registros'}
+          <AnalisisIA key={lunes} lunes={lunes} diasRegistrados={n} />
         </div>
-      </section>
 
-      <section className="tarjeta p-4 mb-4">
-        <h2 className="font-semibold mb-2">Día por día</h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs text-gris text-right">
-              <th className="text-left font-semibold pb-1.5">Día</th>
-              <th className="font-semibold pb-1.5">kcal</th>
-              <th className="font-semibold pb-1.5">Proteína</th>
-              <th className="font-semibold pb-1.5">Líquido</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-linea">
-            {dias.map((x) => (
-              <tr key={x.f} className="text-right">
-                <td className="text-left py-2">{nombreDia(x.f)}</td>
-                <td className="py-2 font-semibold">{x.kcal > 0 ? miles(x.kcal) : '—'}</td>
-                <td className="py-2">{x.kcal > 0 ? `${redondear(x.protein)} g` : '—'}</td>
-                <td className="py-2">{x.liquido > 0 ? `${litros(x.liquido)} L` : '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </section>
+        <div className="min-w-0">
+          <section className="tarjeta p-4 mb-4">
+            <h2 className="font-semibold mb-1">Calorías por día</h2>
+            <Barras dias={dias} objetivo={kcalObj} elegido={sel.f} onElegir={setElegido} />
+            <div className="mt-2 rounded-xl bg-campo px-3 py-2.5 text-sm">
+              <b>
+                {nombreDia(sel.f)} {fechaCorta(sel.f)}:
+              </b>{' '}
+              {sel.kcal > 0 || sel.liquido > 0
+                ? `${miles(sel.kcal)} kcal · ${redondear(sel.protein)} g de proteína · ${litros(sel.liquido)} L de líquido`
+                : 'sin registros'}
+            </div>
+          </section>
 
-      <section className="tarjeta p-4">
-        <h2 className="font-semibold">Peso</h2>
-        {pesoFin === null ? (
-          <p className="text-sm text-gris mt-1">
-            No anotaste tu peso esta semana. Con una medida por semana alcanza para ver la tendencia.
-          </p>
-        ) : (
-          <p className="text-sm mt-1">
-            Última medida: <b>{pesoFin} kg</b>.{' '}
-            {cambio === null
-              ? 'Todavía no hay otra para comparar.'
-              : cambio === 0
-                ? 'Igual que la medida anterior.'
-                : `${cambio < 0 ? 'Bajaste' : 'Subiste'} ${String(Math.abs(cambio)).replace('.', ',')} kg ${deLaSemana.length > 1 ? 'en la semana' : 'desde la medida anterior'}.`}
-          </p>
-        )}
-      </section>
+          <section className="tarjeta p-4 mb-4">
+            <h2 className="font-semibold mb-2">Día por día</h2>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-gris text-right">
+                  <th className="text-left font-semibold pb-1.5">Día</th>
+                  <th className="font-semibold pb-1.5">kcal</th>
+                  <th className="font-semibold pb-1.5">Proteína</th>
+                  <th className="font-semibold pb-1.5">Líquido</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-linea">
+                {dias.map((x) => (
+                  <tr key={x.f} className="text-right">
+                    <td className="text-left py-2">{nombreDia(x.f)}</td>
+                    <td className="py-2 font-semibold">{x.kcal > 0 ? miles(x.kcal) : '—'}</td>
+                    <td className="py-2">{x.kcal > 0 ? `${redondear(x.protein)} g` : '—'}</td>
+                    <td className="py-2">{x.liquido > 0 ? `${litros(x.liquido)} L` : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+
+          <section className="tarjeta p-4">
+            <h2 className="font-semibold">Peso</h2>
+            {pesoFin === null ? (
+              <p className="text-sm text-gris mt-1">
+                No anotaste tu peso esta semana. Con una medida por semana alcanza para ver la tendencia.
+              </p>
+            ) : (
+              <p className="text-sm mt-1">
+                Última medida: <b>{pesoFin} kg</b>.{' '}
+                {cambio === null
+                  ? 'Todavía no hay otra para comparar.'
+                  : cambio === 0
+                    ? 'Igual que la medida anterior.'
+                    : `${cambio < 0 ? 'Bajaste' : 'Subiste'} ${String(Math.abs(cambio)).replace('.', ',')} kg ${deLaSemana.length > 1 ? 'en la semana' : 'desde la medida anterior'}.`}
+              </p>
+            )}
+          </section>
+        </div>
+      </div>
     </Marco>
   )
 }

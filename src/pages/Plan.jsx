@@ -119,43 +119,45 @@ export default function Plan() {
 
   return (
     <Marco titulo="Plan semanal">
-      <div className="flex items-center justify-between mb-3">
-        <button
-          onClick={() => setLunes(sumarDias(lunes, -7))}
-          disabled={lunes <= primerLunes}
-          className="w-10 h-10 rounded-full bg-superficie shadow-tarjeta flex items-center justify-center disabled:opacity-30"
-          aria-label="Semana anterior"
-        >
-          <Icono n="chevron_left" />
-        </button>
-        <div className="text-center">
-          <p className="font-semibold">
-            {lunes === lunesDe(h) ? 'Esta semana' : lunes === sumarDias(lunesDe(h), 7) ? 'Semana que viene' : 'Semana'}
-          </p>
-          <p className="text-xs text-gris">
-            {fechaCorta(dias[0])} al {fechaCorta(dias[6])}
-          </p>
+      <div className="lg:flex lg:items-center lg:justify-between lg:gap-6 lg:mb-4">
+        <div className="flex items-center justify-between mb-3 lg:mb-0 lg:w-[22rem]">
+          <button
+            onClick={() => setLunes(sumarDias(lunes, -7))}
+            disabled={lunes <= primerLunes}
+            className="w-10 h-10 rounded-full bg-superficie shadow-tarjeta flex items-center justify-center disabled:opacity-30"
+            aria-label="Semana anterior"
+          >
+            <Icono n="chevron_left" />
+          </button>
+          <div className="text-center">
+            <p className="font-semibold">
+              {lunes === lunesDe(h) ? 'Esta semana' : lunes === sumarDias(lunesDe(h), 7) ? 'Semana que viene' : 'Semana'}
+            </p>
+            <p className="text-xs text-gris">
+              {fechaCorta(dias[0])} al {fechaCorta(dias[6])}
+            </p>
+          </div>
+          <button
+            onClick={() => setLunes(sumarDias(lunes, 7))}
+            disabled={lunes >= ultimoLunes}
+            className="w-10 h-10 rounded-full bg-superficie shadow-tarjeta flex items-center justify-center disabled:opacity-30"
+            aria-label="Semana siguiente"
+          >
+            <Icono n="chevron_right" />
+          </button>
         </div>
-        <button
-          onClick={() => setLunes(sumarDias(lunes, 7))}
-          disabled={lunes >= ultimoLunes}
-          className="w-10 h-10 rounded-full bg-superficie shadow-tarjeta flex items-center justify-center disabled:opacity-30"
-          aria-label="Semana siguiente"
-        >
-          <Icono n="chevron_right" />
-        </button>
-      </div>
 
-      {dias[6] >= h && (
-        <div className="flex gap-2 mb-4">
-          <button onClick={armar} disabled={trabajando || !huecos} className="btn-primario flex-1">
-            <Icono n="wand_stars" size={20} /> {huecos ? 'Armar con lo que tengo' : 'Semana completa'}
-          </button>
-          <button onClick={rehacer} disabled={trabajando} className="btn-suave" aria-label="Rehacer la semana">
-            <Icono n="refresh" size={20} />
-          </button>
-        </div>
-      )}
+        {dias[6] >= h && (
+          <div className="flex gap-2 mb-4 lg:mb-0 lg:w-[26rem]">
+            <button onClick={armar} disabled={trabajando || !huecos} className="btn-primario flex-1">
+              <Icono n="wand_stars" size={20} /> {huecos ? 'Armar con lo que tengo' : 'Semana completa'}
+            </button>
+            <button onClick={rehacer} disabled={trabajando} className="btn-suave" aria-label="Rehacer la semana">
+              <Icono n="refresh" size={20} />
+            </button>
+          </div>
+        )}
+      </div>
 
       {faltan > 0 && (
         <Link to="/compras" className="rounded-2xl bg-naranja-suave p-4 mb-4 flex items-center gap-3">
@@ -167,7 +169,7 @@ export default function Plan() {
         </Link>
       )}
 
-      <div className="space-y-3">
+      <div className="grilla-tarjetas [--min:17rem]">
         {dias.map((f) => {
           const pasado = f < h
           // De los días que ya pasaron solo se muestra lo que estaba planificado

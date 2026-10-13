@@ -136,6 +136,7 @@ El plan gratis de Supabase no deja bajar copias. Hay una por día, cifrada, en e
 - Cuando se publica una versión nueva, la app instalada muestra el aviso "Hay una versión nueva" con el botón Actualizar (`src/components/AvisoVersion.jsx`). La versión es la del `package.json` y se ve al pie del Perfil.
 - Al volver a la app después de un rato, trae los datos de nuevo sin mostrar "Cargando": lo que se cambió desde otro dispositivo aparece solo.
 - Funciona sin conexión (ver más abajo).
+- Diseño para computadora: desde 1024 px de ancho aparece la barra de navegación al costado, las pantallas se acomodan en columnas y las ventanas se abren como recuadro en el centro. Por debajo de ese ancho queda el diseño de celular, sin cambios. Se hace con las variantes `lg:` y `xl:` de Tailwind, las clases de la sección "Diseño de computadora" de `src/index.css` y `src/lib/escritorio.js` (que decide entre la barra de abajo y la lateral).
 - Modo oscuro: sigue al teléfono y se puede forzar desde Perfil > Apariencia. Los colores de los dos temas son variables en `src/index.css`; `public/tema.js` aplica la elección antes de pintar.
 
 ## Sin conexión

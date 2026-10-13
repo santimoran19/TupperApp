@@ -215,257 +215,275 @@ export default function Registrar() {
   return (
     <Marco titulo="Registrar" atras sinNav>
       {fecha !== hoy() && <p className="text-sm text-gris mb-2">{fechaLarga(fecha)}</p>}
-      <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-4">
-        {MOMENTOS.map((c) => (
-          <Chip key={c} activo={c === comida} onClick={() => setComida(c)}>
-            {NOMBRE_COMIDA[c]}
-          </Chip>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        <button onClick={() => setBuscando('alimento')} className="tarjeta p-3 text-left">
-          <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2">
-            <Icono n="search" />
+      <div className="con-lateral">
+        <div>
+          <div className="chips-hilera sin-scroll mb-4">
+            {MOMENTOS.map((c) => (
+              <Chip key={c} activo={c === comida} onClick={() => setComida(c)}>
+                {NOMBRE_COMIDA[c]}
+              </Chip>
+            ))}
           </div>
-          <p className="font-semibold">Alimento</p>
-          <p className="text-xs text-gris">Buscá o creá uno</p>
-        </button>
-        <button onClick={() => setBuscando('bebida')} className="tarjeta p-3 text-left">
-          <div className="w-10 h-10 rounded-full bg-teal-suave text-teal-oscuro flex items-center justify-center mb-2">
-            <Icono n="local_bar" />
-          </div>
-          <p className="font-semibold">Bebida</p>
-          <p className="text-xs text-gris">Agua, mate, café, alcohol</p>
-        </button>
-        <button onClick={() => setBuscando('receta')} className="tarjeta p-3 text-left">
-          <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2">
-            <Icono n="menu_book" />
-          </div>
-          <p className="font-semibold">Receta</p>
-          <p className="text-xs text-gris">Una porción armada</p>
-        </button>
-      </div>
 
-      {platos.length === 0 && deAyer.length > 0 && (
-        <button onClick={repetirAyer} className="w-full tarjeta p-3 mb-4 flex items-center gap-3 text-left">
-          <span className="w-10 h-10 rounded-full bg-naranja-suave text-naranja-oscuro flex items-center justify-center">
-            <Icono n="replay" />
-          </span>
-          <span className="flex-1 min-w-0">
-            <span className="block font-semibold">Repetir lo de ayer</span>
-            <span className="block text-xs text-gris truncate">{deAyer.map((r) => r.name).join(', ')}</span>
-          </span>
-        </button>
-      )}
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <button onClick={() => setBuscando('alimento')} className="tarjeta p-3 text-left">
+              <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2">
+                <Icono n="search" />
+              </div>
+              <p className="font-semibold">Alimento</p>
+              <p className="text-xs text-gris">Buscá o creá uno</p>
+            </button>
+            <button onClick={() => setBuscando('bebida')} className="tarjeta p-3 text-left">
+              <div className="w-10 h-10 rounded-full bg-teal-suave text-teal-oscuro flex items-center justify-center mb-2">
+                <Icono n="local_bar" />
+              </div>
+              <p className="font-semibold">Bebida</p>
+              <p className="text-xs text-gris">Agua, mate, café, alcohol</p>
+            </button>
+            <button onClick={() => setBuscando('receta')} className="tarjeta p-3 text-left">
+              <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2">
+                <Icono n="menu_book" />
+              </div>
+              <p className="font-semibold">Receta</p>
+              <p className="text-xs text-gris">Una porción armada</p>
+            </button>
+          </div>
 
-      {chipsFrecuentes.length > 0 && (
-        <>
-          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-            <Icono n="history" size={18} className="text-verde-texto" /> Lo que más registrás
-          </p>
-          <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-4">
-            {chipsFrecuentes.map((g) => {
-              const nombre = (g.food_id ? d.alimentosPorId.get(g.food_id) : d.recetasPorId.get(g.recipe_id)).name
+          {platos.length === 0 && deAyer.length > 0 && (
+            <button onClick={repetirAyer} className="w-full tarjeta p-3 mb-4 flex items-center gap-3 text-left">
+              <span className="w-10 h-10 rounded-full bg-naranja-suave text-naranja-oscuro flex items-center justify-center">
+                <Icono n="replay" />
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block font-semibold">Repetir lo de ayer</span>
+                <span className="block text-xs text-gris truncate">{deAyer.map((r) => r.name).join(', ')}</span>
+              </span>
+            </button>
+          )}
+
+          {chipsFrecuentes.length > 0 && (
+            <>
+              <p className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                <Icono n="history" size={18} className="text-verde-texto" /> Lo que más registrás
+              </p>
+              <div className="chips-hilera sin-scroll mb-4">
+                {chipsFrecuentes.map((g) => {
+                  const nombre = (g.food_id ? d.alimentosPorId.get(g.food_id) : d.recetasPorId.get(g.recipe_id)).name
+                  return (
+                    <button
+                      key={g.clave}
+                      onClick={() => agregarFrecuente(g)}
+                      className="shrink-0 max-w-[220px] rounded-full bg-superficie shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium"
+                    >
+                      <span className="truncate">{nombre.split(' (')[0]}</span>{' '}
+                      <span className="w-6 h-6 shrink-0 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center">
+                        <Icono n="add" size={16} />
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+            </>
+          )}
+
+          {enDespensa.length > 0 && (
+            <>
+              <p className="text-sm font-semibold mb-2 flex items-center gap-1.5">
+                <Icono n="kitchen" size={18} className="text-verde-texto" /> Desde tu despensa
+              </p>
+              <div className="chips-hilera sin-scroll mb-5">
+                {enDespensa.map((a) => (
+                  <button
+                    key={a.id}
+                    onClick={() => agregarAlimento(a)}
+                    className="shrink-0 rounded-full bg-superficie shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium"
+                  >
+                    {a.name.split(' (')[0]}{' '}
+                    <span className="w-6 h-6 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center">
+                      <Icono n="add" size={16} />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-lg font-semibold">Tu plato</h2>
+            <span className="pill bg-campo text-gris">
+              {platos.length} {platos.length === 1 ? 'cosa' : 'cosas'}
+            </span>
+          </div>
+
+          {platos.length === 0 && (
+            <div className="tarjeta border-dashed border-linea shadow-none p-5 text-center text-sm text-gris">
+              Agregá lo que comiste o tomaste: un alimento, una bebida, varios o una receta.
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {platos.map((p, i) => {
+              const a = p.food_id && d.alimentosPorId.get(p.food_id)
+              const r = p.recipe_id && d.recetasPorId.get(p.recipe_id)
+              const m = macrosPlato(p)
+              const error = errorDe(p)
+              const medidas = a ? medidasDe(a, termo) : []
               return (
-                <button
-                  key={g.clave}
-                  onClick={() => agregarFrecuente(g)}
-                  className="shrink-0 max-w-[220px] rounded-full bg-superficie shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium"
-                >
-                  <span className="truncate">{nombre.split(' (')[0]}</span>{' '}
-                  <span className="w-6 h-6 shrink-0 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center">
-                    <Icono n="add" size={16} />
-                  </span>
-                </button>
+                <div key={p.food_id || p.recipe_id} className="tarjeta p-4">
+                  <div className="flex items-start gap-2">
+                    <p className="flex-1 font-medium">{a ? a.name : r.name}</p>
+                    <span className="font-bold text-verde-texto whitespace-nowrap">{redondear(m.kcal)} kcal</span>
+                    <button onClick={() => quitar(i)} className="w-7 h-7 -mr-1 text-gris" aria-label="Quitar">
+                      <Icono n="close" size={20} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Numero
+                      valor={a ? p.qty : p.porciones}
+                      onChange={(v) => cambiar(i, a ? { qty: v } : { porciones: v })}
+                      decimales={a && a.unit !== 'u' ? 0 : 2}
+                      largo={5}
+                      error={!!error}
+                      className="campo h-10 w-24 text-center font-semibold"
+                      aria-label="Cantidad"
+                    />
+                    <span className="text-sm text-gris">
+                      {a ? unidadDe(a, Number(p.qty)) : Number(p.porciones) === 1 ? 'porción' : 'porciones'}
+                    </span>
+                    <span className="ml-auto pill bg-coral-suave text-coral-oscuro">{redondear(m.protein)} g prot.</span>
+                  </div>
+                  <Err>{error}</Err>
+
+                  {medidas.length > 0 && (
+                    <div className="flex gap-1.5 overflow-x-auto sin-scroll mt-2.5">
+                      {medidas.map(([nombre, cantidad]) => (
+                        <button
+                          key={nombre}
+                          onClick={() => cambiar(i, { qty: String(cantidad) })}
+                          className={`shrink-0 rounded-full px-3 h-8 text-xs font-semibold ${Number(p.qty) === cantidad ? 'bg-teal-fuerte text-white' : 'bg-teal-suave text-teal-oscuro'}`}
+                        >
+                          {nombre} · {textoMedida(a, cantidad)}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {a && grupoDe(a) === 'mate' && (
+                    <label className="flex items-center gap-2 mt-2.5 text-xs text-gris">
+                      Tu termo es de
+                      <select
+                        className="rounded-lg bg-campo px-2 h-8 text-sm text-tinta font-semibold"
+                        value={termo}
+                        aria-label="Tamaño del termo"
+                        onChange={(e) => d.ajustarPerfil({ thermos_ml: Number(e.target.value) })}
+                      >
+                        {TERMOS.map((t) => (
+                          <option key={t} value={t}>
+                            {t >= 1000 ? `${String(t / 1000).replace('.', ',')} L` : `${t} ml`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+
+                  {a && seEndulza(a) && azucar && (
+                    <div className="mt-3 pt-3 border-t border-linea">
+                      <p className="text-xs font-semibold text-gris mb-1.5">Endulzado con</p>
+                      <div className="flex gap-1.5">
+                        {[
+                          ['nada', 'Nada'],
+                          ['azucar', 'Azúcar'],
+                          ['edulcorante', 'Edulcorante'],
+                        ].map(([k, t]) => (
+                          <button
+                            key={k}
+                            onClick={() => cambiar(i, { dulce: k })}
+                            className={`rounded-full px-3 h-8 text-xs font-semibold ${p.dulce === k ? 'bg-verde text-white' : 'bg-campo text-tinta'}`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                      {p.dulce === 'azucar' && (
+                        <div className="flex items-center gap-2 mt-2.5">
+                          <div className="flex items-center rounded-full bg-campo">
+                            <button
+                              onClick={() => cambiar(i, { cucharaditas: Math.max(0.5, p.cucharaditas - 0.5) })}
+                              disabled={p.cucharaditas <= 0.5}
+                              className="w-9 h-9 flex items-center justify-center disabled:opacity-30"
+                              aria-label="Menos azúcar"
+                            >
+                              <Icono n="remove" size={18} />
+                            </button>
+                            <span className="min-w-[30px] text-center text-sm font-semibold">
+                              {String(p.cucharaditas).replace('.', ',')}
+                            </span>
+                            <button
+                              onClick={() => cambiar(i, { cucharaditas: Math.min(MAX_CUCHARADITAS, p.cucharaditas + 0.5) })}
+                              disabled={p.cucharaditas >= MAX_CUCHARADITAS}
+                              className="w-9 h-9 flex items-center justify-center disabled:opacity-30"
+                              aria-label="Más azúcar"
+                            >
+                              <Icono n="add" size={18} />
+                            </button>
+                          </div>
+                          <span className="text-sm text-gris">
+                            {p.cucharaditas === 1 ? 'cucharadita' : 'cucharaditas'} en total ·{' '}
+                            {redondear(macrosDe(azucar, gramosAzucar(p)).kcal)} kcal
+                          </span>
+                        </div>
+                      )}
+                      {p.dulce === 'edulcorante' && <p className="text-xs text-gris mt-2">El edulcorante no suma calorías.</p>}
+                    </div>
+                  )}
+                </div>
               )
             })}
           </div>
-        </>
-      )}
 
-      {enDespensa.length > 0 && (
-        <>
-          <p className="text-sm font-semibold mb-2 flex items-center gap-1.5">
-            <Icono n="kitchen" size={18} className="text-verde-texto" /> Desde tu despensa
-          </p>
-          <div className="flex gap-2 overflow-x-auto sin-scroll -mx-4 px-4 mb-5">
-            {enDespensa.map((a) => (
-              <button
-                key={a.id}
-                onClick={() => agregarAlimento(a)}
-                className="shrink-0 rounded-full bg-superficie shadow-tarjeta border border-verde-suave/60 pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-medium"
-              >
-                {a.name.split(' (')[0]}{' '}
-                <span className="w-6 h-6 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center">
-                  <Icono n="add" size={16} />
-                </span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold">Tu plato</h2>
-        <span className="pill bg-campo text-gris">
-          {platos.length} {platos.length === 1 ? 'cosa' : 'cosas'}
-        </span>
-      </div>
-
-      {platos.length === 0 && (
-        <div className="tarjeta border-dashed border-linea shadow-none p-5 text-center text-sm text-gris">
-          Agregá lo que comiste o tomaste: un alimento, una bebida, varios o una receta.
-        </div>
-      )}
-
-      <div className="space-y-3">
-        {platos.map((p, i) => {
-          const a = p.food_id && d.alimentosPorId.get(p.food_id)
-          const r = p.recipe_id && d.recetasPorId.get(p.recipe_id)
-          const m = macrosPlato(p)
-          const error = errorDe(p)
-          const medidas = a ? medidasDe(a, termo) : []
-          return (
-            <div key={p.food_id || p.recipe_id} className="tarjeta p-4">
-              <div className="flex items-start gap-2">
-                <p className="flex-1 font-medium">{a ? a.name : r.name}</p>
-                <span className="font-bold text-verde-texto whitespace-nowrap">{redondear(m.kcal)} kcal</span>
-                <button onClick={() => quitar(i)} className="w-7 h-7 -mr-1 text-gris" aria-label="Quitar">
-                  <Icono n="close" size={20} />
-                </button>
+          {platos.length > 0 && (
+            <section className="tarjeta rounded-3xl p-5 mt-4">
+              <div className="flex items-end justify-between mb-4">
+                <div>
+                  <p className="text-xs font-bold tracking-wider text-gris">TOTAL</p>
+                  <p className="text-3xl font-bold text-verde-texto leading-none mt-1">
+                    {redondear(total.kcal)} <span className="text-sm">kcal</span>
+                  </p>
+                </div>
+                <p className="text-sm text-gris text-right">
+                  Con esto llevás
+                  <br />
+                  <b className="text-tinta">
+                    {redondear(yaComido.kcal + total.kcal)} de {d.perfil.kcal_target} kcal
+                  </b>
+                </p>
               </div>
-              <div className="flex items-center gap-2 mt-2">
-                <Numero
-                  valor={a ? p.qty : p.porciones}
-                  onChange={(v) => cambiar(i, a ? { qty: v } : { porciones: v })}
-                  decimales={a && a.unit !== 'u' ? 0 : 2}
-                  largo={5}
-                  error={!!error}
-                  className="campo h-10 w-24 text-center font-semibold"
-                  aria-label="Cantidad"
+              <div className="space-y-3">
+                <Barra
+                  nombre="Proteína del día"
+                  valor={yaComido.protein + total.protein}
+                  total={d.perfil.protein_target}
+                  color="bg-coral"
                 />
-                <span className="text-sm text-gris">
-                  {a ? unidadDe(a, Number(p.qty)) : Number(p.porciones) === 1 ? 'porción' : 'porciones'}
-                </span>
-                <span className="ml-auto pill bg-coral-suave text-coral-oscuro">{redondear(m.protein)} g prot.</span>
               </div>
-              <Err>{error}</Err>
+              <label className="flex items-center gap-3 mt-4 text-sm">
+                <input
+                  type="checkbox"
+                  checked={descontar}
+                  onChange={(e) => setDescontar(e.target.checked)}
+                  className="w-5 h-5 accent-verde"
+                />
+                Descontar de mi despensa lo que usé
+              </label>
+            </section>
+          )}
 
-              {medidas.length > 0 && (
-                <div className="flex gap-1.5 overflow-x-auto sin-scroll mt-2.5">
-                  {medidas.map(([nombre, cantidad]) => (
-                    <button
-                      key={nombre}
-                      onClick={() => cambiar(i, { qty: String(cantidad) })}
-                      className={`shrink-0 rounded-full px-3 h-8 text-xs font-semibold ${Number(p.qty) === cantidad ? 'bg-teal-fuerte text-white' : 'bg-teal-suave text-teal-oscuro'}`}
-                    >
-                      {nombre} · {textoMedida(a, cantidad)}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {a && grupoDe(a) === 'mate' && (
-                <label className="flex items-center gap-2 mt-2.5 text-xs text-gris">
-                  Tu termo es de
-                  <select
-                    className="rounded-lg bg-campo px-2 h-8 text-sm text-tinta font-semibold"
-                    value={termo}
-                    aria-label="Tamaño del termo"
-                    onChange={(e) => d.ajustarPerfil({ thermos_ml: Number(e.target.value) })}
-                  >
-                    {TERMOS.map((t) => (
-                      <option key={t} value={t}>
-                        {t >= 1000 ? `${String(t / 1000).replace('.', ',')} L` : `${t} ml`}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-
-              {a && seEndulza(a) && azucar && (
-                <div className="mt-3 pt-3 border-t border-linea">
-                  <p className="text-xs font-semibold text-gris mb-1.5">Endulzado con</p>
-                  <div className="flex gap-1.5">
-                    {[
-                      ['nada', 'Nada'],
-                      ['azucar', 'Azúcar'],
-                      ['edulcorante', 'Edulcorante'],
-                    ].map(([k, t]) => (
-                      <button
-                        key={k}
-                        onClick={() => cambiar(i, { dulce: k })}
-                        className={`rounded-full px-3 h-8 text-xs font-semibold ${p.dulce === k ? 'bg-verde text-white' : 'bg-campo text-tinta'}`}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                  {p.dulce === 'azucar' && (
-                    <div className="flex items-center gap-2 mt-2.5">
-                      <div className="flex items-center rounded-full bg-campo">
-                        <button
-                          onClick={() => cambiar(i, { cucharaditas: Math.max(0.5, p.cucharaditas - 0.5) })}
-                          disabled={p.cucharaditas <= 0.5}
-                          className="w-9 h-9 flex items-center justify-center disabled:opacity-30"
-                          aria-label="Menos azúcar"
-                        >
-                          <Icono n="remove" size={18} />
-                        </button>
-                        <span className="min-w-[30px] text-center text-sm font-semibold">{String(p.cucharaditas).replace('.', ',')}</span>
-                        <button
-                          onClick={() => cambiar(i, { cucharaditas: Math.min(MAX_CUCHARADITAS, p.cucharaditas + 0.5) })}
-                          disabled={p.cucharaditas >= MAX_CUCHARADITAS}
-                          className="w-9 h-9 flex items-center justify-center disabled:opacity-30"
-                          aria-label="Más azúcar"
-                        >
-                          <Icono n="add" size={18} />
-                        </button>
-                      </div>
-                      <span className="text-sm text-gris">
-                        {p.cucharaditas === 1 ? 'cucharadita' : 'cucharaditas'} en total ·{' '}
-                        {redondear(macrosDe(azucar, gramosAzucar(p)).kcal)} kcal
-                      </span>
-                    </div>
-                  )}
-                  {p.dulce === 'edulcorante' && <p className="text-xs text-gris mt-2">El edulcorante no suma calorías.</p>}
-                </div>
-              )}
-            </div>
-          )
-        })}
+          <button onClick={confirmar} disabled={!valido || guardando} className="btn-primario w-full h-14 text-base mt-5">
+            <Icono n="check_circle" /> {BOTON[comida]}
+          </button>
+        </div>
       </div>
-
-      {platos.length > 0 && (
-        <section className="tarjeta rounded-3xl p-5 mt-4">
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <p className="text-xs font-bold tracking-wider text-gris">TOTAL</p>
-              <p className="text-3xl font-bold text-verde-texto leading-none mt-1">
-                {redondear(total.kcal)} <span className="text-sm">kcal</span>
-              </p>
-            </div>
-            <p className="text-sm text-gris text-right">
-              Con esto llevás
-              <br />
-              <b className="text-tinta">
-                {redondear(yaComido.kcal + total.kcal)} de {d.perfil.kcal_target} kcal
-              </b>
-            </p>
-          </div>
-          <div className="space-y-3">
-            <Barra nombre="Proteína del día" valor={yaComido.protein + total.protein} total={d.perfil.protein_target} color="bg-coral" />
-          </div>
-          <label className="flex items-center gap-3 mt-4 text-sm">
-            <input type="checkbox" checked={descontar} onChange={(e) => setDescontar(e.target.checked)} className="w-5 h-5 accent-verde" />
-            Descontar de mi despensa lo que usé
-          </label>
-        </section>
-      )}
-
-      <button onClick={confirmar} disabled={!valido || guardando} className="btn-primario w-full h-14 text-base mt-5">
-        <Icono n="check_circle" /> {BOTON[comida]}
-      </button>
 
       {buscando === 'alimento' && (
         <Hoja titulo="Agregar alimento" onCerrar={() => setBuscando(null)}>

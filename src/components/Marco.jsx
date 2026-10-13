@@ -1,10 +1,11 @@
-// Marco común: encabezado, contenido y barra de navegación inferior.
+// Marco común: encabezado, contenido y navegación (abajo en el celular; en la compu, una barra al costado).
 import { useEffect, useRef } from 'react'
 import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Icono } from './ui'
 import { useDatos } from '../store/Datos'
 import { useAvisar, useAvisos } from '../store/avisos'
 import { hoy } from '../lib/fechas'
+import { useEscritorio } from '../lib/escritorio'
 import { redondear, sumar } from '../lib/nutricion'
 
 const PESTANAS = [
@@ -13,6 +14,17 @@ const PESTANAS = [
   null,
   { a: '/despensa', icono: 'kitchen', texto: 'Despensa' },
   { a: '/recetas', icono: 'menu_book', texto: 'Recetas' },
+]
+
+// En la compu hay lugar para todo: se suman las pantallas que en el celular se abren desde otras
+const LATERAL = [
+  { a: '/', icono: 'calendar_today', texto: 'Diario' },
+  { a: '/plan', icono: 'event_note', texto: 'Plan semanal' },
+  { a: '/despensa', icono: 'kitchen', texto: 'Despensa' },
+  { a: '/recetas', icono: 'menu_book', texto: 'Recetas' },
+  { a: '/compras', icono: 'shopping_cart', texto: 'Lista de compras' },
+  { a: '/resumen', icono: 'bar_chart', texto: 'Resumen semanal' },
+  { a: '/alimentos', icono: 'eco', texto: 'Mis alimentos' },
 ]
 
 // Logo: en tamaños chicos va la versión simple (un tupper plano que se lee bien);
@@ -104,11 +116,54 @@ function Conexion({ sinConexion, pendientes, trabada }) {
   )
 }
 
+// Barra de navegación al costado (computadora)
+function BarraLateral({ nombre, inicial }) {
+  return (
+    <aside className="fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-superficie border-r border-linea px-4 py-5">
+      <Link to="/" className="flex items-center gap-3 px-2 mb-6" aria-label="Tupper, ir al diario">
+        <Logo size={40} />
+        <span className="text-xl font-bold tracking-tight">Tupper</span>
+      </Link>
+      <Link to="/registrar" className="btn-primario w-full mb-5">
+        <Icono n="add" size={22} /> Registrar
+      </Link>
+      <nav aria-label="Principal" className="flex-1 min-h-0 overflow-y-auto space-y-1">
+        {LATERAL.map((p) => (
+          <NavLink
+            key={p.a}
+            to={p.a}
+            end={p.a === '/'}
+            className={({ isActive }) => `enlace-lateral ${isActive ? '!bg-verde-suave !text-verde-texto' : ''}`}
+          >
+            {({ isActive }) => (
+              <>
+                <Icono n={p.icono} lleno={isActive} /> {p.texto}
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+      <NavLink
+        to="/perfil"
+        className={({ isActive }) => `enlace-lateral mt-3 h-14 border border-linea ${isActive ? '!bg-verde-suave !text-verde-texto' : ''}`}
+        aria-label="Perfil"
+      >
+        <span className="w-9 h-9 rounded-full bg-verde text-white font-semibold flex items-center justify-center shrink-0">{inicial}</span>
+        <span className="min-w-0 leading-tight">
+          <span className="block text-tinta truncate">{nombre}</span>
+          <span className="block text-xs font-medium">Perfil y ajustes</span>
+        </span>
+      </NavLink>
+    </aside>
+  )
+}
+
 export default function Marco({ titulo, atras = false, children, sinNav = false }) {
   const { registros, perfil, sinConexion, pendientes, trabada } = useDatos()
   const { aviso, pregunta } = useAvisos()
   const { responder } = useAvisar()
   const nav = useNavigate()
+  const escritorio = useEscritorio()
   // Cada pantalla le pone su nombre a la pestaña del navegador
   useEffect(() => {
     document.title = `${titulo} · Tupper`
@@ -117,40 +172,47 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
   const inicial = (perfil?.name || '?').trim().charAt(0).toUpperCase()
 
   return (
-    <div className="min-h-screen bg-fondo">
+    <div className={`min-h-screen bg-fondo ${escritorio ? 'pl-64' : ''}`}>
+      {escritorio && <BarraLateral nombre={perfil?.name || ''} inicial={inicial} />}
       <header className="sticky top-0 z-30 bg-fondo/90 backdrop-blur border-b border-verde-suave/60">
-        <div className="max-w-[440px] mx-auto h-16 px-4 flex items-center gap-3">
+        <div className="max-w-[440px] lg:max-w-[1240px] 2xl:max-w-[1480px] mx-auto h-16 px-4 lg:px-8 flex items-center gap-3">
           {atras ? (
             <button onClick={() => nav(-1)} className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center" aria-label="Volver">
               <Icono n="arrow_back" />
             </button>
           ) : (
-            <Logo />
+            !escritorio && <Logo />
           )}
           <div className="min-w-0 flex-1">
-            {!atras && <p className="text-[11px] font-bold tracking-wider text-verde-texto leading-none mb-0.5">TUPPER</p>}
-            <h1 className={`${atras ? 'text-base' : 'text-lg'} font-semibold leading-tight truncate`}>{titulo}</h1>
+            {!atras && !escritorio && <p className="text-[11px] font-bold tracking-wider text-verde-texto leading-none mb-0.5">TUPPER</p>}
+            <h1 className={`${atras && !escritorio ? 'text-base' : 'text-lg'} font-semibold leading-tight truncate`}>{titulo}</h1>
           </div>
           <span className="pill bg-verde-suave text-verde-texto h-8 px-3">
             <Icono n="local_fire_department" size={16} /> {kcalHoy.toLocaleString('es-AR')} kcal
           </span>
-          <Link
-            to="/perfil"
-            className="w-10 h-10 rounded-full bg-verde text-white font-semibold flex items-center justify-center"
-            aria-label="Perfil"
-          >
-            {inicial}
-          </Link>
+          {!escritorio && (
+            <Link
+              to="/perfil"
+              className="w-10 h-10 rounded-full bg-verde text-white font-semibold flex items-center justify-center"
+              aria-label="Perfil"
+            >
+              {inicial}
+            </Link>
+          )}
         </div>
         <Conexion sinConexion={sinConexion} pendientes={pendientes} trabada={trabada} />
       </header>
 
-      <main className={`max-w-[440px] mx-auto px-4 pt-4 ${sinNav ? 'fin-sin-barra' : 'fin-con-barra'}`}>{children}</main>
+      <main
+        className={`max-w-[440px] lg:max-w-[1240px] 2xl:max-w-[1480px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6 ${sinNav ? 'fin-sin-barra' : 'fin-con-barra'}`}
+      >
+        {children}
+      </main>
 
       {pregunta && <Confirmacion pregunta={pregunta} onResponder={responder} />}
 
       {aviso && (
-        <div className="fixed left-0 right-0 aviso-barra z-[60] flex justify-center px-4 pointer-events-none">
+        <div className="fixed left-0 right-0 lg:left-64 aviso-barra z-[60] flex justify-center px-4 pointer-events-none">
           <div
             className={`rounded-full px-4 py-2.5 text-sm font-medium shadow-flotante ${aviso.tipo === 'error' ? 'bg-rojo text-white' : 'bg-tinta text-fondo'}`}
           >
@@ -159,7 +221,7 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
         </div>
       )}
 
-      {!sinNav && (
+      {!sinNav && !escritorio && (
         <nav className="fixed bottom-0 left-0 right-0 z-40 bg-superficie border-t border-linea pb-seguro">
           <div className="max-w-[440px] mx-auto h-[68px] grid grid-cols-5 items-center">
             {PESTANAS.map((p, i) =>

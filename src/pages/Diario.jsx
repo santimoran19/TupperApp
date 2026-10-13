@@ -159,337 +159,350 @@ export default function Diario() {
 
   return (
     <Marco titulo="Diario">
-      <p className="text-sm text-gris">{fechaLarga(fecha)}</p>
-      <h2 className="text-2xl font-bold tracking-tight mb-3">
-        {esHoy ? `¡Hola, ${d.perfil.name.split(' ')[0]}!` : fechaLarga(fecha).split(' ')[0]}
-      </h2>
-
-      <div className="flex items-center gap-1 mb-4">
-        <button
-          onClick={() => mover(-7)}
-          disabled={fecha <= rango.min}
-          className="w-7 h-12 text-gris disabled:opacity-30"
-          aria-label="Semana anterior"
-        >
-          <Icono n="chevron_left" />
-        </button>
-        <div className="flex-1 grid grid-cols-7 gap-1">
-          {semanaDe(fecha).map((f) => {
-            const activo = f === fecha
-            const tiene = d.registros.some((r) => r.date === f)
-            return (
-              <button
-                key={f}
-                onClick={() => setFecha(f)}
-                disabled={f < rango.min || f > rango.max}
-                className={`flex flex-col items-center py-2 rounded-2xl disabled:opacity-40 ${activo ? 'bg-verde text-white shadow-tarjeta' : 'bg-superficie shadow-tarjeta'}`}
-              >
-                <span className={`text-[11px] font-medium ${activo ? 'opacity-90' : 'text-gris'}`}>{diaCorto(f)}</span>
-                <span className="text-sm font-bold">{numeroDia(f)}</span>
-                <span
-                  className={`w-1.5 h-1.5 rounded-full mt-0.5 ${tiene ? (activo ? 'bg-superficie' : 'bg-verde-medio') : 'bg-transparent'}`}
-                />
-              </button>
-            )
-          })}
+      <div className="xl:flex xl:items-end xl:justify-between xl:gap-6 xl:mb-5">
+        <div>
+          <p className="text-sm text-gris">{fechaLarga(fecha)}</p>
+          <h2 className="text-2xl font-bold tracking-tight mb-3 xl:mb-0">
+            {esHoy ? `¡Hola, ${d.perfil.name.split(' ')[0]}!` : fechaLarga(fecha).split(' ')[0]}
+          </h2>
         </div>
-        <button
-          onClick={() => mover(7)}
-          disabled={fecha >= rango.max}
-          className="w-7 h-12 text-gris disabled:opacity-30"
-          aria-label="Semana siguiente"
-        >
-          <Icono n="chevron_right" />
-        </button>
-      </div>
 
-      <section className="tarjeta rounded-3xl p-5 mb-4">
-        <div className="flex items-center gap-5">
-          <Anillo valor={total.kcal} total={d.perfil.kcal_target}>
-            <span className="text-2xl font-bold leading-none">{redondear(total.kcal).toLocaleString('es-AR')}</span>
-            <span className="text-[11px] text-gris mt-1">kcal de {d.perfil.kcal_target.toLocaleString('es-AR')}</span>
-          </Anillo>
-          <div className="flex-1 space-y-2">
-            <div className={`rounded-2xl p-3 ${restante < 0 ? 'bg-naranja-suave' : 'bg-verde-claro'}`}>
-              <p className="text-xs font-semibold text-gris">{restante < 0 ? 'Te pasaste' : 'Restante'}</p>
-              <p className={`text-lg font-bold ${restante < 0 ? 'text-naranja-oscuro' : 'text-verde-texto'}`}>
-                {Math.abs(restante).toLocaleString('es-AR')} kcal
-              </p>
-            </div>
-            <div className="rounded-2xl p-3 bg-campo">
-              <p className="text-xs font-semibold text-gris">Comidas</p>
-              <p className="text-lg font-bold">
-                {registradas.size - salteadas.size} de 4
-                {salteadas.size > 0 && <span className="text-xs font-medium text-gris"> · {salteadas.size} sin comer</span>}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="mt-5 space-y-3">
-          <Barra nombre="Proteína" valor={total.protein} total={d.perfil.protein_target} color="bg-coral" />
-          <div className="flex gap-2">
-            <span className="pill bg-naranja-suave text-naranja-oscuro">{redondear(total.carbs)} g carbohidratos</span>
-            <span className="pill bg-teal-suave text-teal-oscuro">{redondear(total.fat)} g grasas</span>
-          </div>
-          <div>
-            <div className="flex items-center justify-between text-sm mb-1.5">
-              <span className="font-medium">Líquido</span>
-              <span className="text-gris">
-                <b className="text-tinta">{litros(liquido)} L</b> / {litros(metaLiquido)} L
-              </span>
-            </div>
-            <div className="h-2 rounded-full bg-pista overflow-hidden">
-              <div
-                className="h-full rounded-full bg-teal"
-                style={{ width: `${Math.min((liquido / metaLiquido) * 100, 100)}%`, transition: 'width .4s' }}
-              />
-            </div>
-            <div className="flex items-center justify-between gap-2 mt-2">
-              <p className="text-xs text-gris">
-                {liquido >= metaLiquido
-                  ? 'Llegaste al objetivo de líquido.'
-                  : `Te ${metaLiquido - liquido === 1000 ? 'falta' : 'faltan'} ${litros(metaLiquido - liquido)} L para llegar.`}
-              </p>
-              {agua && fecha <= hoy() && (
-                <button onClick={tomeAgua} className="btn-chico h-8 bg-teal-suave text-teal-oscuro whitespace-nowrap">
-                  <Icono n="water_drop" size={15} /> Vaso de agua
+        <div className="flex items-center gap-1 mb-4 xl:mb-0 xl:w-[30rem] xl:shrink-0">
+          <button
+            onClick={() => mover(-7)}
+            disabled={fecha <= rango.min}
+            className="w-7 h-12 text-gris disabled:opacity-30"
+            aria-label="Semana anterior"
+          >
+            <Icono n="chevron_left" />
+          </button>
+          <div className="flex-1 grid grid-cols-7 gap-1">
+            {semanaDe(fecha).map((f) => {
+              const activo = f === fecha
+              const tiene = d.registros.some((r) => r.date === f)
+              return (
+                <button
+                  key={f}
+                  onClick={() => setFecha(f)}
+                  disabled={f < rango.min || f > rango.max}
+                  className={`flex flex-col items-center py-2 rounded-2xl disabled:opacity-40 ${activo ? 'bg-verde text-white shadow-tarjeta' : 'bg-superficie shadow-tarjeta'}`}
+                >
+                  <span className={`text-[11px] font-medium ${activo ? 'opacity-90' : 'text-gris'}`}>{diaCorto(f)}</span>
+                  <span className="text-sm font-bold">{numeroDia(f)}</span>
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full mt-0.5 ${tiene ? (activo ? 'bg-superficie' : 'bg-verde-medio') : 'bg-transparent'}`}
+                  />
                 </button>
-              )}
-            </div>
+              )
+            })}
           </div>
+          <button
+            onClick={() => mover(7)}
+            disabled={fecha >= rango.max}
+            className="w-7 h-12 text-gris disabled:opacity-30"
+            aria-label="Semana siguiente"
+          >
+            <Icono n="chevron_right" />
+          </button>
         </div>
-      </section>
-
-      <Link to={`/resumen?fecha=${fecha}`} className="flex items-center gap-2 text-sm font-semibold text-verde-texto mb-4 px-1">
-        <Icono n="bar_chart" size={18} /> Ver el resumen de la semana <Icono n="chevron_right" size={18} className="ml-auto text-gris" />
-      </Link>
-
-      {esHoy && (
-        <section className={`rounded-2xl p-4 mb-4 ${tono.caja}`}>
-          <p className={`text-[11px] font-bold tracking-wider flex items-center gap-1.5 ${tono.titulo}`}>
-            <Icono n={tono.icono} size={16} lleno /> {tono.rotulo}
-          </p>
-          <p className="text-sm mt-1.5">{consejo.texto}</p>
-          {ideas.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              {ideas.map((r) => (
-                <Link key={r.id} to={`/recetas/${r.id}`} className="pill bg-superficie text-tinta shadow-tarjeta py-1.5">
-                  {r.name} · {redondear(d.macrosPorReceta.get(r.id).kcal)} kcal
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
-
-      {paraLlevar.length > 0 && (
-        <section className="rounded-2xl p-4 mb-4 bg-naranja-suave">
-          <p className="text-[11px] font-bold tracking-wider flex items-center gap-1.5 text-naranja-oscuro">
-            <Icono n="takeout_dining" size={16} lleno /> PARA LLEVAR
-          </p>
-          <ul className="mt-2 space-y-1.5 text-sm">
-            {paraLlevar.map((p) => (
-              <li key={p.f + p.comida}>
-                <b>
-                  {p.f === fecha ? 'Hoy' : 'Mañana'}, {NOMBRE_COMIDA[p.comida].toLowerCase()}:
-                </b>{' '}
-                {p.receta ? (
-                  <>
-                    {p.receta.name}.{' '}
-                    {!p.receta.portable
-                      ? 'Ojo: esta receta no es para llevar, cambiala en el plan.'
-                      : p.estado === 'preparado'
-                        ? 'Ya está cocinado: pasalo a un tupper.'
-                        : p.estado === 'falta'
-                          ? 'Te faltan ingredientes, mirá la lista de compras.'
-                          : 'Tenés todo: dejalo cocinado y en un tupper.'}
-                  </>
-                ) : p.idea ? (
-                  <>
-                    no hay nada planificado. Podés llevar{' '}
-                    <Link to={`/recetas/${p.idea.r.id}`} className="font-semibold underline">
-                      {p.idea.r.name}
-                    </Link>
-                    {p.idea.cocinada ? ', que ya está cocinado.' : ', tenés todo para hacerlo.'}
-                  </>
-                ) : (
-                  <>
-                    no hay nada planificado.{' '}
-                    <Link to="/plan" className="font-semibold underline">
-                      Armá el plan
-                    </Link>{' '}
-                    para ver qué llevar.
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-semibold">Comidas</h3>
-        <span className="text-sm text-gris">Total: {redondear(total.kcal).toLocaleString('es-AR')} kcal</span>
       </div>
 
-      <div className="space-y-3">
-        {COMIDAS.map((comida) => {
-          const entradas = delDia.filter((r) => r.meal === comida && !r.skipped)
-          const salteada = delDia.find((r) => r.meal === comida && r.skipped)
-          const fila = planDia.get(comida)
-          const receta = fila?.recipe_id && d.recetasPorId.get(fila.recipe_id)
-          const m = receta && d.macrosPorReceta.get(receta.id)
-          const subtotal = sumar(entradas)
-          const irARegistrar = () => nav(`/registrar?fecha=${fecha}&comida=${comida}`)
-          return (
-            <section
-              key={comida}
-              className={`tarjeta p-4 ${entradas.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-verde-claro text-verde-texto flex items-center justify-center">
-                  <Icono n={ICONO_COMIDA[comida]} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold tracking-wider text-verde-texto">{NOMBRE_COMIDA[comida].toUpperCase()}</p>
-                  {entradas.length > 0 ? (
-                    <p className="text-sm text-gris">{redondear(subtotal.protein)} g de proteína</p>
-                  ) : salteada ? (
-                    <p className="text-sm text-gris">No comiste</p>
-                  ) : (
-                    <p className="text-sm text-gris truncate">{receta ? `Plan: ${receta.name}` : 'Sin registrar'}</p>
-                  )}
-                </div>
-                {esAfuera(fecha, comida, fila) && (
-                  <span className="pill bg-naranja-suave text-naranja-oscuro">
-                    <Icono n="takeout_dining" size={14} /> Afuera
-                  </span>
-                )}
-                {entradas.length > 0 && (
-                  <p className="font-bold">
-                    {redondear(subtotal.kcal)} <span className="text-xs font-medium text-gris">kcal</span>
+      <div className="con-lateral [--lat:24rem]">
+        <div>
+          <section className="tarjeta rounded-3xl p-5 mb-4">
+            <div className="flex items-center gap-5">
+              <Anillo valor={total.kcal} total={d.perfil.kcal_target}>
+                <span className="text-2xl font-bold leading-none">{redondear(total.kcal).toLocaleString('es-AR')}</span>
+                <span className="text-[11px] text-gris mt-1">kcal de {d.perfil.kcal_target.toLocaleString('es-AR')}</span>
+              </Anillo>
+              <div className="flex-1 space-y-2">
+                <div className={`rounded-2xl p-3 ${restante < 0 ? 'bg-naranja-suave' : 'bg-verde-claro'}`}>
+                  <p className="text-xs font-semibold text-gris">{restante < 0 ? 'Te pasaste' : 'Restante'}</p>
+                  <p className={`text-lg font-bold ${restante < 0 ? 'text-naranja-oscuro' : 'text-verde-texto'}`}>
+                    {Math.abs(restante).toLocaleString('es-AR')} kcal
                   </p>
-                )}
+                </div>
+                <div className="rounded-2xl p-3 bg-campo">
+                  <p className="text-xs font-semibold text-gris">Comidas</p>
+                  <p className="text-lg font-bold">
+                    {registradas.size - salteadas.size} de 4
+                    {salteadas.size > 0 && <span className="text-xs font-medium text-gris"> · {salteadas.size} sin comer</span>}
+                  </p>
+                </div>
               </div>
+            </div>
+            <div className="mt-5 space-y-3">
+              <Barra nombre="Proteína" valor={total.protein} total={d.perfil.protein_target} color="bg-coral" />
+              <div className="flex gap-2">
+                <span className="pill bg-naranja-suave text-naranja-oscuro">{redondear(total.carbs)} g carbohidratos</span>
+                <span className="pill bg-teal-suave text-teal-oscuro">{redondear(total.fat)} g grasas</span>
+              </div>
+              <div>
+                <div className="flex items-center justify-between text-sm mb-1.5">
+                  <span className="font-medium">Líquido</span>
+                  <span className="text-gris">
+                    <b className="text-tinta">{litros(liquido)} L</b> / {litros(metaLiquido)} L
+                  </span>
+                </div>
+                <div className="h-2 rounded-full bg-pista overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-teal"
+                    style={{ width: `${Math.min((liquido / metaLiquido) * 100, 100)}%`, transition: 'width .4s' }}
+                  />
+                </div>
+                <div className="flex items-center justify-between gap-2 mt-2">
+                  <p className="text-xs text-gris">
+                    {liquido >= metaLiquido
+                      ? 'Llegaste al objetivo de líquido.'
+                      : `Te ${metaLiquido - liquido === 1000 ? 'falta' : 'faltan'} ${litros(metaLiquido - liquido)} L para llegar.`}
+                  </p>
+                  {agua && fecha <= hoy() && (
+                    <button onClick={tomeAgua} className="btn-chico h-8 bg-teal-suave text-teal-oscuro whitespace-nowrap">
+                      <Icono n="water_drop" size={15} /> Vaso de agua
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
 
-              {entradas.length > 0 && (
-                <div className="mt-3 pt-1 border-t border-linea divide-y divide-linea">
-                  {entradas.map((r) => (
-                    <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
-                      <button
-                        onClick={() => abrirEdicion(r)}
-                        className="flex-1 min-w-0 truncate text-left"
-                        aria-label={`Cambiar la cantidad de ${r.name}`}
-                      >
-                        {r.name}
-                        <span className="text-gris"> · {cantidadDeRegistro(r, d.alimentosPorId.get(r.food_id))}</span>
-                      </button>
-                      <span className="text-gris">{redondear(r.kcal)} kcal</span>
-                      <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
-                        <Icono n="close" size={18} />
-                      </button>
-                    </div>
+          <Link to={`/resumen?fecha=${fecha}`} className="flex items-center gap-2 text-sm font-semibold text-verde-texto mb-4 px-1">
+            <Icono n="bar_chart" size={18} /> Ver el resumen de la semana{' '}
+            <Icono n="chevron_right" size={18} className="ml-auto text-gris" />
+          </Link>
+
+          {esHoy && (
+            <section className={`rounded-2xl p-4 mb-4 ${tono.caja}`}>
+              <p className={`text-[11px] font-bold tracking-wider flex items-center gap-1.5 ${tono.titulo}`}>
+                <Icono n={tono.icono} size={16} lleno /> {tono.rotulo}
+              </p>
+              <p className="text-sm mt-1.5">{consejo.texto}</p>
+              {ideas.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {ideas.map((r) => (
+                    <Link key={r.id} to={`/recetas/${r.id}`} className="pill bg-superficie text-tinta shadow-tarjeta py-1.5">
+                      {r.name} · {redondear(d.macrosPorReceta.get(r.id).kcal)} kcal
+                    </Link>
                   ))}
-                  <button onClick={irARegistrar} className="pt-2.5 text-sm font-semibold text-verde-texto flex items-center gap-1">
-                    <Icono n="add" size={18} /> Agregar algo más
-                  </button>
-                </div>
-              )}
-
-              {entradas.length === 0 && salteada && (
-                <div className="mt-3 flex items-center gap-2">
-                  <button onClick={() => d.borrarRegistro(salteada.id)} className="btn-chico bg-campo text-tinta flex-1">
-                    <Icono n="undo" size={16} /> Deshacer
-                  </button>
-                  <button onClick={irARegistrar} className="btn-chico bg-verde-suave text-verde-texto flex-1">
-                    <Icono n="add" size={16} /> Al final comí
-                  </button>
-                </div>
-              )}
-
-              {entradas.length === 0 && !salteada && (
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  {receta && (
-                    <button onClick={() => comiPlan(comida, fila)} className="btn-chico bg-verde text-white flex-1 whitespace-nowrap">
-                      <Icono n="check" size={16} /> Comí esto · {redondear(m.kcal)} kcal
-                    </button>
-                  )}
-                  <button
-                    onClick={irARegistrar}
-                    className={`btn-chico bg-verde-suave text-verde-texto whitespace-nowrap ${receta ? '' : 'flex-1'}`}
-                  >
-                    <Icono n={receta ? 'swap_horiz' : 'add'} size={16} /> {receta ? 'Otra cosa' : 'Registrar'}
-                  </button>
-                  {fecha <= hoy() && (
-                    <button
-                      onClick={() => d.saltear(fecha, comida)}
-                      className="btn-chico bg-campo text-gris whitespace-nowrap"
-                      aria-label={`No comí ${NOMBRE_COMIDA[comida].toLowerCase()}`}
-                    >
-                      <Icono n="no_meals" size={16} /> No comí
-                    </button>
-                  )}
                 </div>
               )}
             </section>
-          )
-        })}
-
-        <section className={`tarjeta p-4 ${extras.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-teal-suave text-teal-oscuro flex items-center justify-center">
-              <Icono n={ICONO_COMIDA[EXTRA]} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold tracking-wider text-teal-oscuro">BEBIDAS Y ENTRE COMIDAS</p>
-              <p className="text-sm text-gris">
-                {extras.length > 0 ? `${redondear(sumar(extras).protein)} g de proteína` : 'Agua, mate, café, alcohol, algo que picaste'}
-              </p>
-            </div>
-            {extras.length > 0 && (
-              <p className="font-bold">
-                {redondear(sumar(extras).kcal)} <span className="text-xs font-medium text-gris">kcal</span>
-              </p>
-            )}
-          </div>
-          {extras.length > 0 && (
-            <div className="mt-3 pt-1 border-t border-linea divide-y divide-linea">
-              {extras.map((r) => {
-                const a = d.alimentosPorId.get(r.food_id)
-                return (
-                  <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
-                    <button
-                      onClick={() => abrirEdicion(r)}
-                      className="flex-1 min-w-0 truncate text-left"
-                      aria-label={`Cambiar la cantidad de ${r.name}`}
-                    >
-                      {r.name}
-                      <span className="text-gris"> · {cantidadDeRegistro(r, a)}</span>
-                    </button>
-                    <span className="text-gris">{redondear(r.kcal)} kcal</span>
-                    <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
-                      <Icono n="close" size={18} />
-                    </button>
-                  </div>
-                )
-              })}
-            </div>
           )}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}&abrir=bebida`)}
-              className="btn-chico bg-teal-suave text-teal-oscuro flex-1 whitespace-nowrap"
-            >
-              <Icono n="local_bar" size={16} /> Bebida
-            </button>
-            <button
-              onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}`)}
-              className="btn-chico bg-verde-suave text-verde-texto flex-1 whitespace-nowrap"
-            >
-              <Icono n="add" size={16} /> Otra cosa
-            </button>
+
+          {paraLlevar.length > 0 && (
+            <section className="rounded-2xl p-4 mb-4 bg-naranja-suave">
+              <p className="text-[11px] font-bold tracking-wider flex items-center gap-1.5 text-naranja-oscuro">
+                <Icono n="takeout_dining" size={16} lleno /> PARA LLEVAR
+              </p>
+              <ul className="mt-2 space-y-1.5 text-sm">
+                {paraLlevar.map((p) => (
+                  <li key={p.f + p.comida}>
+                    <b>
+                      {p.f === fecha ? 'Hoy' : 'Mañana'}, {NOMBRE_COMIDA[p.comida].toLowerCase()}:
+                    </b>{' '}
+                    {p.receta ? (
+                      <>
+                        {p.receta.name}.{' '}
+                        {!p.receta.portable
+                          ? 'Ojo: esta receta no es para llevar, cambiala en el plan.'
+                          : p.estado === 'preparado'
+                            ? 'Ya está cocinado: pasalo a un tupper.'
+                            : p.estado === 'falta'
+                              ? 'Te faltan ingredientes, mirá la lista de compras.'
+                              : 'Tenés todo: dejalo cocinado y en un tupper.'}
+                      </>
+                    ) : p.idea ? (
+                      <>
+                        no hay nada planificado. Podés llevar{' '}
+                        <Link to={`/recetas/${p.idea.r.id}`} className="font-semibold underline">
+                          {p.idea.r.name}
+                        </Link>
+                        {p.idea.cocinada ? ', que ya está cocinado.' : ', tenés todo para hacerlo.'}
+                      </>
+                    ) : (
+                      <>
+                        no hay nada planificado.{' '}
+                        <Link to="/plan" className="font-semibold underline">
+                          Armá el plan
+                        </Link>{' '}
+                        para ver qué llevar.
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+
+        <div className="min-w-0">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold">Comidas</h3>
+            <span className="text-sm text-gris">Total: {redondear(total.kcal).toLocaleString('es-AR')} kcal</span>
           </div>
-        </section>
+
+          <div className="space-y-3">
+            {COMIDAS.map((comida) => {
+              const entradas = delDia.filter((r) => r.meal === comida && !r.skipped)
+              const salteada = delDia.find((r) => r.meal === comida && r.skipped)
+              const fila = planDia.get(comida)
+              const receta = fila?.recipe_id && d.recetasPorId.get(fila.recipe_id)
+              const m = receta && d.macrosPorReceta.get(receta.id)
+              const subtotal = sumar(entradas)
+              const irARegistrar = () => nav(`/registrar?fecha=${fecha}&comida=${comida}`)
+              return (
+                <section
+                  key={comida}
+                  className={`tarjeta p-4 ${entradas.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-verde-claro text-verde-texto flex items-center justify-center">
+                      <Icono n={ICONO_COMIDA[comida]} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold tracking-wider text-verde-texto">{NOMBRE_COMIDA[comida].toUpperCase()}</p>
+                      {entradas.length > 0 ? (
+                        <p className="text-sm text-gris">{redondear(subtotal.protein)} g de proteína</p>
+                      ) : salteada ? (
+                        <p className="text-sm text-gris">No comiste</p>
+                      ) : (
+                        <p className="text-sm text-gris truncate">{receta ? `Plan: ${receta.name}` : 'Sin registrar'}</p>
+                      )}
+                    </div>
+                    {esAfuera(fecha, comida, fila) && (
+                      <span className="pill bg-naranja-suave text-naranja-oscuro">
+                        <Icono n="takeout_dining" size={14} /> Afuera
+                      </span>
+                    )}
+                    {entradas.length > 0 && (
+                      <p className="font-bold">
+                        {redondear(subtotal.kcal)} <span className="text-xs font-medium text-gris">kcal</span>
+                      </p>
+                    )}
+                  </div>
+
+                  {entradas.length > 0 && (
+                    <div className="mt-3 pt-1 border-t border-linea divide-y divide-linea">
+                      {entradas.map((r) => (
+                        <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
+                          <button
+                            onClick={() => abrirEdicion(r)}
+                            className="flex-1 min-w-0 truncate text-left"
+                            aria-label={`Cambiar la cantidad de ${r.name}`}
+                          >
+                            {r.name}
+                            <span className="text-gris"> · {cantidadDeRegistro(r, d.alimentosPorId.get(r.food_id))}</span>
+                          </button>
+                          <span className="text-gris">{redondear(r.kcal)} kcal</span>
+                          <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
+                            <Icono n="close" size={18} />
+                          </button>
+                        </div>
+                      ))}
+                      <button onClick={irARegistrar} className="pt-2.5 text-sm font-semibold text-verde-texto flex items-center gap-1">
+                        <Icono n="add" size={18} /> Agregar algo más
+                      </button>
+                    </div>
+                  )}
+
+                  {entradas.length === 0 && salteada && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <button onClick={() => d.borrarRegistro(salteada.id)} className="btn-chico bg-campo text-tinta flex-1">
+                        <Icono n="undo" size={16} /> Deshacer
+                      </button>
+                      <button onClick={irARegistrar} className="btn-chico bg-verde-suave text-verde-texto flex-1">
+                        <Icono n="add" size={16} /> Al final comí
+                      </button>
+                    </div>
+                  )}
+
+                  {entradas.length === 0 && !salteada && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {receta && (
+                        <button onClick={() => comiPlan(comida, fila)} className="btn-chico bg-verde text-white flex-1 whitespace-nowrap">
+                          <Icono n="check" size={16} /> Comí esto · {redondear(m.kcal)} kcal
+                        </button>
+                      )}
+                      <button
+                        onClick={irARegistrar}
+                        className={`btn-chico bg-verde-suave text-verde-texto whitespace-nowrap ${receta ? '' : 'flex-1'}`}
+                      >
+                        <Icono n={receta ? 'swap_horiz' : 'add'} size={16} /> {receta ? 'Otra cosa' : 'Registrar'}
+                      </button>
+                      {fecha <= hoy() && (
+                        <button
+                          onClick={() => d.saltear(fecha, comida)}
+                          className="btn-chico bg-campo text-gris whitespace-nowrap"
+                          aria-label={`No comí ${NOMBRE_COMIDA[comida].toLowerCase()}`}
+                        >
+                          <Icono n="no_meals" size={16} /> No comí
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </section>
+              )
+            })}
+
+            <section className={`tarjeta p-4 ${extras.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-suave text-teal-oscuro flex items-center justify-center">
+                  <Icono n={ICONO_COMIDA[EXTRA]} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-bold tracking-wider text-teal-oscuro">BEBIDAS Y ENTRE COMIDAS</p>
+                  <p className="text-sm text-gris">
+                    {extras.length > 0
+                      ? `${redondear(sumar(extras).protein)} g de proteína`
+                      : 'Agua, mate, café, alcohol, algo que picaste'}
+                  </p>
+                </div>
+                {extras.length > 0 && (
+                  <p className="font-bold">
+                    {redondear(sumar(extras).kcal)} <span className="text-xs font-medium text-gris">kcal</span>
+                  </p>
+                )}
+              </div>
+              {extras.length > 0 && (
+                <div className="mt-3 pt-1 border-t border-linea divide-y divide-linea">
+                  {extras.map((r) => {
+                    const a = d.alimentosPorId.get(r.food_id)
+                    return (
+                      <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
+                        <button
+                          onClick={() => abrirEdicion(r)}
+                          className="flex-1 min-w-0 truncate text-left"
+                          aria-label={`Cambiar la cantidad de ${r.name}`}
+                        >
+                          {r.name}
+                          <span className="text-gris"> · {cantidadDeRegistro(r, a)}</span>
+                        </button>
+                        <span className="text-gris">{redondear(r.kcal)} kcal</span>
+                        <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
+                          <Icono n="close" size={18} />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button
+                  onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}&abrir=bebida`)}
+                  className="btn-chico bg-teal-suave text-teal-oscuro flex-1 whitespace-nowrap"
+                >
+                  <Icono n="local_bar" size={16} /> Bebida
+                </button>
+                <button
+                  onClick={() => nav(`/registrar?fecha=${fecha}&comida=${EXTRA}`)}
+                  className="btn-chico bg-verde-suave text-verde-texto flex-1 whitespace-nowrap"
+                >
+                  <Icono n="add" size={16} /> Otra cosa
+                </button>
+              </div>
+            </section>
+          </div>
+        </div>
       </div>
       {editandoId && d.registros.some((r) => r.id === editandoId) && (
         <EditarRegistro registro={d.registros.find((r) => r.id === editandoId)} onCerrar={() => setEditandoId(null)} />

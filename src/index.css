@@ -282,3 +282,66 @@
 .fin-hoja {
   padding-bottom: calc(2rem + var(--seguro));
 }
+
+/* ---------- Diseño de computadora (D-03): desde 1024 px de ancho. ----------
+   Todo lo de escritorio está dentro de estas reglas y de las variantes lg:/xl: de tailwind, así que por debajo de 1024 px
+   no cambia nada del diseño de celular. */
+@layer components {
+  /* Lista de tarjetas: en el celular van una abajo de la otra; en la compu se acomodan en las columnas que entren.
+     --min es el ancho mínimo de cada tarjeta. */
+  .grilla-tarjetas {
+    @apply space-y-3 lg:space-y-0 lg:grid lg:grid-cols-[repeat(auto-fill,minmax(var(--min,19rem),1fr))] lg:gap-4 lg:items-start;
+  }
+
+  /* Una columna angosta y centrada. Con 1280 px o más, las pantallas que tienen dos columnas la sueltan. */
+  .una-columna {
+    @apply lg:max-w-[760px] lg:mx-auto;
+  }
+
+  /* Dos columnas: una al costado (--lat de ancho) y el resto. Desde 1280 px; antes, una sola columna centrada. */
+  .con-lateral {
+    @apply lg:max-w-[760px] lg:mx-auto xl:max-w-none xl:grid xl:grid-cols-[var(--lat,22rem)_minmax(0,1fr)] xl:gap-6 xl:items-start;
+  }
+
+  /* Dos columnas iguales, desde 1280 px */
+  .dos-columnas {
+    @apply lg:max-w-[760px] lg:mx-auto xl:max-w-none xl:grid xl:grid-cols-2 xl:gap-6 xl:items-start;
+  }
+
+  /* Hilera de chips: en el celular se desliza de costado; en la compu pasa a otro renglón. Va junto con sin-scroll (sin barra). */
+  .chips-hilera {
+    @apply flex gap-2 overflow-x-auto -mx-4 px-4 lg:flex-wrap lg:overflow-visible lg:mx-0 lg:px-0;
+  }
+
+  .enlace-lateral {
+    @apply flex items-center gap-3 rounded-xl px-3 h-11 text-sm font-semibold text-gris transition-colors;
+  }
+}
+
+@media (min-width: 1024px) {
+  .aviso-barra {
+    bottom: 2rem;
+  }
+
+  .fin-con-barra,
+  .fin-sin-barra {
+    padding-bottom: 3rem;
+  }
+}
+
+/* Con mouse: los botones y las tarjetas que son enlaces responden al pasar por encima */
+@media (hover: hover) and (min-width: 1024px) {
+  .btn:not(:disabled):hover,
+  .btn-chico:not(:disabled):hover {
+    filter: brightness(0.94);
+  }
+
+  a.tarjeta:hover {
+    border-color: rgb(var(--c-verde-tenue) / 0.55);
+  }
+
+  .enlace-lateral:hover {
+    background-color: rgb(var(--c-campo));
+    color: rgb(var(--c-tinta));
+  }
+}

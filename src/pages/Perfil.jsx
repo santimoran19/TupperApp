@@ -136,174 +136,180 @@ export default function Perfil() {
 
   return (
     <Marco titulo="Perfil" atras>
-      <section className="tarjeta p-5 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-verde text-white text-xl font-semibold flex items-center justify-center">
-            {perfil.name.charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold text-lg truncate">{perfil.name}</p>
-            <p className="text-sm text-gris truncate">{usuario.email}</p>
-          </div>
-          <button onClick={() => setEditando(true)} className="btn-chico bg-verde-suave text-verde-texto">
-            <Icono n="edit" size={16} /> Editar
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          <div className="rounded-xl bg-verde-claro p-3">
-            <p className="text-xs text-gris font-semibold">Calorías</p>
-            <p className="text-xl font-bold text-verde-texto">{perfil.kcal_target}</p>
-          </div>
-          <div className="rounded-xl bg-coral-suave p-3">
-            <p className="text-xs text-gris font-semibold">Proteína</p>
-            <p className="text-xl font-bold text-coral-oscuro">{perfil.protein_target} g</p>
-          </div>
-          <div className="rounded-xl bg-teal-suave p-3">
-            <p className="text-xs text-gris font-semibold">Líquido</p>
-            <p className="text-xl font-bold text-teal-oscuro">{litros(objetivoLiquido(perfil))} L</p>
-          </div>
-        </div>
-        <p className="text-xs text-gris mt-2">Objetivos por día.</p>
-      </section>
+      <div className="dos-columnas">
+        <div className="min-w-0">
+          <section className="tarjeta p-5 mb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-full bg-verde text-white text-xl font-semibold flex items-center justify-center">
+                {perfil.name.charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-lg truncate">{perfil.name}</p>
+                <p className="text-sm text-gris truncate">{usuario.email}</p>
+              </div>
+              <button onClick={() => setEditando(true)} className="btn-chico bg-verde-suave text-verde-texto">
+                <Icono n="edit" size={16} /> Editar
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              <div className="rounded-xl bg-verde-claro p-3">
+                <p className="text-xs text-gris font-semibold">Calorías</p>
+                <p className="text-xl font-bold text-verde-texto">{perfil.kcal_target}</p>
+              </div>
+              <div className="rounded-xl bg-coral-suave p-3">
+                <p className="text-xs text-gris font-semibold">Proteína</p>
+                <p className="text-xl font-bold text-coral-oscuro">{perfil.protein_target} g</p>
+              </div>
+              <div className="rounded-xl bg-teal-suave p-3">
+                <p className="text-xs text-gris font-semibold">Líquido</p>
+                <p className="text-xl font-bold text-teal-oscuro">{litros(objetivoLiquido(perfil))} L</p>
+              </div>
+            </div>
+            <p className="text-xs text-gris mt-2">Objetivos por día.</p>
+          </section>
 
-      <section className="tarjeta p-5 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-semibold">Progreso</h2>
-          <button onClick={() => setNueva({ date: hoy(), peso: '', cintura: '' })} className="btn-chico bg-verde text-white">
-            <Icono n="add" size={16} /> Anotar
-          </button>
-        </div>
-        <div className="grid grid-cols-3 gap-2 mb-4 text-center">
-          <div>
-            <p className="text-xs text-gris">Actual</p>
-            <p className="font-bold">{actual ? `${actual} kg` : '—'}</p>
-          </div>
-          <div>
-            <p className="text-xs text-gris">{bajado >= 0 ? 'Bajaste' : 'Subiste'}</p>
-            <p className="font-bold text-verde-texto">{Math.abs(bajado)} kg</p>
-          </div>
-          <div>
-            <p className="text-xs text-gris">Falta</p>
-            <p className="font-bold">{falta === null ? '—' : falta <= 0 ? '¡Llegaste!' : `${falta} kg`}</p>
-          </div>
-        </div>
-        <Grafico puntos={pesos} meta={Number(perfil.goal_weight_kg) || null} />
-        {ordenadas.length > 0 && (
-          <div className="mt-3 divide-y divide-linea">
-            {[...ordenadas]
-              .reverse()
-              .slice(0, 6)
-              .map((m) => (
-                <div key={m.date} className="flex items-center py-2 text-sm">
-                  <span className="w-14 text-gris">{fechaCorta(m.date)}</span>
-                  <span className="flex-1 font-medium">{m.weight_kg ? `${Number(m.weight_kg)} kg` : '—'}</span>
-                  <span className="w-24 text-gris">{m.waist_cm ? `${Number(m.waist_cm)} cm cintura` : ''}</span>
-                  <button
-                    onClick={async () => {
-                      if (await confirmar({ titulo: `¿Borrar la medida del ${fechaCorta(m.date)}?` })) borrarMedida(m.date)
-                    }}
-                    className="w-8 h-8 text-gris"
-                    aria-label={`Borrar la medida del ${fechaCorta(m.date)}`}
-                  >
-                    <Icono n="delete" size={18} />
-                  </button>
+          <section className="tarjeta p-5 mb-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold">Progreso</h2>
+              <button onClick={() => setNueva({ date: hoy(), peso: '', cintura: '' })} className="btn-chico bg-verde text-white">
+                <Icono n="add" size={16} /> Anotar
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-4 text-center">
+              <div>
+                <p className="text-xs text-gris">Actual</p>
+                <p className="font-bold">{actual ? `${actual} kg` : '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gris">{bajado >= 0 ? 'Bajaste' : 'Subiste'}</p>
+                <p className="font-bold text-verde-texto">{Math.abs(bajado)} kg</p>
+              </div>
+              <div>
+                <p className="text-xs text-gris">Falta</p>
+                <p className="font-bold">{falta === null ? '—' : falta <= 0 ? '¡Llegaste!' : `${falta} kg`}</p>
+              </div>
+            </div>
+            <Grafico puntos={pesos} meta={Number(perfil.goal_weight_kg) || null} />
+            {ordenadas.length > 0 && (
+              <div className="mt-3 divide-y divide-linea">
+                {[...ordenadas]
+                  .reverse()
+                  .slice(0, 6)
+                  .map((m) => (
+                    <div key={m.date} className="flex items-center py-2 text-sm">
+                      <span className="w-14 text-gris">{fechaCorta(m.date)}</span>
+                      <span className="flex-1 font-medium">{m.weight_kg ? `${Number(m.weight_kg)} kg` : '—'}</span>
+                      <span className="w-24 text-gris">{m.waist_cm ? `${Number(m.waist_cm)} cm cintura` : ''}</span>
+                      <button
+                        onClick={async () => {
+                          if (await confirmar({ titulo: `¿Borrar la medida del ${fechaCorta(m.date)}?` })) borrarMedida(m.date)
+                        }}
+                        className="w-8 h-8 text-gris"
+                        aria-label={`Borrar la medida del ${fechaCorta(m.date)}`}
+                      >
+                        <Icono n="delete" size={18} />
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </section>
+
+          <section className="tarjeta p-5 mb-4">
+            <h2 className="font-semibold">Comidas fuera de casa</h2>
+            <p className="text-sm text-gris mt-1 mb-3">
+              Marcá las comidas que todas las semanas hacés afuera (trabajo, estudio, lo que sea). El plan usa recetas que se pueden llevar
+              para esos días, te avisa qué preparar y, si ya tenías la semana armada, la actualiza.
+            </p>
+            <div className="grid grid-cols-[84px_repeat(7,1fr)] gap-1 text-center text-xs">
+              <span />
+              {diasCortos.map((d) => (
+                <span key={d} className="font-semibold text-gris">
+                  {d}
+                </span>
+              ))}
+              {COMIDAS.map((c) => (
+                <div key={c} className="contents">
+                  <span className="text-left font-medium self-center">{NOMBRE_COMIDA[c]}</span>
+                  {diasCortos.map((_, i) => {
+                    const activo = reglas.some((r) => r.weekday === i && r.meal === c)
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => cambiarRegla(i, c)}
+                        aria-label={`${NOMBRE_COMIDA[c]} ${diasCortos[i]}`}
+                        className={`h-9 rounded-lg flex items-center justify-center ${activo ? 'bg-naranja-fuerte text-white' : 'bg-campo text-gris/80'}`}
+                      >
+                        <Icono n="takeout_dining" size={18} lleno={activo} />
+                      </button>
+                    )
+                  })}
                 </div>
               ))}
-          </div>
-        )}
-      </section>
-
-      <section className="tarjeta p-5 mb-4">
-        <h2 className="font-semibold">Comidas fuera de casa</h2>
-        <p className="text-sm text-gris mt-1 mb-3">
-          Marcá las comidas que todas las semanas hacés afuera (trabajo, estudio, lo que sea). El plan usa recetas que se pueden llevar para
-          esos días, te avisa qué preparar y, si ya tenías la semana armada, la actualiza.
-        </p>
-        <div className="grid grid-cols-[84px_repeat(7,1fr)] gap-1 text-center text-xs">
-          <span />
-          {diasCortos.map((d) => (
-            <span key={d} className="font-semibold text-gris">
-              {d}
-            </span>
-          ))}
-          {COMIDAS.map((c) => (
-            <div key={c} className="contents">
-              <span className="text-left font-medium self-center">{NOMBRE_COMIDA[c]}</span>
-              {diasCortos.map((_, i) => {
-                const activo = reglas.some((r) => r.weekday === i && r.meal === c)
-                return (
-                  <button
-                    key={i}
-                    onClick={() => cambiarRegla(i, c)}
-                    aria-label={`${NOMBRE_COMIDA[c]} ${diasCortos[i]}`}
-                    className={`h-9 rounded-lg flex items-center justify-center ${activo ? 'bg-naranja-fuerte text-white' : 'bg-campo text-gris/80'}`}
-                  >
-                    <Icono n="takeout_dining" size={18} lleno={activo} />
-                  </button>
-                )
-              })}
             </div>
-          ))}
+          </section>
         </div>
-      </section>
 
-      <section className="tarjeta p-5 mb-4">
-        <h2 className="font-semibold">Apariencia</h2>
-        <p className="text-sm text-gris mt-1 mb-3">En automático la app sigue el modo claro u oscuro de tu teléfono.</p>
-        <div className="grid grid-cols-3 gap-1 bg-campo rounded-full p-1" role="radiogroup" aria-label="Tema de la app">
-          {TEMAS.map(([valor, nombre]) => (
-            <button
-              key={valor}
-              role="radio"
-              aria-checked={tema === valor}
-              onClick={() => {
-                elegirTema(valor)
-                setTema(valor)
-              }}
-              className={`h-9 rounded-full text-[13px] font-semibold transition ${tema === valor ? 'bg-superficie text-verde-texto shadow-tarjeta' : 'text-gris'}`}
-            >
-              {nombre}
+        <div className="min-w-0">
+          <section className="tarjeta p-5 mb-4">
+            <h2 className="font-semibold">Apariencia</h2>
+            <p className="text-sm text-gris mt-1 mb-3">En automático la app sigue el modo claro u oscuro de tu teléfono.</p>
+            <div className="grid grid-cols-3 gap-1 bg-campo rounded-full p-1" role="radiogroup" aria-label="Tema de la app">
+              {TEMAS.map(([valor, nombre]) => (
+                <button
+                  key={valor}
+                  role="radio"
+                  aria-checked={tema === valor}
+                  onClick={() => {
+                    elegirTema(valor)
+                    setTema(valor)
+                  }}
+                  className={`h-9 rounded-full text-[13px] font-semibold transition ${tema === valor ? 'bg-superficie text-verde-texto shadow-tarjeta' : 'text-gris'}`}
+                >
+                  {nombre}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="tarjeta px-4 mb-4 divide-y divide-linea">
+            {[
+              ['/resumen', 'bar_chart', 'Resumen de la semana'],
+              ['/alimentos', 'eco', 'Mis alimentos'],
+            ].map(([a, icono, texto]) => (
+              <Link key={a} to={a} className="flex items-center gap-3 py-3.5">
+                <Icono n={icono} className="text-verde-texto" size={20} /> <span className="flex-1 font-medium">{texto}</span>{' '}
+                <Icono n="chevron_right" className="text-gris" size={20} />
+              </Link>
+            ))}
+            <button onClick={descargar} disabled={trabajando} className="w-full flex items-center gap-3 py-3.5 text-left">
+              <Icono n="download" className="text-verde-texto" size={20} /> <span className="flex-1 font-medium">Descargar mis datos</span>
             </button>
-          ))}
+            {[
+              ['/terminos', 'Términos de uso'],
+              ['/privacidad', 'Política de privacidad'],
+            ].map(([a, texto]) => (
+              <Link key={a} to={a} className="flex items-center gap-3 py-3.5">
+                <Icono n="description" className="text-gris" size={20} /> <span className="flex-1 font-medium">{texto}</span>{' '}
+                <Icono n="chevron_right" className="text-gris" size={20} />
+              </Link>
+            ))}
+          </section>
+
+          <button
+            onClick={async () => {
+              if (await salir()) nav('/', { replace: true })
+            }}
+            className="btn w-full bg-superficie border border-linea text-rojo-texto"
+          >
+            <Icono n="logout" size={20} /> Cerrar sesión
+          </button>
+          <button onClick={() => setBorrando('')} className="mx-auto mt-5 text-sm text-gris underline flex items-center gap-1.5">
+            <Icono n="person_remove" size={16} /> Borrar mi cuenta
+          </button>
+          {VERSION && <p className="mt-6 text-center text-xs text-gris">Tupper {VERSION}</p>}
         </div>
-      </section>
-
-      <section className="tarjeta px-4 mb-4 divide-y divide-linea">
-        {[
-          ['/resumen', 'bar_chart', 'Resumen de la semana'],
-          ['/alimentos', 'eco', 'Mis alimentos'],
-        ].map(([a, icono, texto]) => (
-          <Link key={a} to={a} className="flex items-center gap-3 py-3.5">
-            <Icono n={icono} className="text-verde-texto" size={20} /> <span className="flex-1 font-medium">{texto}</span>{' '}
-            <Icono n="chevron_right" className="text-gris" size={20} />
-          </Link>
-        ))}
-        <button onClick={descargar} disabled={trabajando} className="w-full flex items-center gap-3 py-3.5 text-left">
-          <Icono n="download" className="text-verde-texto" size={20} /> <span className="flex-1 font-medium">Descargar mis datos</span>
-        </button>
-        {[
-          ['/terminos', 'Términos de uso'],
-          ['/privacidad', 'Política de privacidad'],
-        ].map(([a, texto]) => (
-          <Link key={a} to={a} className="flex items-center gap-3 py-3.5">
-            <Icono n="description" className="text-gris" size={20} /> <span className="flex-1 font-medium">{texto}</span>{' '}
-            <Icono n="chevron_right" className="text-gris" size={20} />
-          </Link>
-        ))}
-      </section>
-
-      <button
-        onClick={async () => {
-          if (await salir()) nav('/', { replace: true })
-        }}
-        className="btn w-full bg-superficie border border-linea text-rojo-texto"
-      >
-        <Icono n="logout" size={20} /> Cerrar sesión
-      </button>
-      <button onClick={() => setBorrando('')} className="mx-auto mt-5 text-sm text-gris underline flex items-center gap-1.5">
-        <Icono n="person_remove" size={16} /> Borrar mi cuenta
-      </button>
-      {VERSION && <p className="mt-6 text-center text-xs text-gris">Tupper {VERSION}</p>}
+      </div>
 
       {editando && (
         <Hoja titulo="Editar perfil" onCerrar={() => setEditando(false)}>

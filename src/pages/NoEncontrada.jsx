@@ -6,7 +6,7 @@ import { Icono, Vacio } from '../components/ui'
 export default function NoEncontrada() {
   return (
     <Marco titulo="No encontrada">
-      <div className="pt-10">
+      <div className="pt-10 una-columna">
         <Vacio
           icono="search"
           titulo="Esa página no existe"
