@@ -27,19 +27,19 @@ Si se agrega o cambia una tarea, se actualizan las dos.
 Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junto está indicado.
 
 **Primero (P1)**
-1. S-01 · Copias de seguridad propias (falta la prueba de restauración)
-2. C-03 · Mails propios (SMTP)
-3. L-01 · Edad mínima
-4. L-02 · Revisión de los textos legales
-5. L-03 · Registro de la base de datos
-6. C-01 · Planes y cobro (para empezar a cobrar)
-7. S-04 · Repo privado (al terminar)
+1. C-03 · Mails propios (SMTP)
+2. L-01 · Edad mínima
+3. L-02 · Revisión de los textos legales
+4. L-03 · Registro de la base de datos
+5. C-01 · Planes y cobro (para empezar a cobrar)
+6. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-8. D-01 · Hojas que suben desde abajo (va junto con D-02)
-9. D-02 · Botones del tamaño del dedo
-10. D-05 · Recorrido inicial
-11. F-07 · Ajustar las porciones de una receta
+7. D-01 · Hojas que suben desde abajo (va junto con D-02)
+8. D-02 · Botones del tamaño del dedo
+9. D-05 · Recorrido inicial
+10. F-07 · Ajustar las porciones de una receta
+11. F-15 · Alimentos solos en el plan
 12. F-05 · Compartir la lista de compras por WhatsApp
 13. S-02 · CORS de la función de IA
 14. T-02 · Pruebas automáticas en cada push
@@ -102,6 +102,10 @@ Nada por ahora.
   - Necesita notificaciones del navegador y algo del lado del servidor que las mande a la hora.
   - En iPhone solo funcionan con la app instalada en la pantalla de inicio.
 - [ ] **F-07 · Ajustar las porciones de una receta** · P2 · S. Ver las cantidades para 1, 2 o N porciones, y cocinar más o menos de lo que rinde la receta.
+- [ ] **F-15 · Alimentos solos en el plan** · P2 · M. Hoy, en Plan, al tocar una comida solo se puede elegir una receta. Que también se pueda poner un alimento suelto con su cantidad (por ejemplo, mate solo en la merienda) en cualquiera de las cuatro comidas, aunque el día no tenga nada planeado.
+  - La hoja de elegir comida ofrece dos caminos: receta o alimento (con el mismo buscador y las mismas medidas del diario).
+  - Que cuente como cualquier otra comida del plan: calorías del día, "Comí esto" en el diario (anota el alimento con esa cantidad), lo que falta de la despensa y la lista de compras.
+  - Hace falta guardar el alimento y la cantidad en la tabla del plan (hoy solo guarda la receta): un SQL nuevo, y que "Armar con lo que tengo" respete lo que se puso a mano.
 - [ ] **F-08 · Copiar un día entero** · P3 · S. Hoy se puede repetir la comida de ayer; falta copiar el día completo (o un día cualquiera) a otra fecha.
 - [ ] **F-09 · Combos frecuentes** · P3 · M. Guardar "mi desayuno de siempre" con varios alimentos y registrarlo con un toque.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
@@ -130,7 +134,6 @@ Nada por ahora.
 
 ## 4. Seguridad
 
-- [~] **S-01 · Copias de seguridad propias** · P1 · S. Repo `tupper-respaldos` armado en GitHub (privado, Actions, copia diaria cifrada, 90 días, con scripts para abrirla y restaurarla); el primer respaldo corrió bien el 12/10/2026 (3 cuentas, 140 registros, 302 alimentos, 91 recetas). Falta: una prueba de restauración en un proyecto nuevo de Supabase, y guardar la `RESPALDO_CLAVE` en un gestor de contraseñas aparte de GitHub. Por qué: el plan gratis de Supabase no guarda copias que se puedan bajar: si algo sale mal, no hay de dónde recuperar. Una copia automática de la base, por ejemplo una vez por día, guardada fuera de Supabase y con acceso solo para vos. Probar una vez que se puede restaurar.
 - [ ] **S-02 · CORS de la función de IA** · P2 · S. Hoy acepta pedidos de cualquier página (`*`); dejar solo el dominio de la app.
 - [ ] **S-03 · Contraseñas filtradas también del lado de Supabase** · P3 · S. Solo con el plan Pro; la app ya lo revisa por su cuenta.
 - [ ] **S-04 · Repo privado** · P1 · S. Al terminar la app, antes de venderla.
@@ -170,6 +173,7 @@ Nada por ahora.
 
 ## Hecho
 
+- **S-01 · Copias de seguridad propias** (14/10/2026): repo privado `tupper-respaldos` en GitHub con copia diaria cifrada (3:17 AR, guardada 90 días) y scripts para abrirla y restaurarla. Respaldo verificado el 14/10 (4 cuentas, 174 registros, 309 alimentos, 91 recetas, 42 del plan). Contraseña de la base cambiada, `RESPALDO_CLAVE` guardada aparte y prueba de restauración hecha.
 - **Verificado el 13/10/2026:** el análisis con IA anda (V-02, función `analizar-semana` versión 4) y `actualizacion-9.sql` está aplicada en Supabase.
 - **1.11.0**:
   - D-03: diseño para computadora desde 1024 px de ancho. Barra de navegación al costado (con Registrar, todas las pantallas y el perfil), varias columnas en diario, despensa, recetas, plan, compras, resumen, perfil, receta y registrar, y las ventanas (hojas) como recuadro centrado en vez de subir desde abajo.
