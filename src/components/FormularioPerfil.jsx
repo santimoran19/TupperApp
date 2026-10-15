@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react'
 import { Err, Numero } from './ui'
 import { ACTIVIDADES, liquidoSugerido, objetivoSugerido } from '../lib/nutricion'
 import { edad } from '../lib/fechas'
-import { LIM, errFecha, errNumero, errTexto, hayErrores, rangoNacimiento } from '../lib/validar'
+import { LIM, errNacimiento, errNumero, errTexto, hayErrores, rangoNacimiento } from '../lib/validar'
 
 export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
   const [f, setF] = useState({
@@ -28,7 +28,7 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
 
   const errDatos = {
     name: errTexto(f.name, { max: LIM.nombre }),
-    birth_date: errFecha(f.birth_date, nac),
+    birth_date: errNacimiento(f.birth_date, inicial?.birth_date),
     height_cm: errNumero(f.height_cm, LIM.altura),
     weight_kg: errNumero(f.weight_kg, LIM.peso),
     goal_weight_kg: errNumero(f.goal_weight_kg, LIM.peso, { opcional: true }),

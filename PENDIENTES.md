@@ -28,56 +28,55 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 **Primero (P1)**
 1. C-03 · Mails propios (SMTP)
-2. L-01 · Edad mínima
-3. L-02 · Revisión de los textos legales
-4. L-03 · Registro de la base de datos
-5. C-01 · Planes y cobro (para empezar a cobrar)
-6. S-04 · Repo privado (al terminar)
+2. L-02 · Revisión de los textos legales
+3. L-03 · Registro de la base de datos
+4. C-01 · Planes y cobro (para empezar a cobrar)
+5. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-7. D-01 · Hojas que suben desde abajo (va junto con D-02)
-8. D-02 · Botones del tamaño del dedo
-9. D-05 · Recorrido inicial
-10. F-07 · Ajustar las porciones de una receta
-11. F-15 · Alimentos solos en el plan
-12. F-05 · Compartir la lista de compras por WhatsApp
-13. S-02 · CORS de la función de IA
-14. T-02 · Pruebas automáticas en cada push
-15. T-06 · Aviso de errores (va junto con S-05)
-16. S-05 · Revisión periódica
-17. F-01 · Escanear el código de barras (va junto con F-02)
-18. F-02 · Catálogo compartido de productos
-19. F-12 · Base propia de alimentos más grande
-20. IA-01 · Chat con IA (va junto con IA-02)
-21. IA-02 · Proveedor de respaldo
-22. F-04 · Vencimientos en la despensa
-23. D-07 · Revisión completa de accesibilidad
-24. L-04 · Consentimiento al registrarse
-25. C-02 · Dominio propio y página de presentación
-26. C-05 · Opiniones desde la app
-27. T-03 · Pruebas en Safari
-28. T-04 · Base de pruebas aparte
-29. T-01 · Actualizar las herramientas
-30. F-03 · Despensa compartida entre los de una misma casa
-31. F-06 · Recordatorios
+6. D-01 · Hojas que suben desde abajo (va junto con D-02)
+7. D-02 · Botones del tamaño del dedo
+8. D-05 · Recorrido inicial
+9. F-07 · Ajustar las porciones de una receta
+10. F-15 · Alimentos solos en el plan
+11. F-05 · Compartir la lista de compras por WhatsApp
+12. S-02 · CORS de la función de IA
+13. T-02 · Pruebas automáticas en cada push
+14. T-06 · Aviso de errores (va junto con S-05)
+15. S-05 · Revisión periódica
+16. F-01 · Escanear el código de barras (va junto con F-02)
+17. F-02 · Catálogo compartido de productos
+18. F-12 · Base propia de alimentos más grande
+19. IA-01 · Chat con IA (va junto con IA-02)
+20. IA-02 · Proveedor de respaldo
+21. F-04 · Vencimientos en la despensa
+22. D-07 · Revisión completa de accesibilidad
+23. L-04 · Consentimiento al registrarse
+24. C-02 · Dominio propio y página de presentación
+25. C-05 · Opiniones desde la app
+26. T-03 · Pruebas en Safari
+27. T-04 · Base de pruebas aparte
+28. T-01 · Actualizar las herramientas
+29. F-03 · Despensa compartida entre los de una misma casa
+30. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-32. F-08 · Copiar un día entero
-33. D-06 · Deshacer en más lugares
-34. D-04 · Esqueletos de carga
-35. F-10 · Peso: gráfico y fecha estimada
-36. F-11 · Exportar el registro a planilla
-37. F-09 · Combos frecuentes
-38. F-13 · Categorías editables por el usuario
-39. D-08 · Revisión de los textos
-40. IA-04 · Cargar una receta desde un texto
-41. IA-03 · Foto de un plato
-42. C-06 · Métricas de uso
-43. C-04 · Play Store
-44. T-05 · Partir `sincronizacion.js`
-45. T-07 · Mandar lo cargado sin conexión con la app cerrada
-46. S-06 · Verificación en dos pasos
-47. S-03 · Contraseñas filtradas también del lado de Supabase
+31. F-08 · Copiar un día entero
+32. D-06 · Deshacer en más lugares
+33. D-04 · Esqueletos de carga
+34. F-10 · Peso: gráfico y fecha estimada
+35. F-11 · Exportar el registro a planilla
+36. F-09 · Combos frecuentes
+37. F-13 · Categorías editables por el usuario
+38. D-08 · Revisión de los textos
+39. IA-04 · Cargar una receta desde un texto
+40. IA-03 · Foto de un plato
+41. C-06 · Métricas de uso
+42. C-04 · Play Store
+43. T-05 · Partir `sincronizacion.js`
+44. T-07 · Mandar lo cargado sin conexión con la app cerrada
+45. S-06 · Verificación en dos pasos
+46. S-03 · Contraseñas filtradas también del lado de Supabase
 
 ---
 
@@ -142,7 +141,6 @@ Nada por ahora.
 
 ## 5. Legal y datos personales
 
-- [ ] **L-01 · Edad mínima** · P1 · S. Hoy acepta desde los 13 años. Con IA y datos de alimentación, subirla a 18 o pedir el consentimiento de un adulto. Verlo con alguien de legales.
 - [ ] **L-02 · Revisión de los textos legales** · P1 · S. Términos y Política de privacidad, por un abogado. Son una base razonable, no un documento definitivo.
 - [ ] **L-03 · Registro de la base de datos** · P1 · S. En Argentina, las bases con datos personales se inscriben en el registro de la Agencia de Acceso a la Información Pública, y acá hay datos de salud. Confirmarlo con legales.
 - [ ] **L-04 · Consentimiento al registrarse** · P2 · S. Una casilla explícita para el uso de datos de salud, además del texto que ya está debajo del botón.
@@ -175,6 +173,11 @@ Nada por ahora.
 
 - **S-01 · Copias de seguridad propias** (14/10/2026): repo privado `tupper-respaldos` en GitHub con copia diaria cifrada (3:17 AR, guardada 90 días) y scripts para abrirla y restaurarla. Respaldo verificado el 14/10 (4 cuentas, 174 registros, 309 alimentos, 91 recetas, 42 del plan). Contraseña de la base cambiada, `RESPALDO_CLAVE` guardada aparte y prueba de restauración hecha.
 - **Verificado el 13/10/2026:** el análisis con IA anda (V-02, función `analizar-semana` versión 4) y `actualizacion-9.sql` está aplicada en Supabase.
+- **1.12.0** (hay que correr `actualizacion-10.sql`):
+  - L-01: la app es solo para mayores de 18 años. La fecha de nacimiento no deja poner menos (aviso "Tupper es solo para mayores de 18 años."), debajo de "Crear cuenta" dice que se confirma tener 18 o más, y los Términos y la Política de privacidad dicen 18 sin la excepción del adulto responsable.
+  - La base lo cuida también (`actualizacion-10.sql`): no deja guardar una fecha de menos de 18, pero no toca ninguna cuenta que ya exista; si alguna tuviera menos de 18, sigue andando y puede editar el resto del perfil.
+  - Pruebas nuevas: `mayores-de-edad` (la base) y `objetivo` (sin recorte de calorías para una cuenta anterior de menor); las de navegador `01` y `04` ahora comprueban que un menor no puede crear el perfil.
+  - Queda para L-02: que un abogado revise la redacción de "Menores" y "Tu cuenta".
 - **1.11.0**:
   - D-03: diseño para computadora desde 1024 px de ancho. Barra de navegación al costado (con Registrar, todas las pantallas y el perfil), varias columnas en diario, despensa, recetas, plan, compras, resumen, perfil, receta y registrar, y las ventanas (hojas) como recuadro centrado en vez de subir desde abajo.
   - Hasta 1023 px (celulares y tablets) el diseño es el de siempre: comparado píxel a píxel con la versión anterior a 390 y 412 px, sin diferencias.

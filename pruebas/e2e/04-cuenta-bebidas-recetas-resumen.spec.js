@@ -85,20 +85,19 @@ test('cuenta con código, bebidas, recetas y resumen', async ({ browser }) => {
     await pg.waitForSelector('text=Armemos tu perfil')
   })
 
-  await test.step('acceso: menor de 18, sin recorte', async () => {
-    // menor de 18: sin recorte
+  await test.step('acceso: con menos de 18 años no se puede crear el perfil', async () => {
     await pg.fill('#pf-nombre', 'Ana')
     await pg.fill('#pf-nac', '2010-05-01')
     await pg.fill('#pf-altura', '160')
     await pg.fill('#pf-peso', '60')
     await pg.fill('#pf-meta', '50')
-    await pg.waitForSelector('text=Como tenés menos de 18')
-    const menor = await pg.inputValue('#pf-kcal')
+    await pg.waitForSelector('text=Tupper es solo para mayores de 18 años.')
+    expect(await pg.locator('#pf-kcal').count(), 'no tiene que calcular objetivo para un menor').toBe(0)
+    await pg.click('button:has-text("Empezar")')
+    await pg.waitForTimeout(300)
+    expect(await pg.locator('text=¡Hola').count(), 'guardó el perfil de un menor').toBe(0)
     await pg.fill('#pf-nac', '2000-05-01')
-    await pg.waitForTimeout(200)
-    const adulto = await pg.inputValue('#pf-kcal')
-    expect(parseInt(menor, 10)).toBeGreaterThan(parseInt(adulto, 10))
-    expect(await pg.locator('text=Como tenés menos de 18').count()).toBe(0)
+    await pg.waitForSelector('text=Tupper es solo para mayores de 18 años.', { state: 'detached' })
     await pg.click('button:has-text("Empezar")')
     await pg.waitForSelector('text=¡Hola, Ana!')
   })

@@ -23,7 +23,7 @@ const TEXTOS = {
         'No reemplaza a un profesional',
         [
           'Los objetivos de calorías, proteína y líquido, los consejos del día y los valores nutricionales son cálculos orientativos hechos con fórmulas generales. No son un diagnóstico ni una indicación médica o nutricional.',
-          'Antes de hacer una dieta, y sobre todo si estás embarazada, tenés una enfermedad, tomás medicación, sos menor de edad o tenés o tuviste un trastorno de la conducta alimentaria, consultá con un médico o un nutricionista.',
+          'Antes de hacer una dieta, y sobre todo si estás embarazada, tenés una enfermedad, tomás medicación o tenés o tuviste un trastorno de la conducta alimentaria, consultá con un médico o un nutricionista.',
           'El análisis con IA del resumen semanal lo escribe un modelo de inteligencia artificial a partir de lo que registraste. Puede equivocarse y no conoce tu historia clínica: tomalo como una orientación general.',
           'Los datos de los alimentos son aproximados. Parte viene de una base propia y parte de Open Food Facts, que carga la comunidad: pueden tener errores. Si tenés una alergia o una restricción, guiate siempre por la etiqueta del producto.',
         ],
@@ -31,7 +31,7 @@ const TEXTOS = {
       [
         'Tu cuenta',
         [
-          'Para usar la app tenés que tener 18 años o más, o contar con la autorización de un adulto responsable.',
+          'Para usar la app tenés que tener 18 años o más. Al crear la cuenta confirmás que los tenés.',
           'Sos responsable de cuidar tu contraseña y de lo que se haga desde tu cuenta. Los datos que cargues tienen que ser tuyos.',
         ],
       ],
@@ -112,7 +112,12 @@ const TEXTOS = {
         'Cuánto tiempo los guardamos',
         ['Mientras tengas la cuenta. Si la borrás, se eliminan todos tus datos de la base.', 'El registro técnico se borra a los 90 días.'],
       ],
-      ['Menores', ['La app no está pensada para menores de 18 años sin la autorización de un adulto responsable.']],
+      [
+        'Menores',
+        [
+          `La app es solo para mayores de 18 años y no recopilamos datos de menores a propósito. Si creés que un menor creó una cuenta, podés pedir que se borre ${contacto}.`,
+        ],
+      ],
       ['Cambios', ['Si esta política cambia de forma importante, lo vamos a avisar en la app.']],
     ],
   },

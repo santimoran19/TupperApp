@@ -433,7 +433,7 @@ export default function Acceso() {
             )}
             {modo === 'crear' && (
               <p className="text-xs text-gris text-center">
-                Al crear la cuenta aceptás los{' '}
+                Al crear la cuenta confirmás que tenés 18 años o más y aceptás los{' '}
                 <Link to="/terminos" className="underline font-semibold">
                   Términos
                 </Link>{' '}

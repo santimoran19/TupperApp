@@ -4,7 +4,7 @@ import { aFecha, aTexto, fechaCorta, hoy, sumarDias } from './fechas'
 
 export const LIM = {
   nombre: 60,
-  edad: [13, 100],
+  edad: [18, 100], // la app es para mayores de 18 (el mínimo también lo cuida la base: supabase/actualizacion-10.sql)
   altura: [100, 250],
   peso: [30, 300],
   cintura: [40, 250],
@@ -266,12 +266,23 @@ export function errClave(v, email = '') {
   return requisitosClave(v, email).every((r) => r.ok) ? null : 'La contraseña todavía no cumple los requisitos.'
 }
 
-// Rango aceptado para la fecha de nacimiento (entre 10 y 100 años)
+// Rango aceptado para la fecha de nacimiento (entre 18 y 100 años)
 export function rangoNacimiento() {
   const h = aFecha(hoy())
   const min = new Date(h.getFullYear() - LIM.edad[1], h.getMonth(), h.getDate())
   const max = new Date(h.getFullYear() - LIM.edad[0], h.getMonth(), h.getDate())
   return { min: aTexto(min), max: aTexto(max) }
+}
+
+// Error de la fecha de nacimiento. `actual` es la que ya tiene guardada la cuenta: si no se toca, se deja como está
+// (una cuenta anterior al mínimo de 18 años no pierde nada ni queda trabada para editar el resto del perfil).
+export function errNacimiento(v, actual = null) {
+  const { min, max } = rangoNacimiento()
+  // Primero lo común a cualquier fecha (formato, demasiado vieja, en el futuro)...
+  const e = errFecha(v, { min, max: hoy() })
+  if (e || (v && v === actual)) return e
+  // ...y después el mínimo de edad
+  return v > max ? `Tupper es solo para mayores de ${LIM.edad[0]} años.` : null
 }
 
 // Días en los que se puede registrar: lo que la app carga hacia atrás y un par de semanas hacia adelante
