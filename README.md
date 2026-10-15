@@ -97,7 +97,8 @@ Para crear la base desde cero, se ejecutan en este orden:
 8. `supabase/actualizacion-8.sql`: los topes para que una cuenta no pueda llenar la base: máximo de filas por usuario, textos con largo máximo y filas que no pesan de más. No depende de ninguna versión de la app.
 9. `supabase/actualizacion-9.sql`: cuánto descontó de la despensa cada registro, y las funciones para cambiar la cantidad de un registro o borrarlo dejando la despensa al día. Tiene que estar aplicada antes de publicar la versión 1.10 de la app.
 10. `supabase/actualizacion-10.sql`: la regla de que la app es solo para mayores de 18 años, también del lado de la base. No toca ninguna cuenta que ya exista. Tiene que estar aplicada antes de publicar la versión 1.12 de la app.
-11. `supabase/seed.sql`: los 274 alimentos y las 88 recetas base, comunes a todos. Se puede ejecutar de nuevo: agrega solo lo que falta.
+11. `supabase/actualizacion-11.sql`: los alimentos sueltos en el plan (cada comida del plan puede ser una receta o un alimento con su cantidad). No toca ninguna fila que ya exista. Tiene que estar aplicada antes de publicar la versión 1.13 de la app.
+12. `supabase/seed.sql`: los 274 alimentos y las 88 recetas base, comunes a todos. Se puede ejecutar de nuevo: agrega solo lo que falta.
 
 La función que consulta a la IA está en `supabase/functions/analizar-semana/`; cómo activarla, en `supabase/functions/LEEME.md`.
 

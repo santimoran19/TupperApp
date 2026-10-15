@@ -6,7 +6,16 @@ import { reemplazar } from '../listas'
 
 export async function guardarFilasPlan(k, filas) {
   if (filas.length === 0) return
-  const conUsuario = filas.map((f) => ({ user_id: k.uid, date: f.date, meal: f.meal, recipe_id: f.recipe_id ?? null, away: !!f.away }))
+  // Cada comida es una receta o un alimento suelto con su cantidad: lo que no viene queda vacío
+  const conUsuario = filas.map((f) => ({
+    user_id: k.uid,
+    date: f.date,
+    meal: f.meal,
+    recipe_id: f.recipe_id ?? null,
+    food_id: f.food_id ?? null,
+    qty: f.food_id ? f.qty : null,
+    away: !!f.away,
+  }))
   const guardadas = ok(await supabase.from('plan').upsert(conUsuario, { onConflict: 'user_id,date,meal' }).select())
   k.setE((s) => {
     let plan = s.plan
@@ -29,7 +38,7 @@ async function ponerAfuera(k, lugares, away) {
     const receta = actual?.recipe_id && v.recetasPorId.get(actual.recipe_id)
     const hayParaLlevar = v.recetasVisibles.some((r) => r.portable && r.meal_types.includes(meal) && v.itemsDe(r.id).length > 0)
     if (away && receta && !receta.portable && hayParaLlevar) aCambiar.add(clave)
-    else filas.push({ date, meal, recipe_id: actual?.recipe_id ?? null, away })
+    else filas.push({ date, meal, recipe_id: actual?.recipe_id ?? null, food_id: actual?.food_id ?? null, qty: actual?.qty ?? null, away })
   }
   const cambiadas = []
   if (aCambiar.size > 0) {
@@ -47,6 +56,7 @@ async function ponerAfuera(k, lugares, away) {
       soloClaves: aCambiar,
       ocultas: v.ocultas,
       favoritas: v.favoritas,
+      alimentoDe: v.alimentoPlan,
     })
     for (const n of nuevas) {
       filas.push(n)

@@ -1,5 +1,5 @@
 // Cruza recetas con el stock: qué se puede cocinar, qué falta y cómo armar la semana.
-import { COMIDAS } from './nutricion'
+import { COMIDAS, macrosDe } from './nutricion'
 import { diaSemana, sumarDias } from './fechas'
 
 const EPS = 0.001
@@ -26,15 +26,40 @@ export function porcionesPosibles(receta, items, stock) {
   return max === Infinity ? 0 : max
 }
 
+// Lo que aporta una comida del plan: las calorías y macros de la receta, o las del alimento suelto con su cantidad.
+export function macrosDeFila(fila, { macrosPorReceta, alimentosPorId }) {
+  if (fila?.recipe_id) return macrosPorReceta.get(fila.recipe_id) || null
+  const a = fila?.food_id && alimentosPorId.get(fila.food_id)
+  return a ? macrosDe(a, Number(fila.qty)) : null
+}
+
 // Recorre el plan en orden y dice, comida por comida, si hay con qué hacerla.
 // Devuelve el estado de cada fila y el total de ingredientes que faltan comprar.
-export function estadoDelPlan(filas, { recetas, itemsDe, stock, preparado }) {
+// `alimentoDe(fila)`: lo que gasta un alimento suelto, llevado al alimento base ([{ food_id, qty }]). Un alimento suelto solo
+// cuenta si la persona lo lleva en la despensa (tiene una fila ahí, aunque esté agotado): el agua, el mate o una fruta que
+// nunca anotó no tienen que aparecer como "falta comprar".
+export function estadoDelPlan(filas, { recetas, itemsDe, stock, preparado, alimentoDe = () => [] }) {
   const sim = new Map(stock)
   const prep = new Map(preparado)
   const estados = new Map()
   const faltantes = new Map()
   const orden = [...filas].sort((a, b) => (a.date + COMIDAS.indexOf(a.meal)).localeCompare(b.date + COMIDAS.indexOf(b.meal)))
   for (const fila of orden) {
+    if (fila.food_id) {
+      const items = alimentoDe(fila).filter((it) => stock.has(it.food_id))
+      if (items.length === 0) continue
+      const faltan = []
+      for (const it of items) {
+        const hay = Math.max(sim.get(it.food_id) || 0, 0)
+        if (hay + EPS < it.qty) {
+          faltan.push({ food_id: it.food_id, falta: it.qty - hay })
+          faltantes.set(it.food_id, (faltantes.get(it.food_id) || 0) + it.qty - hay)
+        }
+        sim.set(it.food_id, (sim.get(it.food_id) || 0) - it.qty)
+      }
+      estados.set(fila.id, { estado: faltan.length ? 'falta' : 'listo', faltan })
+      continue
+    }
     const receta = fila.recipe_id && recetas.get(fila.recipe_id)
     if (!receta) continue
     if ((prep.get(receta.id) || 0) >= 1) {
@@ -61,6 +86,7 @@ export function estadoDelPlan(filas, { recetas, itemsDe, stock, preparado }) {
 // `existentes`: Map 'fecha|comida' -> fila ya guardada. `reglas`: Set 'diaSemana|comida' de comidas fuera de casa.
 // `soloClaves`: si viene, solo se eligen recetas para esas 'fecha|comida' (sirve para cambiar una comida puntual).
 // `ocultas`: recetas que el usuario no quiere ver; `favoritas`: tienen prioridad.
+// `alimentoDe(fila)`: lo que gasta un alimento suelto del plan (ver estadoDelPlan).
 export function armarPlan({
   fechas,
   recetas,
@@ -72,6 +98,7 @@ export function armarPlan({
   soloClaves = null,
   ocultas = new Set(),
   favoritas = new Set(),
+  alimentoDe = () => [],
 }) {
   const sim = new Map(stock)
   const prep = new Map(preparado)
@@ -95,6 +122,11 @@ export function armarPlan({
       const afuera = ya ? ya.away : reglas.has(`${diaSemana(fecha)}|${comida}`)
       if (ya?.recipe_id && recetas.get(ya.recipe_id)) {
         consumir(recetas.get(ya.recipe_id))
+        continue
+      }
+      // Un alimento suelto puesto a mano se respeta: no se pisa ni se completa esa comida
+      if (ya?.food_id) {
+        for (const it of alimentoDe(ya)) if (stock.has(it.food_id)) sim.set(it.food_id, (sim.get(it.food_id) || 0) - it.qty)
         continue
       }
       if (soloClaves && !soloClaves.has(clave)) continue

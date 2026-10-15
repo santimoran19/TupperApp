@@ -2,11 +2,24 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Marco from '../components/Marco'
-import { Hoja, Icono } from '../components/ui'
+import SelectorAlimento from '../components/SelectorAlimento'
+import { Chip, Err, Hoja, Icono, Numero } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { diaSemana, fechaCorta, hoy, lunesDe, nombreDia, semanaDe, sumarDias } from '../lib/fechas'
-import { COMIDAS, NOMBRE_COMIDA, redondear, sumar } from '../lib/nutricion'
-import { armarPlan, disponibilidad } from '../lib/planificador'
+import {
+  COMIDAS,
+  NOMBRE_COMIDA,
+  cantidadTexto,
+  macrosDe,
+  medidasDe,
+  porcionSugerida,
+  redondear,
+  sumar,
+  textoMedida,
+  unidadDe,
+} from '../lib/nutricion'
+import { armarPlan, disponibilidad, macrosDeFila } from '../lib/planificador'
+import { errCantidad, maxPorComida } from '../lib/validar'
 
 const ESTADOS = {
   preparado: { texto: 'Ya cocinado', clase: 'bg-teal-suave text-teal-oscuro', icono: 'takeout_dining' },
@@ -14,10 +27,62 @@ const ESTADOS = {
   falta: { texto: 'Falta comprar', clase: 'bg-naranja-suave text-naranja-oscuro', icono: 'shopping_basket' },
 }
 
+// Cantidad de un alimento suelto que se pone en una comida del plan
+function AlimentoSuelto({ suelto, onCambiar, onOtro, onPoner, termo, enDespensa }) {
+  const { a, qty } = suelto
+  const error = errCantidad(a, qty, maxPorComida(a))
+  const m = macrosDe(a, Number(qty) || 0)
+  const medidas = medidasDe(a, termo)
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start gap-2">
+        <p className="flex-1 font-medium">{a.name}</p>
+        <span className="font-bold text-verde-texto whitespace-nowrap">{redondear(m.kcal)} kcal</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Numero
+          valor={qty}
+          onChange={onCambiar}
+          decimales={a.unit !== 'u' ? 0 : 2}
+          largo={5}
+          error={!!error}
+          className="campo h-10 w-24 text-center font-semibold"
+          aria-label="Cantidad"
+        />
+        <span className="text-sm text-gris">{unidadDe(a, Number(qty))}</span>
+        <span className="ml-auto pill bg-coral-suave text-coral-oscuro">{redondear(m.protein)} g prot.</span>
+      </div>
+      <Err>{error}</Err>
+      {medidas.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto sin-scroll">
+          {medidas.map(([nombre, cantidad]) => (
+            <button
+              key={nombre}
+              onClick={() => onCambiar(String(cantidad))}
+              className={`shrink-0 rounded-full px-3 h-8 text-xs font-semibold ${Number(qty) === cantidad ? 'bg-teal-fuerte text-white' : 'bg-teal-suave text-teal-oscuro'}`}
+            >
+              {nombre} · {textoMedida(a, cantidad)}
+            </button>
+          ))}
+        </div>
+      )}
+      {enDespensa !== null && <p className="text-xs text-gris">En tu despensa: {cantidadTexto(a, enDespensa)}.</p>}
+      <button onClick={onPoner} disabled={!!error} className="btn-primario w-full">
+        <Icono n="check_circle" size={20} /> Poner en el plan
+      </button>
+      <button onClick={onOtro} className="btn-suave w-full">
+        Elegir otro alimento
+      </button>
+    </div>
+  )
+}
+
 export default function Plan() {
   const d = useDatos()
   const [lunes, setLunes] = useState(lunesDe(hoy()))
   const [eligiendo, setEligiendo] = useState(null) // { date, meal }
+  const [modo, setModo] = useState('receta') // qué se está eligiendo para la comida: 'receta' o 'alimento'
+  const [suelto, setSuelto] = useState(null) // alimento suelto elegido y su cantidad: { a, qty }
   const [trabajando, setTrabajando] = useState(false)
   const dias = useMemo(() => semanaDe(lunes), [lunes])
   const h = hoy()
@@ -30,7 +95,8 @@ export default function Plan() {
     [d.plan, dias],
   )
   const reglas = useMemo(() => new Set(d.reglas.map((r) => `${r.weekday}|${r.meal}`)), [d.reglas])
-  const huecos = dias.filter((f) => f >= h).some((f) => COMIDAS.some((c) => !filas.get(`${f}|${c}`)?.recipe_id))
+  const llena = (fila) => !!(fila?.recipe_id || fila?.food_id)
+  const huecos = dias.filter((f) => f >= h).some((f) => COMIDAS.some((c) => !llena(filas.get(`${f}|${c}`))))
   const faltan = d.planFuturo.faltantes.size
 
   async function armar() {
@@ -48,6 +114,7 @@ export default function Plan() {
       existentes,
       ocultas: d.ocultas,
       favoritas: d.favoritas,
+      alimentoDe: d.alimentoPlan,
     })
     const listo = await d.guardarPlan(nuevas)
     setTrabajando(false)
@@ -79,6 +146,7 @@ export default function Plan() {
       existentes,
       ocultas: d.ocultas,
       favoritas: d.favoritas,
+      alimentoDe: d.alimentoPlan,
     })
     await d.guardarPlan(nuevas)
     setTrabajando(false)
@@ -89,9 +157,30 @@ export default function Plan() {
     const fila = filas.get(`${date}|${meal}`)
     return fila ? fila.away : reglas.has(`${diaSemana(date)}|${meal}`)
   }
+  const cerrar = () => {
+    setEligiendo(null)
+    setModo('receta')
+    setSuelto(null)
+  }
+  // Abre la ventana de una comida. Si ya tiene un alimento suelto, se abre en su cantidad para poder cambiarla.
+  const abrir = (date, meal) => {
+    const fila = filas.get(`${date}|${meal}`)
+    const a = fila?.food_id && d.alimentosPorId.get(fila.food_id)
+    setEligiendo({ date, meal })
+    setModo(a ? 'alimento' : 'receta')
+    setSuelto(a ? { a, qty: String(Number(fila.qty)) } : null)
+  }
   const elegir = async (recipe_id) => {
     await d.guardarPlan([{ date: eligiendo.date, meal: eligiendo.meal, recipe_id, away: esAfuera(eligiendo.date, eligiendo.meal) }])
-    setEligiendo(null)
+    cerrar()
+  }
+  const elegirAlimento = (a) => setSuelto({ a, qty: String(porcionSugerida(a, d.perfil.thermos_ml || 1000)) })
+  const ponerSuelto = async () => {
+    const { a, qty } = suelto
+    await d.guardarPlan([
+      { date: eligiendo.date, meal: eligiendo.meal, food_id: a.id, qty: Number(qty), away: esAfuera(eligiendo.date, eligiendo.meal) },
+    ])
+    cerrar()
   }
   // Al marcar una comida como afuera, si la receta no se puede llevar se cambia por una que sí
   const alternarAfuera = async (date, meal) => {
@@ -173,14 +262,9 @@ export default function Plan() {
         {dias.map((f) => {
           const pasado = f < h
           // De los días que ya pasaron solo se muestra lo que estaba planificado
-          const comidas = pasado ? COMIDAS.filter((c) => filas.get(`${f}|${c}`)?.recipe_id) : COMIDAS
+          const comidas = pasado ? COMIDAS.filter((c) => llena(filas.get(`${f}|${c}`))) : COMIDAS
           if (comidas.length === 0) return null
-          const kcal = sumar(
-            COMIDAS.map((c) => {
-              const p = filas.get(`${f}|${c}`)
-              return (p?.recipe_id && d.macrosPorReceta.get(p.recipe_id)) || { kcal: 0 }
-            }),
-          ).kcal
+          const kcal = sumar(COMIDAS.map((c) => macrosDeFila(filas.get(`${f}|${c}`), d) || { kcal: 0 })).kcal
           return (
             <section key={f} className={`tarjeta p-4 ${pasado ? 'opacity-60' : ''} ${f === h ? 'ring-2 ring-verde-medio' : ''}`}>
               <div className="flex items-center justify-between mb-1">
@@ -194,17 +278,15 @@ export default function Plan() {
                 {comidas.map((c) => {
                   const fila = filas.get(`${f}|${c}`)
                   const receta = fila?.recipe_id && d.recetasPorId.get(fila.recipe_id)
+                  const alimento = fila?.food_id && d.alimentosPorId.get(fila.food_id)
+                  const nombre = receta ? receta.name : alimento ? `${alimento.name} · ${cantidadTexto(alimento, Number(fila.qty))}` : null
                   const est = fila && d.planFuturo.estados.get(fila.id)
                   const afuera = esAfuera(f, c)
                   return (
                     <div key={c} className="flex items-center gap-2 py-2.5">
-                      <button
-                        onClick={() => !pasado && setEligiendo({ date: f, meal: c })}
-                        className="flex-1 min-w-0 text-left"
-                        disabled={pasado}
-                      >
+                      <button onClick={() => !pasado && abrir(f, c)} className="flex-1 min-w-0 text-left" disabled={pasado}>
                         <p className="text-[11px] font-bold tracking-wider text-verde-texto">{NOMBRE_COMIDA[c].toUpperCase()}</p>
-                        <p className={`text-sm truncate ${receta ? 'font-medium' : 'text-gris'}`}>{receta ? receta.name : 'Elegir'}</p>
+                        <p className={`text-sm truncate ${nombre ? 'font-medium' : 'text-gris'}`}>{nombre || 'Elegir'}</p>
                         {afuera && receta && !receta.portable && (
                           <span className="pill mt-1 mr-1 bg-rojo-suave text-rojo-texto">No es para llevar</span>
                         )}
@@ -243,41 +325,65 @@ export default function Plan() {
       </p>
 
       {eligiendo && (
-        <Hoja
-          titulo={`${NOMBRE_COMIDA[eligiendo.meal]} del ${nombreDia(eligiendo.date).toLowerCase()}`}
-          onCerrar={() => setEligiendo(null)}
-        >
-          {eligiendoAfuera && (
+        <Hoja titulo={`${NOMBRE_COMIDA[eligiendo.meal]} del ${nombreDia(eligiendo.date).toLowerCase()}`} onCerrar={cerrar}>
+          <div className="flex gap-2 mb-3">
+            <Chip
+              activo={modo === 'receta'}
+              onClick={() => {
+                setModo('receta')
+                setSuelto(null)
+              }}
+            >
+              Recetas
+            </Chip>
+            <Chip activo={modo === 'alimento'} onClick={() => setModo('alimento')}>
+              Alimento suelto
+            </Chip>
+          </div>
+          {modo === 'alimento' && !suelto && <SelectorAlimento onElegir={elegirAlimento} />}
+          {modo === 'alimento' && suelto && (
+            <AlimentoSuelto
+              suelto={suelto}
+              onCambiar={(qty) => setSuelto((s) => ({ ...s, qty }))}
+              onOtro={() => setSuelto(null)}
+              onPoner={ponerSuelto}
+              termo={d.perfil.thermos_ml || 1000}
+              enDespensa={d.stockMap.has(suelto.a.id) ? d.stockMap.get(suelto.a.id) : null}
+            />
+          )}
+          {modo === 'receta' && eligiendoAfuera && (
             <p className="text-sm text-gris mb-1">Esta comida la hacés afuera: primero van las recetas que se pueden llevar.</p>
           )}
-          <div className="divide-y divide-linea">
-            {opciones.map(({ r, cocinadas, ok }) => {
-              const m = d.macrosPorReceta.get(r.id)
-              return (
-                <button key={r.id} onClick={() => elegir(r.id)} className="w-full flex items-center gap-3 py-3 text-left">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-medium truncate">
-                      {d.favoritas.has(r.id) && <Icono n="favorite" lleno size={14} className="text-coral-oscuro mr-1 align-[-2px]" />}
-                      {r.name}
-                    </p>
-                    <p className="text-xs text-gris">
-                      {redondear(m.kcal)} kcal · {redondear(m.protein)} g prot.
-                      {cocinadas > 0 ? (
-                        <span className="text-teal-oscuro font-semibold"> · ya cocinado</span>
-                      ) : ok ? (
-                        <span className="text-verde-texto font-semibold"> · tenés todo</span>
-                      ) : (
-                        <span className="text-naranja-oscuro font-semibold"> · falta comprar</span>
-                      )}
-                      {eligiendoAfuera && !r.portable && <span className="text-rojo-texto font-semibold"> · no es para llevar</span>}
-                    </p>
-                  </div>
-                  <Icono n="chevron_right" className="text-gris" />
-                </button>
-              )
-            })}
-          </div>
-          {filas.get(`${eligiendo.date}|${eligiendo.meal}`)?.recipe_id && (
+          {modo === 'receta' && (
+            <div className="divide-y divide-linea">
+              {opciones.map(({ r, cocinadas, ok }) => {
+                const m = d.macrosPorReceta.get(r.id)
+                return (
+                  <button key={r.id} onClick={() => elegir(r.id)} className="w-full flex items-center gap-3 py-3 text-left">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium truncate">
+                        {d.favoritas.has(r.id) && <Icono n="favorite" lleno size={14} className="text-coral-oscuro mr-1 align-[-2px]" />}
+                        {r.name}
+                      </p>
+                      <p className="text-xs text-gris">
+                        {redondear(m.kcal)} kcal · {redondear(m.protein)} g prot.
+                        {cocinadas > 0 ? (
+                          <span className="text-teal-oscuro font-semibold"> · ya cocinado</span>
+                        ) : ok ? (
+                          <span className="text-verde-texto font-semibold"> · tenés todo</span>
+                        ) : (
+                          <span className="text-naranja-oscuro font-semibold"> · falta comprar</span>
+                        )}
+                        {eligiendoAfuera && !r.portable && <span className="text-rojo-texto font-semibold"> · no es para llevar</span>}
+                      </p>
+                    </div>
+                    <Icono n="chevron_right" className="text-gris" />
+                  </button>
+                )
+              })}
+            </div>
+          )}
+          {llena(filas.get(`${eligiendo.date}|${eligiendo.meal}`)) && (
             <button onClick={() => elegir(null)} className="btn bg-rojo-suave text-rojo-texto w-full mt-3">
               Dejar vacío
             </button>

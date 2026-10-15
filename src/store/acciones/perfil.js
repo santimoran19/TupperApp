@@ -66,7 +66,7 @@ export const accionesDePerfil = (k) => ({
       perfil: e.perfil,
       medidas: e.medidas,
       registros: registros.map(({ user_id: _u, ...r }) => r),
-      plan: plan.map(({ user_id: _u, ...p }) => ({ ...p, receta: nombreReceta(p.recipe_id) })),
+      plan: plan.map(({ user_id: _u, ...p }) => ({ ...p, receta: nombreReceta(p.recipe_id), alimento: nombreAlimento(p.food_id) })),
       comidas_fuera_de_casa: e.reglas.map((r) => ({ dia: r.weekday, comida: r.meal })),
       despensa: e.stock.map((s) => ({ alimento: nombreAlimento(s.food_id), cantidad: Number(s.qty) })),
       comida_lista: e.preparado.map((p) => ({ receta: nombreReceta(p.recipe_id), porciones: Number(p.portions) })),

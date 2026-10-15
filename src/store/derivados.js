@@ -39,6 +39,11 @@ export function useDerivados(e) {
     return m
   }, [itemsPorReceta, alimentosPorId])
   const itemsPlan = useCallback((id) => itemsBasePorReceta.get(id) || [], [itemsBasePorReceta])
+  // Lo que gasta un alimento suelto del plan, llevado al alimento base (igual que los ingredientes de una receta)
+  const alimentoPlan = useCallback(
+    (fila) => itemsEnBase([{ food_id: fila.food_id, qty: Number(fila.qty) }], alimentosPorId),
+    [alimentosPorId],
+  )
   // Alimentos por los que puede valer un producto: los que son ingrediente de alguna receta
   const ingredientes = useMemo(() => {
     const ids = new Set()
@@ -71,8 +76,14 @@ export function useDerivados(e) {
     const limite = sumarDias(h, 14)
     const yaComidas = new Set(e.registros.filter((r) => r.date === h).map((r) => r.meal))
     const filas = e.plan.filter((p) => p.date >= h && p.date <= limite && !(p.date === h && yaComidas.has(p.meal)))
-    return estadoDelPlan(filas, { recetas: recetasPorId, itemsDe: itemsPlan, stock: stockRecetas, preparado: preparadoMap })
-  }, [e.plan, e.registros, recetasPorId, itemsPlan, stockRecetas, preparadoMap])
+    return estadoDelPlan(filas, {
+      recetas: recetasPorId,
+      itemsDe: itemsPlan,
+      stock: stockRecetas,
+      preparado: preparadoMap,
+      alimentoDe: alimentoPlan,
+    })
+  }, [e.plan, e.registros, recetasPorId, itemsPlan, stockRecetas, preparadoMap, alimentoPlan])
 
   return useMemo(
     () => ({
@@ -92,6 +103,7 @@ export function useDerivados(e) {
       // Equivalencias: stock e ingredientes vistos por el alimento base, y qué producto cubre cada uno
       stockRecetas,
       itemsPlan,
+      alimentoPlan,
       equivalentes,
       enUso,
       base,
@@ -113,6 +125,7 @@ export function useDerivados(e) {
       planFuturo,
       stockRecetas,
       itemsPlan,
+      alimentoPlan,
       equivalentes,
       enUso,
       base,

@@ -38,7 +38,7 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 7. D-02 · Botones del tamaño del dedo
 8. D-05 · Recorrido inicial
 9. F-07 · Ajustar las porciones de una receta
-10. F-15 · Alimentos solos en el plan
+10. F-16 · Líquido diario sin bebidas azucaradas
 11. F-05 · Compartir la lista de compras por WhatsApp
 12. S-02 · CORS de la función de IA
 13. T-02 · Pruebas automáticas en cada push
@@ -101,12 +101,12 @@ Nada por ahora.
   - Necesita notificaciones del navegador y algo del lado del servidor que las mande a la hora.
   - En iPhone solo funcionan con la app instalada en la pantalla de inicio.
 - [ ] **F-07 · Ajustar las porciones de una receta** · P2 · S. Ver las cantidades para 1, 2 o N porciones, y cocinar más o menos de lo que rinde la receta.
-- [ ] **F-15 · Alimentos solos en el plan** · P2 · M. Hoy, en Plan, al tocar una comida solo se puede elegir una receta. Que también se pueda poner un alimento suelto con su cantidad (por ejemplo, mate solo en la merienda) en cualquiera de las cuatro comidas, aunque el día no tenga nada planeado.
   - La hoja de elegir comida ofrece dos caminos: receta o alimento (con el mismo buscador y las mismas medidas del diario).
   - Que cuente como cualquier otra comida del plan: calorías del día, "Comí esto" en el diario (anota el alimento con esa cantidad), lo que falta de la despensa y la lista de compras.
   - Hace falta guardar el alimento y la cantidad en la tabla del plan (hoy solo guarda la receta): un SQL nuevo, y que "Armar con lo que tengo" respete lo que se puso a mano.
 - [ ] **F-08 · Copiar un día entero** · P3 · S. Hoy se puede repetir la comida de ayer; falta copiar el día completo (o un día cualquiera) a otra fecha.
 - [ ] **F-09 · Combos frecuentes** · P3 · M. Guardar "mi desayuno de siempre" con varios alimentos y registrarlo con un toque.
+- [ ] **F-16 · Líquido diario sin bebidas azucaradas** · P2 · S. Hoy la barra "Líquido" suma todo lo que se mide en ml y es de Bebidas o Lácteos sin alcohol, así que una gaseosa común o un jugo cuentan como si hidrataran para la meta. Las Guías Alimentarias argentinas piden "al menos 2 litros de líquidos, sin azúcar, preferentemente agua", y Harvard y el NHS dicen lo mismo: la bebida azucarada no es la forma de cumplir la hidratación. Cambio: que el líquido cuente solo agua, mate, té, café, infusiones y leche sin azúcar, y las bebidas sin azúcar (gaseosa light, soda). Las bebidas azucaradas siguen sumando sus calorías al día, pero no suman al líquido. Hay que decidir cómo marcar cada alimento (un dato `azucarada` en la base, parecido al de `alcohol`) y qué hacer con el azúcar que se agrega a una infusión al registrarla (¿se resta del líquido o se deja como está?). Va con una actualización de la base (campo nuevo en `foods` y marcar los alimentos de la base), una prueba y el texto de ayuda de la barra. Ver `cuentaComoLiquido` en `src/lib/nutricion.js`.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
 - [ ] **F-11 · Exportar el registro a planilla** · P3 · S. Hoy "Descargar mis datos" baja un JSON; sumar un CSV que abra en Excel, útil para llevarle al nutricionista.
 - [ ] **F-12 · Base propia de alimentos más grande** · P2 · M (y continuo). Sumar alimentos, categorías y recetas a medida que aparecen productos nuevos en las despensas, para depender menos de Open Food.
@@ -173,6 +173,14 @@ Nada por ahora.
 
 - **S-01 · Copias de seguridad propias** (14/10/2026): repo privado `tupper-respaldos` en GitHub con copia diaria cifrada (3:17 AR, guardada 90 días) y scripts para abrirla y restaurarla. Respaldo verificado el 14/10 (4 cuentas, 174 registros, 309 alimentos, 91 recetas, 42 del plan). Contraseña de la base cambiada, `RESPALDO_CLAVE` guardada aparte y prueba de restauración hecha.
 - **Verificado el 13/10/2026:** el análisis con IA anda (V-02, función `analizar-semana` versión 4) y `actualizacion-9.sql` está aplicada en Supabase.
+- **1.13.0** (hay que correr `actualizacion-11.sql`):
+  - F-15: en Plan, al tocar una comida se elige una receta o un **alimento suelto** con su cantidad (por ejemplo, mate solo en la merienda), en cualquiera de las cuatro comidas y aunque el día no tenga nada planeado. Usa el mismo buscador que el diario, con las medidas de siempre (un mate, un termo, una taza...).
+  - Cuenta en todo el plan: las calorías del día, el "Comí esto" del diario (registra el alimento con su cantidad y descuenta de la despensa lo que haya), "Para llevar" y lo que falta para la lista de compras.
+  - Un alimento suelto solo cuenta como "falta comprar" si lo llevás en la despensa (aunque esté agotado): el agua, el mate o una fruta que nunca anotaste no llenan la lista.
+  - "Armar con lo que tengo" lo respeta y no lo pisa. "Rehacer la semana" sí lo borra, como a las recetas (ya lo avisa la confirmación).
+  - Cada comida del plan tiene una sola cosa: receta o alimento. Si el alimento propio se borra, se va también del plan.
+  - La base: `actualizacion-11.sql` agrega `food_id` y `qty` a la tabla `plan`, con reglas para que sean coherentes. No toca lo que ya estaba.
+  - Pruebas nuevas: `plan-alimentos` (la base), `plan-suelto` (calorías, faltantes y armar) y la de navegador `15-plan-alimento-suelto`.
 - **1.12.0** (hay que correr `actualizacion-10.sql`):
   - L-01: la app es solo para mayores de 18 años. La fecha de nacimiento no deja poner menos (aviso "Tupper es solo para mayores de 18 años."), debajo de "Crear cuenta" dice que se confirma tener 18 o más, y los Términos y la Política de privacidad dicen 18 sin la excepción del adulto responsable.
   - La base lo cuida también (`actualizacion-10.sql`): no deja guardar una fecha de menos de 18, pero no toca ninguna cuenta que ya exista; si alguna tuviera menos de 18, sigue andando y puede editar el resto del perfil.

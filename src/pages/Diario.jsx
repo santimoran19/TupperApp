@@ -12,6 +12,7 @@ import {
   EXTRA,
   ICONO_COMIDA,
   NOMBRE_COMIDA,
+  cantidadTexto,
   consejoDelDia,
   cuentaComoLiquido,
   litros,
@@ -19,7 +20,7 @@ import {
   redondear,
   sumar,
 } from '../lib/nutricion'
-import { disponibilidad } from '../lib/planificador'
+import { disponibilidad, macrosDeFila } from '../lib/planificador'
 import { rangoDiario } from '../lib/validar'
 
 const TONOS = {
@@ -60,7 +61,7 @@ export default function Diario() {
   const planDia = useMemo(() => new Map(d.plan.filter((p) => p.date === fecha).map((p) => [p.meal, p])), [d.plan, fecha])
   const planHoy = new Map()
   for (const [comida, fila] of planDia) {
-    const m = fila.recipe_id && d.macrosPorReceta.get(fila.recipe_id)
+    const m = macrosDeFila(fila, d)
     if (m) planHoy.set(comida, m)
   }
   const consejo = consejoDelDia({ objetivoKcal: d.perfil.kcal_target, objetivoProt: d.perfil.protein_target, total, registradas, planHoy })
@@ -69,7 +70,7 @@ export default function Diario() {
 
   // Recetas que entran en lo que queda para la próxima comida
   const ideas = useMemo(() => {
-    if (!esHoy || !consejo.siguiente || planDia.get(consejo.siguiente)?.recipe_id) return []
+    if (!esHoy || !consejo.siguiente || planDia.get(consejo.siguiente)?.recipe_id || planDia.get(consejo.siguiente)?.food_id) return []
     return d.recetas
       .filter((r) => r.meal_types.includes(consejo.siguiente) && d.macrosPorReceta.get(r.id).kcal <= consejo.presupuesto + 60)
       .filter((r) => r.portable || !esAfuera(fecha, consejo.siguiente, planDia.get(consejo.siguiente)))
@@ -99,6 +100,11 @@ export default function Diario() {
           lista.push({ f, comida, receta, estado: d.planFuturo.estados.get(fila.id)?.estado })
           continue
         }
+        const alimento = fila?.food_id && d.alimentosPorId.get(fila.food_id)
+        if (alimento) {
+          lista.push({ f, comida, alimento, qty: Number(fila.qty), estado: d.planFuturo.estados.get(fila.id)?.estado })
+          continue
+        }
         // Sin nada planificado: se propone algo que se pueda llevar y que ya esté cocinado o tenga todo en stock
         const idea = d.recetas
           .filter((r) => r.portable && r.meal_types.includes(comida) && d.itemsDe(r.id).length > 0)
@@ -120,7 +126,9 @@ export default function Diario() {
     if (registrando.current) return
     registrando.current = true
     try {
-      const listo = await d.registrar({ date: fecha, meal: comida, platos: [{ recipe_id: fila.recipe_id, porciones: 1 }] })
+      // Lo planificado es una receta (una porción) o un alimento suelto con su cantidad
+      const platos = fila.food_id ? [{ food_id: fila.food_id, qty: Number(fila.qty) }] : [{ recipe_id: fila.recipe_id, porciones: 1 }]
+      const listo = await d.registrar({ date: fecha, meal: comida, platos })
       if (listo) d.avisar('Registrado')
     } finally {
       registrando.current = false
@@ -300,7 +308,12 @@ export default function Diario() {
                     <b>
                       {p.f === fecha ? 'Hoy' : 'Mañana'}, {NOMBRE_COMIDA[p.comida].toLowerCase()}:
                     </b>{' '}
-                    {p.receta ? (
+                    {p.alimento ? (
+                      <>
+                        {p.alimento.name} · {cantidadTexto(p.alimento, p.qty)}.{' '}
+                        {p.estado === 'falta' ? 'No te alcanza lo que tenés, mirá la lista de compras.' : 'Acordate de llevarlo.'}
+                      </>
+                    ) : p.receta ? (
                       <>
                         {p.receta.name}.{' '}
                         {!p.receta.portable
@@ -347,7 +360,9 @@ export default function Diario() {
               const salteada = delDia.find((r) => r.meal === comida && r.skipped)
               const fila = planDia.get(comida)
               const receta = fila?.recipe_id && d.recetasPorId.get(fila.recipe_id)
-              const m = receta && d.macrosPorReceta.get(receta.id)
+              const alimento = fila?.food_id && d.alimentosPorId.get(fila.food_id)
+              const planificado = receta ? receta.name : alimento ? `${alimento.name} · ${cantidadTexto(alimento, Number(fila.qty))}` : null
+              const m = planificado && macrosDeFila(fila, d)
               const subtotal = sumar(entradas)
               const irARegistrar = () => nav(`/registrar?fecha=${fecha}&comida=${comida}`)
               return (
@@ -366,7 +381,7 @@ export default function Diario() {
                       ) : salteada ? (
                         <p className="text-sm text-gris">No comiste</p>
                       ) : (
-                        <p className="text-sm text-gris truncate">{receta ? `Plan: ${receta.name}` : 'Sin registrar'}</p>
+                        <p className="text-sm text-gris truncate">{planificado ? `Plan: ${planificado}` : 'Sin registrar'}</p>
                       )}
                     </div>
                     {esAfuera(fecha, comida, fila) && (
@@ -418,16 +433,16 @@ export default function Diario() {
 
                   {entradas.length === 0 && !salteada && (
                     <div className="mt-3 flex flex-wrap items-center gap-2">
-                      {receta && (
+                      {planificado && (
                         <button onClick={() => comiPlan(comida, fila)} className="btn-chico bg-verde text-white flex-1 whitespace-nowrap">
                           <Icono n="check" size={16} /> Comí esto · {redondear(m.kcal)} kcal
                         </button>
                       )}
                       <button
                         onClick={irARegistrar}
-                        className={`btn-chico bg-verde-suave text-verde-texto whitespace-nowrap ${receta ? '' : 'flex-1'}`}
+                        className={`btn-chico bg-verde-suave text-verde-texto whitespace-nowrap ${planificado ? '' : 'flex-1'}`}
                       >
-                        <Icono n={receta ? 'swap_horiz' : 'add'} size={16} /> {receta ? 'Otra cosa' : 'Registrar'}
+                        <Icono n={planificado ? 'swap_horiz' : 'add'} size={16} /> {planificado ? 'Otra cosa' : 'Registrar'}
                       </button>
                       {fecha <= hoy() && (
                         <button
