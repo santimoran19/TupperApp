@@ -27,7 +27,7 @@ Si se agrega o cambia una tarea, se actualizan las dos.
 Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junto está indicado.
 
 **Primero (P1)**
-1. C-03 · Mails propios (SMTP)
+1. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
 2. L-02 · Revisión de los textos legales
 3. L-03 · Registro de la base de datos
 4. C-01 · Planes y cobro (para empezar a cobrar)
@@ -39,44 +39,46 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 8. D-05 · Recorrido inicial
 9. F-07 · Ajustar las porciones de una receta
 10. F-16 · Líquido diario sin bebidas azucaradas
-11. F-05 · Compartir la lista de compras por WhatsApp
-12. S-02 · CORS de la función de IA
-13. T-02 · Pruebas automáticas en cada push
-14. T-06 · Aviso de errores (va junto con S-05)
-15. S-05 · Revisión periódica
-16. F-01 · Escanear el código de barras (va junto con F-02)
-17. F-02 · Catálogo compartido de productos
-18. F-12 · Base propia de alimentos más grande
-19. IA-01 · Chat con IA (va junto con IA-02)
-20. IA-02 · Proveedor de respaldo
-21. F-04 · Vencimientos en la despensa
-22. D-07 · Revisión completa de accesibilidad
-23. L-04 · Consentimiento al registrarse
-24. C-02 · Dominio propio y página de presentación
-25. C-05 · Opiniones desde la app
-26. T-03 · Pruebas en Safari
-27. T-04 · Base de pruebas aparte
-28. T-01 · Actualizar las herramientas
-29. F-03 · Despensa compartida entre los de una misma casa
-30. F-06 · Recordatorios
+11. F-17 · Nombre de usuario (va junto con F-18)
+12. F-18 · Registrarse e iniciar sesión con Google (va junto con F-17)
+13. F-05 · Compartir la lista de compras por WhatsApp
+14. S-02 · CORS de la función de IA
+15. T-02 · Pruebas automáticas en cada push
+16. T-06 · Aviso de errores (va junto con S-05)
+17. S-05 · Revisión periódica
+18. F-01 · Escanear el código de barras (va junto con F-02)
+19. F-02 · Catálogo compartido de productos
+20. F-12 · Base propia de alimentos más grande
+21. IA-01 · Chat con IA (va junto con IA-02)
+22. IA-02 · Proveedor de respaldo
+23. F-04 · Vencimientos en la despensa
+24. D-07 · Revisión completa de accesibilidad
+25. L-04 · Consentimiento al registrarse
+26. C-02 · Dominio propio y página de presentación (va junto con C-03)
+27. C-05 · Opiniones desde la app
+28. T-03 · Pruebas en Safari
+29. T-04 · Base de pruebas aparte
+30. T-01 · Actualizar las herramientas
+31. F-03 · Despensa compartida entre los de una misma casa
+32. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-31. F-08 · Copiar un día entero
-32. D-06 · Deshacer en más lugares
-33. D-04 · Esqueletos de carga
-34. F-10 · Peso: gráfico y fecha estimada
-35. F-11 · Exportar el registro a planilla
-36. F-09 · Combos frecuentes
-37. F-13 · Categorías editables por el usuario
-38. D-08 · Revisión de los textos
-39. IA-04 · Cargar una receta desde un texto
-40. IA-03 · Foto de un plato
-41. C-06 · Métricas de uso
-42. C-04 · Play Store
-43. T-05 · Partir `sincronizacion.js`
-44. T-07 · Mandar lo cargado sin conexión con la app cerrada
-45. S-06 · Verificación en dos pasos
-46. S-03 · Contraseñas filtradas también del lado de Supabase
+33. F-08 · Copiar un día entero
+34. D-06 · Deshacer en más lugares
+35. D-04 · Esqueletos de carga
+36. F-10 · Peso: gráfico y fecha estimada
+37. F-11 · Exportar el registro a planilla
+38. F-09 · Combos frecuentes
+39. F-13 · Categorías editables por el usuario
+40. D-08 · Revisión de los textos
+41. IA-04 · Cargar una receta desde un texto
+42. IA-03 · Foto de un plato
+43. C-06 · Métricas de uso
+44. C-04 · Play Store
+45. T-05 · Partir `sincronizacion.js`
+46. T-07 · Mandar lo cargado sin conexión con la app cerrada
+47. S-06 · Verificación en dos pasos
+48. S-03 · Contraseñas filtradas también del lado de Supabase
 
 ---
 
@@ -107,6 +109,8 @@ Nada por ahora.
 - [ ] **F-08 · Copiar un día entero** · P3 · S. Hoy se puede repetir la comida de ayer; falta copiar el día completo (o un día cualquiera) a otra fecha.
 - [ ] **F-09 · Combos frecuentes** · P3 · M. Guardar "mi desayuno de siempre" con varios alimentos y registrarlo con un toque.
 - [ ] **F-16 · Líquido diario sin bebidas azucaradas** · P2 · S. Hoy la barra "Líquido" suma todo lo que se mide en ml y es de Bebidas o Lácteos sin alcohol, así que una gaseosa común o un jugo cuentan como si hidrataran para la meta. Las Guías Alimentarias argentinas piden "al menos 2 litros de líquidos, sin azúcar, preferentemente agua", y Harvard y el NHS dicen lo mismo: la bebida azucarada no es la forma de cumplir la hidratación. Cambio: que el líquido cuente solo agua, mate, té, café, infusiones y leche sin azúcar, y las bebidas sin azúcar (gaseosa light, soda). Las bebidas azucaradas siguen sumando sus calorías al día, pero no suman al líquido. Hay que decidir cómo marcar cada alimento (un dato `azucarada` en la base, parecido al de `alcohol`) y qué hacer con el azúcar que se agrega a una infusión al registrarla (¿se resta del líquido o se deja como está?). Va con una actualización de la base (campo nuevo en `foods` y marcar los alimentos de la base), una prueba y el texto de ayuda de la barra. Ver `cuentaComoLiquido` en `src/lib/nutricion.js`.
+- [ ] **F-17 · Nombre de usuario** · P2 · M. Que cada cuenta tenga un nombre de usuario para no tener que escribir el mail cada vez que se inicia sesión. Se elige al crear la cuenta y se puede cambiar desde el Perfil. Para entrar se acepta el usuario o el mail. **Validaciones:** que no esté tomado (sin distinguir mayúsculas), largo de 3 a 20, solo letras, números, punto, guion y guion bajo, sin espacios, que no parezca un mail y que no sea una palabra reservada (admin, tupper, soporte...); mientras se escribe se avisa si está libre. Al cambiarlo, el nombre viejo queda libre. **Cuentas que ya existen:** el usuario es opcional en la base; la próxima vez que entren se les pide que elijan uno (no se les pierde nada y siguen pudiendo entrar con el mail). **Decisión de seguridad:** Supabase solo inicia sesión con el mail, así que habría que pasar de usuario a mail sin mostrarlo: lo más seguro es una función en el servidor que reciba usuario y contraseña, y no devuelva nunca el mail ni diga si el usuario existe (la app hoy ya evita delatar quién tiene cuenta). Mantener el captcha en ese pedido. Va con una actualización de la base (columna `username` en `profiles` con índice único sobre minúsculas y regla de formato), la función de entrada, pruebas, y sumar el dato a la Política de privacidad. No confundir con `name`, que es el nombre para mostrar ("¡Hola, Santi!"). Va junto con F-18: quien entra con Google también elige su usuario.
+- [ ] **F-18 · Registrarse e iniciar sesión con Google** · P2 · M. Un botón "Continuar con Google" en la pantalla de acceso, para crear la cuenta o entrar sin escribir mail ni contraseña. **Qué hace falta de tu lado:** crear un proyecto en Google Cloud, configurar la pantalla de consentimiento y las credenciales OAuth (cliente web), y activar el proveedor Google en Supabase (Authentication > Providers) con las direcciones de vuelta de la app y de Supabase. Gratis. **Cosas a resolver:** (1) el consentimiento de Google en modo de prueba solo deja entrar a 100 usuarios que vos agregues a mano; para abrirlo a cualquiera hay que publicarlo, y Google pide la Política de privacidad y la página de inicio en un dominio propio (esto se cruza con C-02, dominio propio); (2) si ya existe una cuenta con el mismo mail, Supabase puede unirla con la de Google; hay que dejarlo bien configurado para que nadie tome una cuenta ajena; (3) quien entra con Google no tiene contraseña: la pantalla de "Olvidé mi contraseña" y el Perfil tienen que explicarlo, y se podría ofrecer crear una; (4) igual hay que pasar por el perfil (fecha de nacimiento, para cumplir los 18 años de L-01) y, con F-17, elegir el nombre de usuario; (5) sumar a la Política de privacidad que Google es un proveedor y qué datos se reciben (mail y nombre; la foto no se guarda); (6) probarlo en el navegador del teléfono y en la app instalada (PWA), donde el regreso desde Google a veces se comporta distinto. Va con pruebas (el simulador de las pruebas tiene que fingir el regreso de Google) y los textos del botón. Borrar la cuenta y descargar los datos siguen igual.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
 - [ ] **F-11 · Exportar el registro a planilla** · P3 · S. Hoy "Descargar mis datos" baja un JSON; sumar un CSV que abra en Excel, útil para llevarle al nutricionista.
 - [ ] **F-12 · Base propia de alimentos más grande** · P2 · M (y continuo). Sumar alimentos, categorías y recetas a medida que aparecen productos nuevos en las despensas, para depender menos de Open Food.
@@ -151,8 +155,8 @@ Nada por ahora.
   - El plan de cada usuario guardado de forma que él no lo pueda cambiar.
   - Qué entra en el plan gratis y qué en el pago (la IA, seguro).
   - Suscripciones con Mercado Pago; el aviso de pago lo recibe una función de Supabase.
-- [ ] **C-02 · Dominio propio y página de presentación** · P2 · M. Una página para quien todavía no tiene cuenta: qué hace la app, capturas y el botón para crear la cuenta. Con dominio nuevo hay que actualizar el captcha de Cloudflare, Supabase y los archivos que nombra el README.
-- [ ] **C-03 · Mails propios (SMTP)** · P1 · S. El servidor de mails que trae Supabase manda muy pocos por hora: con más usuarios no alcanza para los códigos de confirmación. Pasos en `supabase/emails/LEEME.md`.
+- [ ] **C-02 · Dominio propio y página de presentación** · P2 · M. Una página para quien todavía no tiene cuenta: qué hace la app, capturas y el botón para crear la cuenta. Con dominio nuevo hay que actualizar el captcha de Cloudflare, Supabase y los archivos que nombra el README. Es la base de C-03 (mails propios) y de F-18 (Google pide la Política de privacidad y la página de inicio en un dominio propio para publicarse). Conviene comprarlo primero.
+- [ ] **C-03 · Mails propios (SMTP)** · P1 · S. El servidor de mails que trae Supabase solo manda a direcciones del equipo del proyecto y a 2 mensajes por hora, sin garantía de entrega: sirve para probar, no para que se registre gente de afuera. Con un SMTP propio llegan a cualquier dirección y el límite arranca en 30 por hora (se puede subir). **Va después de comprar el dominio y junto con C-02:** hace falta un dominio propio para mandar desde `no-responder@tudominio` (una casilla de Gmail no sirve: límites, spam y no deja autenticar el dominio); el mismo dominio se usa para la página de presentación y para publicar el acceso con Google (F-18). **Servicio de envío** (verifica el dominio con SPF, DKIM y DMARC): Resend (gratis: 3.000 mails por mes, 100 por día; recomendado por simple) o Brevo (gratis: hasta 300 por día, con su logo probablemente). Cada registro usa 1 o 2 mails. **Pasos:** (1) comprar el dominio; (2) crear la cuenta del servicio, agregar el dominio y cargar los registros DNS que pida; (3) cargar el SMTP en Supabase (Authentication > SMTP); (4) cambiar el remitente y los links de las plantillas de `supabase/emails/`; (5) probar que el código de confirmación y el de recuperar contraseña lleguen a una casilla ajena. Si se quiere recibir respuestas en `soporte@tudominio`, se reenvía a Gmail con un servicio de reenvío gratuito (aparte del envío). Pasos en `supabase/emails/LEEME.md`.
 - [ ] **C-04 · Play Store** · P3 · M. Empaquetar la app para Android (USD 25, una vez). Pide una prueba cerrada con 12 testers durante 14 días. App Store después: USD 99 por año, hace falta una Mac y Apple suele rechazar las apps que son solo una web.
 - [ ] **C-05 · Opiniones desde la app** · P2 · S. Un "Contanos qué te falta" en el Perfil que llegue a tu mail o a una tabla.
 - [ ] **C-06 · Métricas de uso** · P3 · S. Cuántos vuelven a la semana y qué pantallas usan, sin datos personales: Vercel Analytics ya cuenta visitas, falta mirar el recorrido.
