@@ -51,7 +51,7 @@ export default function Diario() {
   const registradas = useMemo(() => new Set(delDia.filter((r) => r.meal !== EXTRA).map((r) => r.meal)), [delDia])
   const salteadas = new Set(delDia.filter((r) => r.skipped).map((r) => r.meal))
   const extras = delDia.filter((r) => r.meal === EXTRA)
-  // Líquido del día contra el objetivo: lo registrado en ml que no tiene alcohol
+  // Líquido del día contra el objetivo: lo registrado en ml sin alcohol ni azúcar
   const liquido = delDia.reduce((t, r) => t + (cuentaComoLiquido(d.alimentosPorId.get(r.food_id)) ? Number(r.qty) : 0), 0)
   const metaLiquido = objetivoLiquido(d.perfil)
   const agua = d.alimentos.find((a) => a.slug === 'agua')

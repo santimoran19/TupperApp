@@ -144,9 +144,13 @@ export const seEndulza = (alimento) => ['mate', 'infusion'].includes(grupoDe(ali
 export const GRAMOS_CUCHARADITA = 5
 
 // ---------- Líquido ----------
-// Cuenta para el objetivo todo lo que se mide en ml y no tiene alcohol: agua, mate, infusiones, gaseosas, leche.
+// Cuenta para el objetivo lo que se mide en ml, no tiene alcohol y no es una bebida azucarada:
+// agua, mate, infusiones, soda, bebidas light y leche. Una bebida con 4 g o más de hidratos cada 100 ml
+// (gaseosa común, jugo, energizante) suma calorías al día pero no suma al líquido. La leche (Lácteos) cuenta siempre.
+export const HIDRATOS_BEBIDA_AZUCARADA = 4
+export const esAzucarada = (alimento) => alimento?.category === 'Bebidas' && Number(alimento.carbs) >= HIDRATOS_BEBIDA_AZUCARADA
 export const cuentaComoLiquido = (alimento) =>
-  alimento?.unit === 'ml' && ['Bebidas', 'Lácteos'].includes(alimento.category) && !alimento.alcohol
+  alimento?.unit === 'ml' && ['Bebidas', 'Lácteos'].includes(alimento.category) && !alimento.alcohol && !esAzucarada(alimento)
 // Referencia habitual: unos 35 ml por kilo de peso, entre 1,5 y 4 litros
 export function liquidoSugerido(peso) {
   const p = Number(peso)

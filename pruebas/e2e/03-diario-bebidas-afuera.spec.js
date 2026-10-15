@@ -71,7 +71,7 @@ test('no comí, bebidas y extras, comidas afuera y validaciones', async ({ brows
   await test.step('bebidas y extras', async () => {
     await pg.click('button:has-text("Vaso de agua")')
     await pg.waitForSelector('text=Un vaso de agua anotado')
-    await pg.waitForSelector('b:has-text("0,5 L")')
+    await pg.waitForSelector('b:has-text("0,25 L")')
     const comidas = await pg.locator('p:has-text(" de 4")').innerText()
     await pg.locator('section:has-text("BEBIDAS Y ENTRE COMIDAS") button:has-text("Bebida")').click()
     await pg.waitForSelector('input[placeholder="Buscar bebida..."]')
@@ -101,7 +101,7 @@ test('no comí, bebidas y extras, comidas afuera y validaciones', async ({ brows
     await pg.click('button:has-text("Agregar entre comidas")')
     await pg.waitForSelector('text=¡Hola, Santi!')
     await pg.waitForSelector('text=Fernet con coca · 250 ml')
-    expect(await pg.locator('b:has-text("0,5 L")').count(), 'el alcohol no tiene que contar como líquido').toBe(1)
+    expect(await pg.locator('b:has-text("0,25 L")').count(), 'el alcohol y la gaseosa con azúcar no tienen que contar como líquido').toBe(1)
     expect(await pg.locator('p:has-text(" de 4")').innerText(), 'una bebida no cuenta como comida').toBe(comidas)
     await captura(pg, 'v13_diario_extras')
   })

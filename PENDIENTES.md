@@ -27,61 +27,60 @@ Si se agrega o cambia una tarea, se actualizan las dos.
 Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junto está indicado.
 
 **Primero (P1)**
-1. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-2. L-02 · Revisión de los textos legales
-3. L-03 · Registro de la base de datos
-4. C-01 · Planes y cobro (para empezar a cobrar)
-5. S-04 · Repo privado (al terminar)
+1. L-03 · Registro de la base de datos
+2. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-6. D-01 · Hojas que suben desde abajo (va junto con D-02)
-7. D-02 · Botones del tamaño del dedo
-8. D-05 · Recorrido inicial
-9. F-07 · Ajustar las porciones de una receta
-10. F-16 · Líquido diario sin bebidas azucaradas
-11. F-17 · Nombre de usuario (va junto con F-18)
-12. F-18 · Registrarse e iniciar sesión con Google (va junto con F-17)
-13. F-05 · Compartir la lista de compras por WhatsApp
-14. S-02 · CORS de la función de IA
-15. T-02 · Pruebas automáticas en cada push
-16. T-06 · Aviso de errores (va junto con S-05)
-17. S-05 · Revisión periódica
-18. F-01 · Escanear el código de barras (va junto con F-02)
-19. F-02 · Catálogo compartido de productos
-20. F-12 · Base propia de alimentos más grande
-21. IA-01 · Chat con IA (va junto con IA-02)
-22. IA-02 · Proveedor de respaldo
-23. F-04 · Vencimientos en la despensa
-24. D-07 · Revisión completa de accesibilidad
-25. L-04 · Consentimiento al registrarse
-26. C-02 · Dominio propio y página de presentación (va junto con C-03)
-27. C-05 · Opiniones desde la app
-28. T-03 · Pruebas en Safari
-29. T-04 · Base de pruebas aparte
-30. T-01 · Actualizar las herramientas
-31. F-03 · Despensa compartida entre los de una misma casa
-32. F-06 · Recordatorios
+3. D-01 · Hojas que suben desde abajo (va junto con D-02)
+4. D-02 · Botones del tamaño del dedo
+5. D-05 · Recorrido inicial
+6. F-07 · Ajustar las porciones de una receta
+7. F-17 · Nombre de usuario (F-18 queda para el final)
+8. F-05 · Compartir la lista de compras por WhatsApp
+9. S-02 · CORS de la función de IA
+10. T-02 · Pruebas automáticas en cada push
+11. T-06 · Aviso de errores (va junto con S-05)
+12. S-05 · Revisión periódica
+13. F-01 · Escanear el código de barras (va junto con F-02)
+14. F-02 · Catálogo compartido de productos
+15. F-12 · Base propia de alimentos más grande
+16. IA-01 · Chat con IA (va junto con IA-02)
+17. IA-02 · Proveedor de respaldo
+18. F-04 · Vencimientos en la despensa
+19. D-07 · Revisión completa de accesibilidad
+20. L-04 · Consentimiento al registrarse
+21. C-05 · Opiniones desde la app
+22. T-03 · Pruebas en Safari
+23. T-04 · Base de pruebas aparte
+24. T-01 · Actualizar las herramientas
+25. F-03 · Despensa compartida entre los de una misma casa
+26. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-33. F-08 · Copiar un día entero
-34. D-06 · Deshacer en más lugares
-35. D-04 · Esqueletos de carga
-36. F-10 · Peso: gráfico y fecha estimada
-37. F-11 · Exportar el registro a planilla
-38. F-09 · Combos frecuentes
-39. F-13 · Categorías editables por el usuario
-40. D-08 · Revisión de los textos
-41. IA-04 · Cargar una receta desde un texto
-42. IA-03 · Foto de un plato
-43. C-06 · Métricas de uso
-44. C-04 · Play Store
-45. T-05 · Partir `sincronizacion.js`
-46. T-07 · Mandar lo cargado sin conexión con la app cerrada
-47. S-06 · Verificación en dos pasos
-48. S-03 · Contraseñas filtradas también del lado de Supabase
+27. F-08 · Copiar un día entero
+28. D-06 · Deshacer en más lugares
+29. D-04 · Esqueletos de carga
+30. F-10 · Peso: gráfico y fecha estimada
+31. F-11 · Exportar el registro a planilla
+32. F-09 · Combos frecuentes
+33. F-13 · Categorías editables por el usuario
+34. D-08 · Revisión de los textos
+35. IA-04 · Cargar una receta desde un texto
+36. IA-03 · Foto de un plato
+37. C-06 · Métricas de uso
+38. T-05 · Partir `sincronizacion.js`
+39. T-07 · Mandar lo cargado sin conexión con la app cerrada
+40. S-06 · Verificación en dos pasos
+41. S-03 · Contraseñas filtradas también del lado de Supabase
+
+**Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
+42. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+43. C-02 · Dominio propio y página de presentación (va junto con C-03)
+44. C-01 · Planes y cobro (para empezar a cobrar)
+45. F-18 · Registrarse e iniciar sesión con Google (va junto con F-17, que se hace antes)
+46. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
-
 ## Por tema
 
 ## 0. Para verificar ahora
@@ -108,7 +107,6 @@ Nada por ahora.
   - Hace falta guardar el alimento y la cantidad en la tabla del plan (hoy solo guarda la receta): un SQL nuevo, y que "Armar con lo que tengo" respete lo que se puso a mano.
 - [ ] **F-08 · Copiar un día entero** · P3 · S. Hoy se puede repetir la comida de ayer; falta copiar el día completo (o un día cualquiera) a otra fecha.
 - [ ] **F-09 · Combos frecuentes** · P3 · M. Guardar "mi desayuno de siempre" con varios alimentos y registrarlo con un toque.
-- [ ] **F-16 · Líquido diario sin bebidas azucaradas** · P2 · S. Hoy la barra "Líquido" suma todo lo que se mide en ml y es de Bebidas o Lácteos sin alcohol, así que una gaseosa común o un jugo cuentan como si hidrataran para la meta. Las Guías Alimentarias argentinas piden "al menos 2 litros de líquidos, sin azúcar, preferentemente agua", y Harvard y el NHS dicen lo mismo: la bebida azucarada no es la forma de cumplir la hidratación. Cambio: que el líquido cuente solo agua, mate, té, café, infusiones y leche sin azúcar, y las bebidas sin azúcar (gaseosa light, soda). Las bebidas azucaradas siguen sumando sus calorías al día, pero no suman al líquido. Hay que decidir cómo marcar cada alimento (un dato `azucarada` en la base, parecido al de `alcohol`) y qué hacer con el azúcar que se agrega a una infusión al registrarla (¿se resta del líquido o se deja como está?). Va con una actualización de la base (campo nuevo en `foods` y marcar los alimentos de la base), una prueba y el texto de ayuda de la barra. Ver `cuentaComoLiquido` en `src/lib/nutricion.js`.
 - [ ] **F-17 · Nombre de usuario** · P2 · M. Que cada cuenta tenga un nombre de usuario para no tener que escribir el mail cada vez que se inicia sesión. Se elige al crear la cuenta y se puede cambiar desde el Perfil. Para entrar se acepta el usuario o el mail. **Validaciones:** que no esté tomado (sin distinguir mayúsculas), largo de 3 a 20, solo letras, números, punto, guion y guion bajo, sin espacios, que no parezca un mail y que no sea una palabra reservada (admin, tupper, soporte...); mientras se escribe se avisa si está libre. Al cambiarlo, el nombre viejo queda libre. **Cuentas que ya existen:** el usuario es opcional en la base; la próxima vez que entren se les pide que elijan uno (no se les pierde nada y siguen pudiendo entrar con el mail). **Decisión de seguridad:** Supabase solo inicia sesión con el mail, así que habría que pasar de usuario a mail sin mostrarlo: lo más seguro es una función en el servidor que reciba usuario y contraseña, y no devuelva nunca el mail ni diga si el usuario existe (la app hoy ya evita delatar quién tiene cuenta). Mantener el captcha en ese pedido. Va con una actualización de la base (columna `username` en `profiles` con índice único sobre minúsculas y regla de formato), la función de entrada, pruebas, y sumar el dato a la Política de privacidad. No confundir con `name`, que es el nombre para mostrar ("¡Hola, Santi!"). Va junto con F-18: quien entra con Google también elige su usuario.
 - [ ] **F-18 · Registrarse e iniciar sesión con Google** · P2 · M. Un botón "Continuar con Google" en la pantalla de acceso, para crear la cuenta o entrar sin escribir mail ni contraseña. **Qué hace falta de tu lado:** crear un proyecto en Google Cloud, configurar la pantalla de consentimiento y las credenciales OAuth (cliente web), y activar el proveedor Google en Supabase (Authentication > Providers) con las direcciones de vuelta de la app y de Supabase. Gratis. **Cosas a resolver:** (1) el consentimiento de Google en modo de prueba solo deja entrar a 100 usuarios que vos agregues a mano; para abrirlo a cualquiera hay que publicarlo, y Google pide la Política de privacidad y la página de inicio en un dominio propio (esto se cruza con C-02, dominio propio); (2) si ya existe una cuenta con el mismo mail, Supabase puede unirla con la de Google; hay que dejarlo bien configurado para que nadie tome una cuenta ajena; (3) quien entra con Google no tiene contraseña: la pantalla de "Olvidé mi contraseña" y el Perfil tienen que explicarlo, y se podría ofrecer crear una; (4) igual hay que pasar por el perfil (fecha de nacimiento, para cumplir los 18 años de L-01) y, con F-17, elegir el nombre de usuario; (5) sumar a la Política de privacidad que Google es un proveedor y qué datos se reciben (mail y nombre; la foto no se guarda); (6) probarlo en el navegador del teléfono y en la app instalada (PWA), donde el regreso desde Google a veces se comporta distinto. Va con pruebas (el simulador de las pruebas tiene que fingir el regreso de Google) y los textos del botón. Borrar la cuenta y descargar los datos siguen igual.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
@@ -145,7 +143,6 @@ Nada por ahora.
 
 ## 5. Legal y datos personales
 
-- [ ] **L-02 · Revisión de los textos legales** · P1 · S. Términos y Política de privacidad, por un abogado. Son una base razonable, no un documento definitivo.
 - [ ] **L-03 · Registro de la base de datos** · P1 · S. En Argentina, las bases con datos personales se inscriben en el registro de la Agencia de Acceso a la Información Pública, y acá hay datos de salud. Confirmarlo con legales.
 - [ ] **L-04 · Consentimiento al registrarse** · P2 · S. Una casilla explícita para el uso de datos de salud, además del texto que ya está debajo del botón.
 
@@ -177,6 +174,11 @@ Nada por ahora.
 
 - **S-01 · Copias de seguridad propias** (14/10/2026): repo privado `tupper-respaldos` en GitHub con copia diaria cifrada (3:17 AR, guardada 90 días) y scripts para abrirla y restaurarla. Respaldo verificado el 14/10 (4 cuentas, 174 registros, 309 alimentos, 91 recetas, 42 del plan). Contraseña de la base cambiada, `RESPALDO_CLAVE` guardada aparte y prueba de restauración hecha.
 - **Verificado el 13/10/2026:** el análisis con IA anda (V-02, función `analizar-semana` versión 4) y `actualizacion-9.sql` está aplicada en Supabase.
+- **L-02 · Revisión de los textos legales** (15/10/2026): hecha por tu lado; Términos y Política quedan como están.
+- **1.14.0** (no hay que correr nada en Supabase):
+  - F-16: el "Líquido" del día ya no suma las bebidas azucaradas. Una bebida con 4 g o más de hidratos cada 100 ml (gaseosa común, jugo, energizante, chocolatada) sigue sumando sus calorías al día pero no cuenta para la meta de líquido. Cuentan el agua, el mate, las infusiones, la soda, las bebidas sin azúcar y la leche. El alcohol sigue sin contar.
+  - Es automático: sirve también para los alimentos propios y los que vienen de Open Food, sin marcar nada ni tocar la base. El azúcar que se le pone a una infusión se deja como está (el mate o el café siguen contando completos).
+  - Cambió el texto de ayuda del objetivo de líquido en el Perfil. Prueba nueva: `liquido`. La de navegador 03 espera 0,25 L (antes 0,5 L, porque la gaseosa del día ya no suma).
 - **1.13.0** (hay que correr `actualizacion-11.sql`):
   - F-15: en Plan, al tocar una comida se elige una receta o un **alimento suelto** con su cantidad (por ejemplo, mate solo en la merienda), en cualquiera de las cuatro comidas y aunque el día no tenga nada planeado. Usa el mismo buscador que el diario, con las medidas de siempre (un mate, un termo, una taza...).
   - Cuenta en todo el plan: las calorías del día, el "Comí esto" del diario (registra el alimento con su cantidad y descuenta de la despensa lo que haya), "Para llevar" y lo que falta para la lista de compras.

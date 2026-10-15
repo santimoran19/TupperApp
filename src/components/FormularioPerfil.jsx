@@ -265,7 +265,8 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
           />
           <Err>{errObjetivo.liquido}</Err>
           <p className="text-xs text-gris mt-1">
-            Si lo dejás vacío se usan unos 35 ml por kilo de peso. Cuenta agua, mate, infusiones y cualquier bebida sin alcohol.
+            Si lo dejás vacío se usan unos 35 ml por kilo de peso. Cuenta agua, mate, infusiones, soda, bebidas sin azúcar y leche. Las
+            bebidas con azúcar y el alcohol suman calorías pero no líquido.
           </p>
         </div>
       </div>
