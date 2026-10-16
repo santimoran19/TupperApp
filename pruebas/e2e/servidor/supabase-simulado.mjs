@@ -1,6 +1,6 @@
 // Supabase simulado para las pruebas: acceso (auth), tablas (REST), funciones de la base (RPC) y un "modelo" de IA falso.
 // Guarda todo en memoria y arranca con los alimentos y recetas de la base. No toca internet ni el proyecto real.
-// Si Deno está instalado, además levanta la función `analizar-semana` de verdad para probarla entera.
+// Si Deno está instalado, además levanta las funciones `analizar-semana` y `entrar` de verdad para probarlas enteras.
 import http from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
@@ -8,7 +8,9 @@ import { fileURLToPath } from 'node:url'
 import { foods, recipes, conAlcohol } from '../../../scripts/seed-data.mjs'
 
 const PUERTO = 54321
-const PUERTO_FUNCION = 8000
+// Las funciones de verdad, corriendo en Deno: cada una en su puerto
+const FUNCIONES_REALES = { 'analizar-semana': 8000, entrar: 8001 }
+const CLAVE_SERVICIO = 'service-role-de-prueba' // la que usa la función `entrar` para mirar usuarios, saltándose los permisos por fila
 
 const db = {
   profiles: [],
@@ -116,7 +118,39 @@ function repetido(uid, clave) {
   return false
 }
 
+// El nombre de usuario como lo cuida la base (supabase/actualizacion-12.sql), con una lista corta de reservados
+const RESERVADOS_DE_PRUEBA = ['admin', 'root', 'tupper', 'soporte', 'null', 'postgres']
+function validarUsuario(u) {
+  if (u.length < 3) return 'El usuario tiene que tener al menos 3 caracteres.'
+  if (u.length > 20) return 'El usuario puede tener como mucho 20 caracteres.'
+  if (!/^[a-z0-9][a-z0-9._-]*[a-z0-9]$/.test(u) || /[._-]{2}/.test(u) || !/[a-z]/.test(u))
+    return 'El usuario solo puede llevar letras sin tilde, números, punto, guion y guion bajo, y tiene que empezar y terminar con una letra o un número.'
+  if (RESERVADOS_DE_PRUEBA.some((r) => u === r || u.includes('tupper') || u.includes('admin')))
+    return 'Ese usuario no está disponible. Probá con otro.'
+  return null
+}
+// Lo que hace la base al guardar un perfil con usuario: pasarlo a minúsculas, validarlo (solo si cambió) y no repetirlo
+function cuidarUsuario(fila, anterior, uid) {
+  if (!('username' in fila)) return
+  fila.username =
+    String(fila.username ?? '')
+      .trim()
+      .toLowerCase() || null
+  if (fila.username === null || fila.username === anterior?.username) return
+  const mensaje = validarUsuario(fila.username)
+  if (mensaje) throw errorPg('P0001', mensaje)
+  if (db.profiles.some((p) => p.username === fila.username && p.id !== (anterior?.id ?? uid)))
+    throw errorPg('23505', 'duplicate key value violates unique constraint "profiles_username_key"')
+}
+
 const FUNCIONES = {
+  usuario_disponible: (uid, a) => {
+    const u = String(a.p_usuario ?? '')
+      .trim()
+      .toLowerCase()
+    return !db.profiles.some((p) => p.username === u && p.id !== uid)
+  },
+
   mover_stock: (uid, a) => moverStock(uid, a.p_cambios, a.p_solo_si_existe),
 
   cocinar(uid, a) {
@@ -350,7 +384,7 @@ const ultimoMail = new Map() // email -> cuándo se le mandó el último mail de
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
 function sesion(u) {
   const exp = Math.floor(Date.now() / 1000) + 3600
-  const token = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: u.id, email: u.email, role: 'authenticated', exp })}.firma`
+  const token = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: u.id, email: u.email, role: 'authenticated', exp })}.ZmlybWE`
   const user = {
     id: u.id,
     aud: 'authenticated',
@@ -370,6 +404,8 @@ function uidDe(req) {
     return null
   }
 }
+
+const esServicio = (req) => (req.headers.authorization || '') === 'Bearer ' + CLAVE_SERVICIO
 
 function filtros(url) {
   const fs = []
@@ -414,7 +450,8 @@ const server = http.createServer(async (req, res) => {
   const body = raw ? JSON.parse(raw) : null
   try {
     // Para que las pruebas (y Playwright) sepan cuándo está todo listo y si hay función de IA
-    if (url.pathname === '/_pruebas/estado') return listo ? send(200, { funcion: funcion.activa }) : send(503, { message: 'arrancando' })
+    if (url.pathname === '/_pruebas/estado')
+      return listo ? send(200, { funcion: funcion.activa, entrar: funcion.entrar }) : send(503, { message: 'arrancando' })
     // Captcha, como en Supabase con la protección prendida: crear cuenta, entrar con contraseña y pedir mails exigen
     // una comprobación, y cada una sirve una sola vez. (Renovar la sesión no la pide.)
     const pideCaptcha =
@@ -466,6 +503,12 @@ const server = http.createServer(async (req, res) => {
       }
       return send(200, {})
     }
+    // Para las pruebas: deja a una cuenta sin nombre de usuario, como las que ya existían antes de que hubiera usuarios
+    if (url.pathname === '/_pruebas/sin-usuario') {
+      const perfil = db.profiles.find((p) => p.id === users.get(body.email)?.id)
+      if (perfil) perfil.username = null
+      return send(200, { ok: !!perfil })
+    }
     if (url.pathname === '/auth/v1/_mock')
       return send(200, {
         mails,
@@ -494,6 +537,13 @@ const server = http.createServer(async (req, res) => {
       return send(200, sesion(u).user)
     }
     if (url.pathname === '/auth/v1/logout') return send(204)
+    // Administración de usuarios (solo con la clave de servicio, como en Supabase): la usa la función `entrar`
+    const admin = url.pathname.match(/^\/auth\/v1\/admin\/users\/([\w-]+)$/)
+    if (admin) {
+      if (!esServicio(req)) return send(403, { msg: 'not_admin' })
+      const u = [...users.values()].find((x) => x.id === admin[1])
+      return u ? send(200, sesion(u).user) : send(404, { msg: 'User not found' })
+    }
 
     // ---- "Modelo" simulado: devuelve una devolución fija con la forma de la API de Anthropic
     if (url.pathname === '/anthropic/_modo') {
@@ -559,7 +609,9 @@ const server = http.createServer(async (req, res) => {
     // ---- Funciones: se le pasa el pedido a la función real, corriendo en Deno en el puerto 8000
     if (url.pathname.startsWith('/functions/v1/')) {
       try {
-        const r = await fetch(`http://localhost:${PUERTO_FUNCION}` + url.pathname, {
+        const puerto = FUNCIONES_REALES[url.pathname.split('/')[3]]
+        if (!puerto) throw new Error('no existe')
+        const r = await fetch(`http://localhost:${puerto}` + url.pathname, {
           method: req.method,
           body: raw || undefined,
           headers: { 'content-type': 'application/json', authorization: req.headers.authorization || '', apikey: req.headers.apikey || '' },
@@ -598,9 +650,11 @@ const server = http.createServer(async (req, res) => {
     const m = url.pathname.match(/^\/rest\/v1\/(\w+)$/)
     if (!m || !db[m[1]]) return send(404, { message: 'no existe ' + url.pathname })
     const tabla = m[1]
+    const servicio = esServicio(req)
     const uid = uidDe(req)
-    if (!uid) return send(401, { message: 'sin sesión' })
+    if (!uid && !servicio) return send(401, { message: 'sin sesión' })
     const visible = (row) => {
+      if (servicio) return true
       if (tabla === 'foods' || tabla === 'recipes') return row.owner === null || row.owner === uid
       if (tabla === 'recipe_items') return true
       if (tabla === 'profiles') return row.id === uid
@@ -637,6 +691,16 @@ const server = http.createServer(async (req, res) => {
           const cols = conflicto.split(',')
           existente = db[tabla].find((r) => cols.every((c) => String(r[c]) === String(f[c])))
         }
+        const rechazo = (e) => {
+          if (!e.pg) throw e
+          return send(e.pg === '23505' ? 409 : 400, { code: e.pg, message: e.message, details: null, hint: null })
+        }
+        if (tabla === 'profiles')
+          try {
+            cuidarUsuario(f, existente, uid)
+          } catch (e) {
+            return rechazo(e)
+          }
         if (existente) {
           Object.assign(existente, f)
           out.push(existente)
@@ -644,7 +708,7 @@ const server = http.createServer(async (req, res) => {
           const fila = { ...(SIN_ID.has(tabla) ? {} : { id: randomUUID() }), ...f }
           if (['log_entries', 'shopping_items', 'profiles', 'ai_analyses'].includes(tabla)) fila.created_at = new Date().toISOString()
           if (tabla === 'log_entries' && fila.skipped === undefined) fila.skipped = false
-          if (tabla === 'profiles') Object.assign(fila, { thermos_ml: 1000, water_target_ml: null, ...f })
+          if (tabla === 'profiles') Object.assign(fila, { thermos_ml: 1000, water_target_ml: null, username: null, ...f })
           if (tabla === 'foods' && fila.alcohol === undefined) fila.alcohol = false
           if (tabla === 'purchases' && !fila.date) fila.date = new Date().toISOString().slice(0, 10)
           if (tabla === 'eventos')
@@ -665,6 +729,13 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === 'PATCH') {
       const out = db[tabla].filter((r) => visible(r) && pasa(r))
+      if (tabla === 'profiles')
+        try {
+          out.forEach((r) => cuidarUsuario(body, r, uid))
+        } catch (e) {
+          if (!e.pg) throw e
+          return send(e.pg === '23505' ? 409 : 400, { code: e.pg, message: e.message, details: null, hint: null })
+        }
       out.forEach((r) => Object.assign(r, body))
       return send(200, out)
     }
@@ -681,60 +752,57 @@ const server = http.createServer(async (req, res) => {
   }
 })
 
-// ---------- La función de IA, corriendo en Deno (si está instalado) ----------
-const funcion = { activa: false }
-async function levantarFuncion() {
-  const carpeta = fileURLToPath(new URL('../../../supabase/functions/analizar-semana/', import.meta.url))
+// ---------- Las funciones de verdad, corriendo en Deno (si está instalado) ----------
+const funcion = { activa: false, entrar: false }
+async function levantarFunciones() {
   const base = `http://localhost:${PUERTO}`
-  const hijo = spawn(process.env.DENO || 'deno', ['run', '--no-lock', '--allow-net', '--allow-env', 'index.ts'], {
-    cwd: carpeta,
-    stdio: 'ignore',
-    env: {
-      ...process.env,
-      SUPABASE_URL: base,
-      IA_PROVEEDOR: '',
-      GROQ_API_KEY: 'clave-de-prueba',
-      GROQ_URL: base + '/groq/openai/v1/chat/completions',
-      ANTHROPIC_API_KEY: 'clave-de-prueba',
-      ANTHROPIC_URL: base + '/anthropic/v1/messages',
-    },
-  })
-  let sinDeno = false
-  hijo.on('error', () => {
-    sinDeno = true
-  })
-  hijo.on('exit', () => {
-    sinDeno = true
-  })
-  const matar = () => {
-    try {
-      hijo.kill()
-    } catch {
-      /* ya terminó */
-    }
-  }
+  const hijos = []
+  const matar = () => hijos.forEach((h) => h.kill())
   process.on('exit', matar)
   for (const s of ['SIGINT', 'SIGTERM'])
     process.on(s, () => {
       matar()
       process.exit(0)
     })
-  // Se espera hasta 20 segundos a que conteste; si Deno no está, se sigue sin la función
-  for (let i = 0; i < 80 && !sinDeno; i++) {
-    try {
-      await fetch(`http://localhost:${PUERTO_FUNCION}/`, { method: 'OPTIONS' })
-      funcion.activa = true
-      return
-    } catch {
-      await new Promise((r) => setTimeout(r, 250))
+  const arrancar = async (nombre, puerto, env) => {
+    const carpeta = fileURLToPath(new URL(`../../../supabase/functions/${nombre}/`, import.meta.url))
+    const hijo = spawn(process.env.DENO || 'deno', ['run', '--no-lock', '--allow-net', '--allow-env', 'index.ts'], {
+      cwd: carpeta,
+      stdio: 'ignore',
+      env: { ...process.env, SUPABASE_URL: base, DENO_SERVE_ADDRESS: `tcp:127.0.0.1:${puerto}`, ...env },
+    })
+    let sinDeno = false
+    hijo.on('error', () => (sinDeno = true))
+    hijo.on('exit', () => (sinDeno = true))
+    hijos.push(hijo)
+    // Se espera hasta 20 segundos a que conteste; si Deno no está, se sigue sin la función
+    for (let i = 0; i < 80 && !sinDeno; i++) {
+      try {
+        await fetch(`http://localhost:${puerto}/`, { method: 'OPTIONS' })
+        return true
+      } catch {
+        await new Promise((r) => setTimeout(r, 250))
+      }
     }
+    return false
   }
+  ;[funcion.activa, funcion.entrar] = await Promise.all([
+    arrancar('analizar-semana', FUNCIONES_REALES['analizar-semana'], {
+      IA_PROVEEDOR: '',
+      GROQ_API_KEY: 'clave-de-prueba',
+      GROQ_URL: base + '/groq/openai/v1/chat/completions',
+      ANTHROPIC_API_KEY: 'clave-de-prueba',
+      ANTHROPIC_URL: base + '/anthropic/v1/messages',
+    }),
+    arrancar('entrar', FUNCIONES_REALES.entrar, { SUPABASE_ANON_KEY: 'anon-de-prueba', SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO }),
+  ])
 }
 
 server.listen(PUERTO, async () => {
-  await levantarFuncion()
+  await levantarFunciones()
   console.log(
-    `Supabase simulado en ${PUERTO}` + (funcion.activa ? ' (con la función de IA)' : ' (sin Deno: las pruebas de la IA se saltean)'),
+    `Supabase simulado en ${PUERTO}` +
+      (funcion.activa ? ' (con las funciones de verdad)' : ' (sin Deno: las pruebas de la IA y del usuario se saltean)'),
   )
   listo = true
 })

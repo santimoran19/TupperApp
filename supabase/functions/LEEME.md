@@ -48,3 +48,17 @@ supabase functions deploy analizar-semana --project-ref bpxxwmcqidoxgmfyzhpc
 ```
 
 Los registros de cada llamada se ven en **Edge Functions > analizar-semana > Logs**.
+
+# Iniciar sesión con el nombre de usuario
+
+La función `entrar` deja iniciar sesión con el nombre de usuario en vez del email. La app le manda el usuario y la contraseña; ella busca el email de esa cuenta, inicia la sesión en Supabase y le devuelve a la app solo la sesión. **El email nunca sale de la función**, y si el usuario no existe contesta lo mismo que con una contraseña equivocada. No necesita ningún secreto: Supabase le da solo `SUPABASE_URL` y las claves del proyecto (usa las de siempre y, cuando Supabase las apague a fin de 2026, las nuevas).
+
+Para publicarla (una sola vez, y de nuevo si cambia el código):
+
+```bash
+supabase functions deploy entrar --no-verify-jwt --project-ref bpxxwmcqidoxgmfyzhpc
+```
+
+Va **sin** verificación de JWT (`--no-verify-jwt`; en el panel, la opción *Verify JWT* apagada): quien inicia sesión todavía no tiene ninguno, y con las claves nuevas de Supabase la verificación rechazaría a todos. No es un hueco: la función no hace nada privilegiado si no llega la contraseña correcta y el pedido lleva el captcha igual que el del email. Antes de publicar la app corré `supabase/actualizacion-12.sql`. Los registros de cada llamada se ven en **Edge Functions > entrar > Logs** (no guarda usuarios ni contraseñas, solo errores inesperados).
+
+Un límite a tener en cuenta: Supabase limita los inicios de sesión por dirección de IP (unos 30 cada 5 minutos). Con la función, todos los que entran con usuario le llegan a Supabase desde el servidor de la función y no desde su teléfono, así que ese tope puede compartirse entre ellos. Con pocos usuarios no se nota; si la app crece y aparece "Se hicieron muchos intentos" a quien entra bien, hay que revisarlo.

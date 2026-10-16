@@ -35,50 +35,49 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 4. D-02 · Botones del tamaño del dedo
 5. D-05 · Recorrido inicial
 6. F-07 · Ajustar las porciones de una receta
-7. F-17 · Nombre de usuario (F-18 queda para el final)
-8. F-05 · Compartir la lista de compras por WhatsApp
-9. S-02 · CORS de la función de IA
-10. T-02 · Pruebas automáticas en cada push
-11. T-06 · Aviso de errores (va junto con S-05)
-12. S-05 · Revisión periódica
-13. F-01 · Escanear el código de barras (va junto con F-02)
-14. F-02 · Catálogo compartido de productos
-15. F-12 · Base propia de alimentos más grande
-16. IA-01 · Chat con IA (va junto con IA-02)
-17. IA-02 · Proveedor de respaldo
-18. F-04 · Vencimientos en la despensa
-19. D-07 · Revisión completa de accesibilidad
-20. L-04 · Consentimiento al registrarse
-21. C-05 · Opiniones desde la app
-22. T-03 · Pruebas en Safari
-23. T-04 · Base de pruebas aparte
-24. T-01 · Actualizar las herramientas
-25. F-03 · Despensa compartida entre los de una misma casa
-26. F-06 · Recordatorios
+7. F-05 · Compartir la lista de compras por WhatsApp
+8. S-02 · CORS de la función de IA
+9. T-02 · Pruebas automáticas en cada push
+10. T-06 · Aviso de errores (va junto con S-05)
+11. S-05 · Revisión periódica
+12. F-01 · Escanear el código de barras (va junto con F-02)
+13. F-02 · Catálogo compartido de productos
+14. F-12 · Base propia de alimentos más grande
+15. IA-01 · Chat con IA (va junto con IA-02)
+16. IA-02 · Proveedor de respaldo
+17. F-04 · Vencimientos en la despensa
+18. D-07 · Revisión completa de accesibilidad
+19. L-04 · Consentimiento al registrarse
+20. C-05 · Opiniones desde la app
+21. T-03 · Pruebas en Safari
+22. T-04 · Base de pruebas aparte
+23. T-01 · Actualizar las herramientas
+24. F-03 · Despensa compartida entre los de una misma casa
+25. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-27. F-08 · Copiar un día entero
-28. D-06 · Deshacer en más lugares
-29. D-04 · Esqueletos de carga
-30. F-10 · Peso: gráfico y fecha estimada
-31. F-11 · Exportar el registro a planilla
-32. F-09 · Combos frecuentes
-33. F-13 · Categorías editables por el usuario
-34. D-08 · Revisión de los textos
-35. IA-04 · Cargar una receta desde un texto
-36. IA-03 · Foto de un plato
-37. C-06 · Métricas de uso
-38. T-05 · Partir `sincronizacion.js`
-39. T-07 · Mandar lo cargado sin conexión con la app cerrada
-40. S-06 · Verificación en dos pasos
-41. S-03 · Contraseñas filtradas también del lado de Supabase
+26. F-08 · Copiar un día entero
+27. D-06 · Deshacer en más lugares
+28. D-04 · Esqueletos de carga
+29. F-10 · Peso: gráfico y fecha estimada
+30. F-11 · Exportar el registro a planilla
+31. F-09 · Combos frecuentes
+32. F-13 · Categorías editables por el usuario
+33. D-08 · Revisión de los textos
+34. IA-04 · Cargar una receta desde un texto
+35. IA-03 · Foto de un plato
+36. C-06 · Métricas de uso
+37. T-05 · Partir `sincronizacion.js`
+38. T-07 · Mandar lo cargado sin conexión con la app cerrada
+39. S-06 · Verificación en dos pasos
+40. S-03 · Contraseñas filtradas también del lado de Supabase
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-42. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-43. C-02 · Dominio propio y página de presentación (va junto con C-03)
-44. C-01 · Planes y cobro (para empezar a cobrar)
-45. F-18 · Registrarse e iniciar sesión con Google (va junto con F-17, que se hace antes)
-46. C-04 · Play Store (cuesta la cuenta de desarrollador)
+41. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+42. C-02 · Dominio propio y página de presentación (va junto con C-03)
+43. C-01 · Planes y cobro (para empezar a cobrar)
+44. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+45. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -107,7 +106,6 @@ Nada por ahora.
   - Hace falta guardar el alimento y la cantidad en la tabla del plan (hoy solo guarda la receta): un SQL nuevo, y que "Armar con lo que tengo" respete lo que se puso a mano.
 - [ ] **F-08 · Copiar un día entero** · P3 · S. Hoy se puede repetir la comida de ayer; falta copiar el día completo (o un día cualquiera) a otra fecha.
 - [ ] **F-09 · Combos frecuentes** · P3 · M. Guardar "mi desayuno de siempre" con varios alimentos y registrarlo con un toque.
-- [ ] **F-17 · Nombre de usuario** · P2 · M. Que cada cuenta tenga un nombre de usuario para no tener que escribir el mail cada vez que se inicia sesión. Se elige al crear la cuenta y se puede cambiar desde el Perfil. Para entrar se acepta el usuario o el mail. **Validaciones:** que no esté tomado (sin distinguir mayúsculas), largo de 3 a 20, solo letras, números, punto, guion y guion bajo, sin espacios, que no parezca un mail y que no sea una palabra reservada (admin, tupper, soporte...); mientras se escribe se avisa si está libre. Al cambiarlo, el nombre viejo queda libre. **Cuentas que ya existen:** el usuario es opcional en la base; la próxima vez que entren se les pide que elijan uno (no se les pierde nada y siguen pudiendo entrar con el mail). **Decisión de seguridad:** Supabase solo inicia sesión con el mail, así que habría que pasar de usuario a mail sin mostrarlo: lo más seguro es una función en el servidor que reciba usuario y contraseña, y no devuelva nunca el mail ni diga si el usuario existe (la app hoy ya evita delatar quién tiene cuenta). Mantener el captcha en ese pedido. Va con una actualización de la base (columna `username` en `profiles` con índice único sobre minúsculas y regla de formato), la función de entrada, pruebas, y sumar el dato a la Política de privacidad. No confundir con `name`, que es el nombre para mostrar ("¡Hola, Santi!"). Va junto con F-18: quien entra con Google también elige su usuario.
 - [ ] **F-18 · Registrarse e iniciar sesión con Google** · P2 · M. Un botón "Continuar con Google" en la pantalla de acceso, para crear la cuenta o entrar sin escribir mail ni contraseña. **Qué hace falta de tu lado:** crear un proyecto en Google Cloud, configurar la pantalla de consentimiento y las credenciales OAuth (cliente web), y activar el proveedor Google en Supabase (Authentication > Providers) con las direcciones de vuelta de la app y de Supabase. Gratis. **Cosas a resolver:** (1) el consentimiento de Google en modo de prueba solo deja entrar a 100 usuarios que vos agregues a mano; para abrirlo a cualquiera hay que publicarlo, y Google pide la Política de privacidad y la página de inicio en un dominio propio (esto se cruza con C-02, dominio propio); (2) si ya existe una cuenta con el mismo mail, Supabase puede unirla con la de Google; hay que dejarlo bien configurado para que nadie tome una cuenta ajena; (3) quien entra con Google no tiene contraseña: la pantalla de "Olvidé mi contraseña" y el Perfil tienen que explicarlo, y se podría ofrecer crear una; (4) igual hay que pasar por el perfil (fecha de nacimiento, para cumplir los 18 años de L-01) y, con F-17, elegir el nombre de usuario; (5) sumar a la Política de privacidad que Google es un proveedor y qué datos se reciben (mail y nombre; la foto no se guarda); (6) probarlo en el navegador del teléfono y en la app instalada (PWA), donde el regreso desde Google a veces se comporta distinto. Va con pruebas (el simulador de las pruebas tiene que fingir el regreso de Google) y los textos del botón. Borrar la cuenta y descargar los datos siguen igual.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
 - [ ] **F-11 · Exportar el registro a planilla** · P3 · S. Hoy "Descargar mis datos" baja un JSON; sumar un CSV que abra en Excel, útil para llevarle al nutricionista.
@@ -175,6 +173,15 @@ Nada por ahora.
 - **S-01 · Copias de seguridad propias** (14/10/2026): repo privado `tupper-respaldos` en GitHub con copia diaria cifrada (3:17 AR, guardada 90 días) y scripts para abrirla y restaurarla. Respaldo verificado el 14/10 (4 cuentas, 174 registros, 309 alimentos, 91 recetas, 42 del plan). Contraseña de la base cambiada, `RESPALDO_CLAVE` guardada aparte y prueba de restauración hecha.
 - **Verificado el 13/10/2026:** el análisis con IA anda (V-02, función `analizar-semana` versión 4) y `actualizacion-9.sql` está aplicada en Supabase.
 - **L-02 · Revisión de los textos legales** (15/10/2026): hecha por tu lado; Términos y Política quedan como están.
+- **1.15.0** (`actualizacion-12.sql` y la función `entrar` ya están en Supabase desde el 16/10/2026, esta sin verificación de JWT; falta publicar la app en Vercel):
+  - F-17: nombre de usuario. Se elige al crear la cuenta (campo obligatorio en "Armemos tu perfil", con aviso de si está libre mientras se escribe) y se cambia desde Perfil > Editar. Se muestra como `@usuario` en el Perfil.
+  - Iniciar sesión: el campo ahora es "Email o usuario" y sirven los dos (si lleva "@" es un email). Con el usuario, la contraseña la comprueba la función `entrar` en el servidor: busca el email, inicia la sesión y devuelve solo la sesión. Si el usuario no existe contesta lo mismo que con una contraseña equivocada, y lleva el mismo captcha que el email. Recuperar la contraseña sigue pidiendo el email.
+  - Cuentas que ya existían: la próxima vez que entran se les pide elegir un usuario. Pueden tocar "Ahora no" (vuelve a aparecer cuando abran la app de nuevo); no pierden nada y siguen entrando con el email.
+  - Seguridad: solo letras sin tilde, números, punto, guion y guion bajo (de 3 a 20); no puede empezar ni terminar con símbolo, ni tener dos símbolos seguidos, ni ser solo números, ni parecer una dirección de internet. Se bloquean palabras reservadas (admin, root, tupper, soporte, postgres, null...) y los que llevan adentro tupper, admin, soporte, support, staff, moderador o supabase. Se repite el chequeo en la base (`actualizacion-12.sql`), así que no se puede saltear hablándole directo a Supabase. No se repite sin importar mayúsculas y se guarda en minúsculas.
+  - Si se agrega una palabra reservada más adelante, nadie pierde el usuario que ya tiene (la base solo juzga un nombre cuando cambia).
+  - La Política de privacidad ahora nombra el usuario entre los datos del perfil. Pruebas nuevas: `nombre-de-usuario` (reglas en la app y la base, y que las dos listas sean iguales), `entrar` y la de navegador `16-nombre-de-usuario`. Ahora las pruebas corren también la función `entrar` de verdad (con Deno).
+  - La función usa las claves de siempre de Supabase y, si las apagan a fin de 2026, las nuevas. Las dos funciones de plantilla `super-service` y `super-task` que quedaron en el panel hay que borrarlas (no hacen nada).
+  - Límite a vigilar: Supabase limita los inicios de sesión por IP y con la función todos salen desde el servidor; con pocos usuarios no se nota (detalle en `supabase/functions/LEEME.md`).
 - **1.14.0** (no hay que correr nada en Supabase):
   - F-16: el "Líquido" del día ya no suma las bebidas azucaradas. Una bebida con 4 g o más de hidratos cada 100 ml (gaseosa común, jugo, energizante, chocolatada) sigue sumando sus calorías al día pero no cuenta para la meta de líquido. Cuentan el agua, el mate, las infusiones, la soda, las bebidas sin azúcar y la leche. El alcohol sigue sin contar.
   - Es automático: sirve también para los alimentos propios y los que vienen de Open Food, sin marcar nada ni tocar la base. El azúcar que se le pone a una infusión se deja como está (el mate o el café siguen contando completos).

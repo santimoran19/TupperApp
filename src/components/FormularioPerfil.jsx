@@ -1,5 +1,6 @@
 // Datos personales y objetivo diario. Se usa al crear la cuenta y al editar el perfil.
 import { useMemo, useState } from 'react'
+import CampoUsuario, { useEstadoUsuario } from './CampoUsuario'
 import { Err, Numero } from './ui'
 import { ACTIVIDADES, liquidoSugerido, objetivoSugerido } from '../lib/nutricion'
 import { edad } from '../lib/fechas'
@@ -8,6 +9,7 @@ import { LIM, errNacimiento, errNumero, errTexto, hayErrores, rangoNacimiento } 
 export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
   const [f, setF] = useState({
     name: inicial?.name || '',
+    username: inicial?.username || '',
     sex: inicial?.sex || 'm',
     birth_date: inicial?.birth_date || '',
     height_cm: inicial?.height_cm ?? '',
@@ -25,6 +27,9 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
   const [intento, setIntento] = useState(false) // los errores de campos vacíos se muestran recién al intentar guardar
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }))
   const nac = rangoNacimiento()
+  // El usuario es obligatorio al crear la cuenta, y también para quien ya tiene uno (se puede cambiar, no quitar). Una cuenta
+  // anterior que todavía no eligió puede dejarlo vacío.
+  const usuario = useEstadoUsuario(f.username, inicial?.username, { obligatorio: !inicial || !!inicial.username })
 
   const errDatos = {
     name: errTexto(f.name, { max: LIM.nombre }),
@@ -59,7 +64,7 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
       errNumero(f.liquido === '' ? '' : Number(f.liquido) * 1000, LIM.liquido, { opcional: true }) &&
       'Tiene que estar entre 0,5 y 6 litros.',
   }
-  const valido = datosOk && !hayErrores(errObjetivo)
+  const valido = datosOk && !hayErrores(errObjetivo) && !usuario.error
   // Un error de rango se muestra al toque; uno de "falta completar", solo después de tocar Guardar
   const ver = (k, e) => (e && (intento || !['', null, undefined].includes(k)) ? e : null)
 
@@ -70,6 +75,7 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
     setGuardando(true)
     await onGuardar({
       name: f.name.trim(),
+      username: usuario.usuario || null,
       sex: f.sex,
       birth_date: f.birth_date,
       height_cm: Number(f.height_cm),
@@ -99,6 +105,12 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
         />
         <Err>{ver(f.name, errDatos.name)}</Err>
       </div>
+      <CampoUsuario
+        valor={f.username}
+        onChange={set('username')}
+        estado={usuario}
+        mostrarError={intento || !!f.username || !!inicial?.username}
+      />
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="etiqueta" htmlFor="pf-sexo">

@@ -1,4 +1,5 @@
-// Acceso: iniciar sesión, crear cuenta con código de confirmación por mail y recuperar la contraseña.
+// Acceso: iniciar sesión (con el email o con el nombre de usuario), crear cuenta con código de confirmación por mail y
+// recuperar la contraseña.
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -24,7 +25,7 @@ function traducir(err) {
   if (/different from the old/i.test(m)) return 'La contraseña nueva tiene que ser distinta a la anterior.'
   if (/weak|should be at least|password/i.test(m)) return 'La contraseña no es lo bastante segura. Probá con otra.'
   if (/signups? not allowed|disabled/i.test(m)) return 'Por ahora no se pueden crear cuentas nuevas.'
-  if (/fetch|network|abort/i.test(m)) return 'No hay conexión. Revisá internet y probá de nuevo.'
+  if (/fetch|network|abort|failed to send a request/i.test(m)) return 'No hay conexión. Revisá internet y probá de nuevo.'
   return 'Algo salió mal. Probá de nuevo.'
 }
 
@@ -186,6 +187,9 @@ export default function Acceso() {
   }
 
   async function entrar() {
+    const dato = email.trim()
+    if (!dato) return setError('Escribí tu email o tu usuario.')
+    if (!dato.includes('@')) return entrarConUsuario(dato)
     if (errEmail(email)) return setError(errEmail(email))
     if (!clave) return setError('Escribí tu contraseña.')
     setError('')
@@ -207,6 +211,37 @@ export default function Acceso() {
         return setMensaje('Te falta confirmar el email. Usá el código que te mandamos o pedí otro en un minuto.')
       }
       setError(traducir(err))
+    } catch (err) {
+      setError(traducir(err))
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  // Con el usuario no se puede entrar directo: una función del servidor busca el email de esa cuenta, inicia la sesión y
+  // le devuelve a la app solo la sesión (nunca el email). Si el usuario no existe, contesta lo mismo que con una contraseña
+  // equivocada, para que nadie pueda averiguar qué usuarios hay.
+  async function entrarConUsuario(usuario) {
+    if (!clave) return setError('Escribí tu contraseña.')
+    setError('')
+    setEnviando(true)
+    try {
+      const { data, error: err } = await conCaptcha((captchaToken) =>
+        supabase.functions.invoke('entrar', { body: { usuario, clave, captchaToken } }),
+      )
+      if (err) {
+        // La función todavía no está publicada en el proyecto
+        if (err.context?.status === 404) return setError('Entrar con el usuario todavía no está disponible. Probá con tu email.')
+        return setError(traducir(err))
+      }
+      if (data?.sesion) {
+        const { error: sinSesion } = await supabase.auth.setSession(data.sesion)
+        // Si salió bien, la app entra sola (ver App.jsx)
+        return sinSesion ? setError(traducir(sinSesion)) : undefined
+      }
+      if (data?.codigo === 'captcha') return setError(traducir({ message: 'captcha' }))
+      if (data?.codigo === 'espera') return setError('Se hicieron muchos intentos. Esperá unos minutos y probá de nuevo.')
+      setError('El usuario o la contraseña no coinciden.')
     } catch (err) {
       setError(traducir(err))
     } finally {
@@ -347,14 +382,16 @@ export default function Acceso() {
             {(pestanas || modo === 'olvide') && (
               <div>
                 <label className="etiqueta" htmlFor="email">
-                  Email
+                  {modo === 'entrar' ? 'Email o usuario' : 'Email'}
                 </label>
                 <input
                   id="email"
-                  type="email"
-                  autoComplete="email"
-                  inputMode="email"
+                  type={modo === 'entrar' ? 'text' : 'email'}
+                  autoComplete={modo === 'entrar' ? 'username' : 'email'}
+                  inputMode={modo === 'entrar' ? 'text' : 'email'}
                   autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck={false}
                   className="campo"
                   maxLength={120}
                   value={email}

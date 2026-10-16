@@ -9,6 +9,7 @@ import Diario from './pages/Diario'
 
 // El acceso y el diario cargan de entrada; el resto de las pantallas se baja recién cuando se abre
 const Bienvenida = lazy(() => import('./pages/Bienvenida'))
+const ElegirUsuario = lazy(() => import('./pages/ElegirUsuario'))
 const Registrar = lazy(() => import('./pages/Registrar'))
 const Despensa = lazy(() => import('./pages/Despensa'))
 const Compras = lazy(() => import('./pages/Compras'))
@@ -33,8 +34,20 @@ function Cargando({ texto = 'Cargando...' }) {
   )
 }
 
+// Las cuentas que ya existían se quedan sin usuario hasta que lo eligen: se les pide, pero pueden dejarlo para después
+// (durante esa sesión de la app; la próxima vez que la abran se les vuelve a pedir).
+const CLAVE_SIN_USUARIO = 'tupper:usuario-despues'
+const dejoElUsuarioParaDespues = () => {
+  try {
+    return sessionStorage.getItem(CLAVE_SIN_USUARIO) === '1'
+  } catch {
+    return false
+  }
+}
+
 function Pantallas() {
   const { cargando, errorCarga, perfil, recargar } = useDatos()
+  const [despues, setDespues] = useState(dejoElUsuarioParaDespues)
   if (cargando) return <Cargando />
   if (errorCarga) {
     return (
@@ -52,6 +65,22 @@ function Pantallas() {
     return (
       <Suspense fallback={Hueco}>
         <Bienvenida />
+      </Suspense>
+    )
+  // (`=== null` y no vacío: si la base todavía no tiene la columna del usuario, no se pide)
+  if (perfil.username === null && !despues)
+    return (
+      <Suspense fallback={Hueco}>
+        <ElegirUsuario
+          onDespues={() => {
+            try {
+              sessionStorage.setItem(CLAVE_SIN_USUARIO, '1')
+            } catch {
+              // sin almacenamiento, se pide de nuevo al recargar
+            }
+            setDespues(true)
+          }}
+        />
       </Suspense>
     )
   return (

@@ -145,6 +145,7 @@ export default function Perfil() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-lg truncate">{perfil.name}</p>
+                {perfil.username && <p className="text-sm font-semibold text-verde-texto truncate">@{perfil.username}</p>}
                 <p className="text-sm text-gris truncate">{usuario.email}</p>
               </div>
               <button onClick={() => setEditando(true)} className="btn-chico bg-verde-suave text-verde-texto">

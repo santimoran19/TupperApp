@@ -87,6 +87,7 @@ test('cuenta con código, bebidas, recetas y resumen', async ({ browser }) => {
 
   await test.step('acceso: con menos de 18 años no se puede crear el perfil', async () => {
     await pg.fill('#pf-nombre', 'Ana')
+    await pg.fill('#pf-usuario', 'ana.p')
     await pg.fill('#pf-nac', '2010-05-01')
     await pg.fill('#pf-altura', '160')
     await pg.fill('#pf-peso', '60')

@@ -34,6 +34,18 @@ export const accionesDePerfil = (k) => ({
     k.setE((s) => ({ ...s, perfil: p }))
   }),
 
+  // ¿Está libre este nombre de usuario? true / false, o null si no se pudo preguntar (sin conexión, o falta aplicar
+  // supabase/actualizacion-12.sql): ahí la base lo vuelve a revisar al guardar. No pasa por `accion` para no mostrar avisos
+  // mientras la persona todavía está escribiendo.
+  usuarioDisponible: async (usuario) => {
+    try {
+      const { data, error } = await supabase.rpc('usuario_disponible', { p_usuario: usuario })
+      return error ? null : !!data
+    } catch {
+      return null
+    }
+  },
+
   guardarMedida: k.accion('guardarMedida', async ({ date, weight_kg, waist_cm }) => {
     const fila = { user_id: k.uid, date, weight_kg: weight_kg || null, waist_cm: waist_cm || null }
     const [g] = ok(await supabase.from('measurements').upsert(fila, { onConflict: 'user_id,date' }).select())

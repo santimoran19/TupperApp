@@ -54,7 +54,7 @@ Cosas a saber:
 - **Al abrir, la app muestra un instante lo que tenía guardado en el teléfono y enseguida lo que trae la base.** Para que ninguna prueba lea lo viejo, `goto` y `reload` esperan solos a que estén los datos de la base (`apoyo.js`; la app lo deja marcado en `<html data-datos="base">`). Cuando la prueba sabe que eso no va a pasar (sin conexión, o con la base rechazando un cambio), se apaga con `ctx.sinEsperarDatos = true`.
 - **El captcha va prendido, con un Turnstile de mentira** (`apoyo.js`): el simulador exige una comprobación nueva en cada pedido de acceso, como Supabase con la protección activada. El servicio de contraseñas filtradas también está reemplazado: las pruebas no salen a internet.
 - **Capturas:** con `CAPTURAS=1` se guardan las pantallas en `pruebas/e2e/capturas/` (no se suben al repo). Sirve para mirar cómo quedó algo.
-- **Análisis con IA:** la función corre de verdad si tenés [Deno](https://deno.com) instalado; si no, esa parte se saltea y el resto corre igual. La lógica de la función se prueba siempre en `npm test`.
+- **Funciones del servidor (análisis con IA y entrar con el usuario):** corren de verdad si tenés [Deno](https://deno.com) instalado; si no, esas partes se saltean y el resto corre igual. La lógica de las funciones se prueba siempre en `npm test`. Si Deno no está en el `PATH`, pasale la ruta en la variable `DENO`.
 - Si una prueba falla, las siguientes probablemente también: mirá la primera que falló.
 
 ## Cuándo correrlas

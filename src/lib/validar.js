@@ -21,6 +21,7 @@ export const LIM = {
   liquido: [500, 6000],
   termo: [250, 3000],
   clave: [8, 72],
+  usuario: [3, 20],
 }
 
 const vacio = (v) => v === '' || v === null || v === undefined
@@ -264,6 +265,49 @@ export function requisitosClave(v, email = '') {
 export function errClave(v, email = '') {
   if ((v || '').length > LIM.clave[1]) return `La contraseña es demasiado larga (máximo ${LIM.clave[1]} caracteres).`
   return requisitosClave(v, email).every((r) => r.ok) ? null : 'La contraseña todavía no cumple los requisitos.'
+}
+
+// ---------- Nombre de usuario ----------
+// Es lo que se escribe para iniciar sesión (en vez del email), así que se cuida de más: solo letras sin tilde, números,
+// punto, guion y guion bajo (con eso no entra ningún símbolo raro, ni espacios, ni "@"), siempre en minúsculas.
+// La base de datos aplica las mismas reglas (supabase/actualizacion-12.sql): si cambiás una lista, cambiala en los dos
+// lugares (una prueba compara que sean iguales).
+// Palabras que no se pueden usar tal cual: nombres de la app o de quien la maneja, cargos, rutas de la app, nombres de
+// los servicios que usa y palabras que rompen programas (null, undefined...).
+export const USUARIOS_RESERVADOS = [
+  'admin', 'administrador', 'administrator', 'root', 'superuser', 'sudo', 'tupper', 'tuppers', 'soporte', 'support',
+  'ayuda', 'help', 'helpdesk', 'system', 'sistema', 'sys', 'api', 'www', 'web', 'mail', 'email', 'correo', 'postmaster',
+  'webmaster', 'hostmaster', 'security', 'seguridad', 'staff', 'moderador', 'moderator', 'mod', 'owner', 'dueno', 'null',
+  'undefined', 'none', 'nan', 'true', 'false', 'anonymous', 'anonimo', 'guest', 'invitado', 'test', 'prueba', 'demo',
+  'supabase', 'vercel', 'github', 'anthropic', 'claude', 'postgres', 'service_role', 'authenticated', 'anon', 'public',
+  'login', 'logout', 'signin', 'signup', 'register', 'registro', 'auth', 'oauth', 'config', 'configuracion', 'settings',
+  'perfil', 'profile', 'cuenta', 'account', 'user', 'users', 'usuario', 'usuarios', 'noreply', 'no-reply', 'info',
+  'contacto', 'contact', 'legal', 'terminos', 'privacidad', 'privacy', 'terms', 'billing', 'pagos', 'ventas', 'sales',
+  'bot', 'robot', 'official', 'oficial',
+] // prettier-ignore
+// Y lo que no puede aparecer en ningún lado del nombre, para que nadie se haga pasar por la app o por quien la maneja
+export const USUARIOS_PROHIBIDOS_EN_MEDIO = ['tupper', 'admin', 'soporte', 'support', 'staff', 'moderador', 'supabase']
+
+export const normalizarUsuario = (v) =>
+  String(v ?? '')
+    .trim()
+    .toLowerCase()
+
+export function errUsuario(v) {
+  const u = normalizarUsuario(v)
+  const [min, max] = LIM.usuario
+  if (!u) return 'Elegí un nombre de usuario.'
+  if (u.length < min) return `Tiene que tener al menos ${min} caracteres.`
+  if (u.length > max) return `Como mucho ${max} caracteres.`
+  if (/\s/.test(u)) return 'No puede tener espacios.'
+  if (/[^a-z0-9._-]/.test(u)) return 'Solo letras sin tilde, números, punto, guion y guion bajo.'
+  if (!/^[a-z0-9]/.test(u) || !/[a-z0-9]$/.test(u)) return 'Tiene que empezar y terminar con una letra o un número.'
+  if (/[._-]{2}/.test(u)) return 'No puede tener dos símbolos seguidos.'
+  if (!/[a-z]/.test(u)) return 'Tiene que tener al menos una letra.'
+  if (/\.(com|net|org|ar|app|io|dev|info|xyz)$/.test(u)) return 'No puede parecer una dirección de internet.'
+  if (USUARIOS_RESERVADOS.includes(u) || USUARIOS_PROHIBIDOS_EN_MEDIO.some((p) => u.includes(p)))
+    return 'Ese nombre no está disponible. Probá con otro.'
+  return null
 }
 
 // Rango aceptado para la fecha de nacimiento (entre 18 y 100 años)

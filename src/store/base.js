@@ -40,6 +40,7 @@ function mensajeDe(error, sinConexion, caido) {
   if (sinConexion) return SIN_CONEXION
   if (caido) return 'El servidor no está respondiendo. Probá de nuevo en un rato.'
   if (error.code === '23503') return 'Ese alimento o esa receta ya no existe. Cerrá la app, volvé a abrirla y probá de nuevo.'
+  if (error.code === '23505' && /username/i.test(error.message || '')) return 'Ese usuario ya lo tiene otra persona. Elegí otro.'
   if (error.code === '23514') return 'Hay un dato fuera de rango. Revisá las cantidades.'
   if (error.code === 'PGRST301' || /jwt expired/i.test(error.message || ''))
     return 'Se venció la sesión. Cerrá la app, volvé a abrirla y probá de nuevo.'
