@@ -38,6 +38,8 @@ npm run test:e2e    # la app entera en un navegador, contra un Supabase simulado
 
 Ninguna toca el proyecto real de Supabase. La primera vez, las de navegador piden bajar Chromium con `npx playwright install chromium`. El detalle está en `pruebas/LEEME.md`.
 
+**En GitHub** (`.github/workflows/pruebas.yml`) corren solas al subir algo: en cada push, el lint, el formato (`npx prettier --check .`), las pruebas de unidad y el build; y al subir a `main` (o a mano, desde la pestaña *Actions*), también las de navegador, con Deno para las funciones. Si algo falla, GitHub avisa por mail a quien hizo el push y la pestaña *Actions* muestra qué paso se rompió; en las de navegador se guardan las capturas por 7 días. No usan ninguna clave ni el Supabase real. Con el repo público es gratis; con el privado hay minutos gratis por mes (cada corrida completa gasta unos 15).
+
 ## Formato del código
 
 El formato lo pone Prettier (`.prettierrc.json`): `npm run format` deja todo el código igual, lo escriba quien lo escriba. En VS Code, con la extensión de Prettier instalada (la propone solo al abrir el proyecto), se formatea al guardar; así el editor no cambia los archivos por su cuenta con otro criterio. Los archivos que se generan con un script (`supabase/seed.sql`, `src/components/iconos.js`) y los datos de `scripts/seed-data.mjs` no se formatean (`.prettierignore`).

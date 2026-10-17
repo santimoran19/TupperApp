@@ -65,3 +65,5 @@ Cosas a saber:
 ## Cuándo correrlas
 
 Antes de cada `git push`: `npm run lint` y `npm test` siempre, y `npm run test:e2e` cuando el cambio toca pantallas o el guardado de datos.
+
+Después del push, GitHub las vuelve a correr solo (`.github/workflows/pruebas.yml`): lint, formato, unidad y build en cada push, y las de navegador al subir a `main`. Si llega un mail de que falló, abrí la pestaña *Actions* del repo, entrá a la corrida y mirá el primer paso en rojo; para repetirlo en tu compu, el mismo comando de esta guía.

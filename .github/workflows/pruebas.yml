@@ -1,0 +1,70 @@
+# Pruebas automáticas (T-02): corren solas cada vez que se sube algo a GitHub y avisan por mail si algo se rompió.
+#  - "rápidas" (unos 3 minutos), en cada push: lint, formato, pruebas de unidad y que la app compile.
+#  - "navegador" (unos 10 minutos), solo al subir a main o a mano: la app entera en un navegador contra el Supabase simulado.
+# No usan el Supabase real ni ninguna clave: las pruebas de la base corren en un Postgres en memoria y las de navegador contra un simulador.
+name: Pruebas
+
+on:
+  push:
+  workflow_dispatch: # también se puede lanzar a mano desde la pestaña Actions
+
+# Si se sube otra cosa mientras corre, se cancela la anterior en esa misma rama
+concurrency:
+  group: pruebas-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  rapidas:
+    name: Lint, formato, unidad y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Formato
+        run: npx prettier --check .
+      - name: Pruebas de unidad y de la base
+        run: npm test
+      - name: Build
+        run: npm run build
+        env:
+          # La app necesita estas dos para compilar; acá van de mentira (no se conecta a nada)
+          VITE_SUPABASE_URL: http://localhost:54321
+          VITE_SUPABASE_KEY: prueba
+
+  navegador:
+    name: Pruebas de navegador
+    needs: rapidas
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # Las funciones de Supabase (`entrar` y la de IA) se prueban corriendo de verdad en Deno
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Pruebas de navegador
+        run: npx playwright test
+      - name: Guardar lo que quedó si falló (capturas y registros)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultado-navegador
+          path: test-results/
+          retention-days: 7
