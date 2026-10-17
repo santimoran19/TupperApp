@@ -33,45 +33,43 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 **Después (P2)**
 3. F-19 · Gasto calórico y ejercicio (por fases; empezar por la 1, la 2 y la 4)
 4. F-18 · Registrarse e iniciar sesión con Google
-5. T-06 · Aviso de errores (va junto con S-05)
-6. S-05 · Revisión periódica
-7. F-01 · Escanear el código de barras (va junto con F-02)
-8. F-02 · Catálogo compartido de productos
-9. F-12 · Base propia de alimentos más grande
-10. IA-01 · Chat con IA (va junto con IA-02)
-11. IA-02 · Proveedor de respaldo
-12. F-04 · Vencimientos en la despensa
-13. D-07 · Revisión completa de accesibilidad
-14. L-04 · Consentimiento al registrarse
-15. C-05 · Opiniones desde la app
-16. T-03 · Pruebas en Safari
-17. T-04 · Base de pruebas aparte
-18. T-01 · Actualizar las herramientas
-19. F-06 · Recordatorios
+5. F-01 · Escanear el código de barras (va junto con F-02)
+6. F-02 · Catálogo compartido de productos
+7. F-12 · Base propia de alimentos más grande
+8. IA-01 · Chat con IA (va junto con IA-02)
+9. IA-02 · Proveedor de respaldo
+10. F-04 · Vencimientos en la despensa
+11. D-07 · Revisión completa de accesibilidad
+12. L-04 · Consentimiento al registrarse
+13. C-05 · Opiniones desde la app
+14. T-03 · Pruebas en Safari
+15. T-04 · Base de pruebas aparte
+16. T-01 · Actualizar las herramientas
+17. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-20. F-08 · Copiar un día entero
-21. D-06 · Deshacer en más lugares
-22. D-04 · Esqueletos de carga
-23. F-10 · Peso: gráfico y fecha estimada
-24. F-11 · Exportar el registro a planilla
-25. F-09 · Combos frecuentes
-26. F-13 · Categorías editables por el usuario
-27. D-08 · Revisión de los textos
-28. IA-04 · Cargar una receta desde un texto
-29. IA-03 · Foto de un plato
-30. C-06 · Métricas de uso
-31. T-05 · Partir `sincronizacion.js`
-32. T-07 · Mandar lo cargado sin conexión con la app cerrada
-33. S-06 · Verificación en dos pasos
-34. S-03 · Contraseñas filtradas también del lado de Supabase
+18. F-08 · Copiar un día entero
+19. D-06 · Deshacer en más lugares
+20. D-04 · Esqueletos de carga
+21. F-10 · Peso: gráfico y fecha estimada
+22. F-11 · Exportar el registro a planilla
+23. F-09 · Combos frecuentes
+24. F-13 · Categorías editables por el usuario
+25. D-08 · Revisión de los textos
+26. IA-04 · Cargar una receta desde un texto
+27. IA-03 · Foto de un plato
+28. C-06 · Métricas de uso
+29. T-05 · Partir `sincronizacion.js`
+30. T-07 · Mandar lo cargado sin conexión con la app cerrada
+31. S-06 · Verificación en dos pasos
+32. S-03 · Contraseñas filtradas también del lado de Supabase
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-35. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-36. C-02 · Dominio propio y página de presentación (va junto con C-03)
-37. C-01 · Planes y cobro (para empezar a cobrar)
-38. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-39. C-04 · Play Store (cuesta la cuenta de desarrollador)
+33. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+34. C-02 · Dominio propio y página de presentación (va junto con C-03)
+35. C-01 · Planes y cobro (para empezar a cobrar)
+36. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+37. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -132,7 +130,6 @@ Nada por ahora.
 
 - [ ] **S-03 · Contraseñas filtradas también del lado de Supabase** · P3 · S. Solo con el plan Pro; la app ya lo revisa por su cuenta.
 - [ ] **S-04 · Repo privado** · P1 · S. Al terminar la app, antes de venderla.
-- [ ] **S-05 · Revisión periódica** · P2 · S. Una vez por mes: avisos de seguridad del panel de Supabase, `npm audit` y que sigan andando el captcha y los topes de la base. Se puede dejar programado (ver T-06).
 - [ ] **S-06 · Verificación en dos pasos** · P3 · M. Opcional para quien la quiera (código de una app autenticadora). Supabase la trae.
 
 ## 5. Legal y datos personales
@@ -158,15 +155,21 @@ Nada por ahora.
 - [ ] **T-03 · Pruebas en Safari** · P2 · M. Hoy las pruebas de navegador corren solo en Chrome. Sumar WebKit, que es el motor de Safari, para encontrar antes los problemas de iPhone (ver V-01).
 - [ ] **T-04 · Base de pruebas aparte** · P2 · M. Un segundo proyecto de Supabase (el plan gratis permite dos) para probar cambios de la base antes de tocar la de producción.
 - [ ] **T-05 · Partir `sincronizacion.js`** · P3 · M. Quedó en unas 740 líneas. Separar la cola, la copia del teléfono y el envío, sin cambiar lo que hace.
-- [ ] **T-06 · Aviso de errores** · P2 · S. Una tarea programada que mire la tabla `eventos` una vez por día y te mande un resumen si aparecieron errores nuevos.
 - [ ] **T-07 · Mandar lo cargado sin conexión con la app cerrada** · P3 · M. Solo en Android: el navegador lo manda cuando vuelve la señal, aunque la app no esté abierta. En iPhone no existe.
 
 ---
 
 ## Hecho
 
+- **T-06 y S-05 · Avisos automáticos** (no cambia la app ni la base, no hay versión nueva). Dos tareas programadas que corren solas en la nube, de solo lectura, y mandan notificación al teléfono:
+  - *Aviso diario de errores* (todos los días 8:47, hora de Argentina): mira `eventos` de las últimas 24 horas con `tipo = 'error'`, agrupa por nombre, versión y pantalla. Si no hay errores no avisa nada; si hay, manda un resumen (total, cuántos usuarios y los más frecuentes).
+  - *Revisión mensual* (día 1 de cada mes, 10:12): avisos de seguridad y de rendimiento de Supabase (ERROR y WARN), tamaño de la base, filas de `eventos`, cantidad de usuarios, que las dos funciones estén activas y errores 4xx/5xx de las funciones en el último mes.
+  - Quedan fuera, porque desde la nube no se pueden mirar: `npm audit` (correrlo en la carpeta del repo), el captcha de Turnstile (probar un registro nuevo) y los límites del plan de Supabase. La revisión mensual te lo recuerda.
+  - Se pausan o cambian desde la lista de tareas programadas de la app de escritorio. Probado: la consulta del aviso diario corre bien contra la base real (hoy no hay errores en las últimas 24 horas).
+
 - **T-02 · Pruebas automáticas en cada push** (no cambia la app, no hay versión nueva). Nuevo `.github/workflows/pruebas.yml`: en cada push GitHub corre el lint, el formato, las pruebas de unidad y de la base, y el build; al subir a `main` (o a mano desde *Actions*) corre además las de navegador, con Deno para las funciones. Si falla, GitHub avisa por mail al que hizo el push. No usa claves ni el Supabase real; si se sube otra cosa a la misma rama mientras corre, cancela la anterior.
   - Probado acá en una copia limpia del repo, sin `node_modules` ni `.env` (como lo ve GitHub): `npm ci`, lint, formato, 238 pruebas de unidad, build y las 26 de navegador, todo en verde. Lo que no se pudo probar acá es GitHub mismo: la primera corrida se ve en la pestaña *Actions* del repo después del push.
+  - Primera corrida en GitHub (17/10/2026): verde, 6 min 25 s en total. Avisaba dos cosas, ya arregladas: las acciones corrían con Node 20 (en desuso; se pasaron a `checkout@v5`, `setup-node@v5` y `upload-artifact@v5`) y `ubuntu-latest` pasaba a Ubuntu 26 el 19/10/2026 (se fijó `ubuntu-24.04` para que no rompa solo la instalación de Chromium). Cuando se quiera pasar a una Ubuntu nueva, se cambia a propósito y se mira la corrida.
   - Costo: gratis con el repo público; con el privado (ver S-04) hay unos 2.000 minutos gratis por mes y una corrida completa gasta unos 15, así que alcanza para unos 130 pushes a `main`; los demás pushes gastan unos 3.
 - **S-02 · CORS de las funciones** (solo las funciones de Supabase; la app no cambia, no hay versión nueva). Las dos funciones (`analizar-semana`, versión 7, y `entrar`, versión 2) ya están publicadas en Supabase desde el 17/10/2026. Verificado desde un navegador: desde `tupperapp.vercel.app` contestan normal y desde otra página (`example.com`) el navegador las bloquea.
   - Las dos contestan solo a pedidos que vienen de `https://tupperapp.vercel.app`: a esa página le devuelven el permiso de CORS con su nombre (antes `*`) y a cualquier otra le contestan 403 sin procesar nada. Un pedido sin `Origin` (curl, otro servidor) sigue como siempre.

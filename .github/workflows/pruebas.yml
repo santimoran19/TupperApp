@@ -2,6 +2,8 @@
 #  - "rápidas" (unos 3 minutos), en cada push: lint, formato, pruebas de unidad y que la app compile.
 #  - "navegador" (unos 10 minutos), solo al subir a main o a mano: la app entera en un navegador contra el Supabase simulado.
 # No usan el Supabase real ni ninguna clave: las pruebas de la base corren en un Postgres en memoria y las de navegador contra un simulador.
+# Se fija Ubuntu 24.04 (no "latest") para que un cambio de versión del servidor de GitHub no rompa solo la instalación del navegador.
+# Las acciones están en versiones que corren con Node 24 (las anteriores avisaban que Node 20 queda en desuso).
 name: Pruebas
 
 on:
@@ -19,11 +21,11 @@ permissions:
 jobs:
   rapidas:
     name: Lint, formato, unidad y build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -45,11 +47,11 @@ jobs:
     name: Pruebas de navegador
     needs: rapidas
     if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -63,7 +65,7 @@ jobs:
         run: npx playwright test
       - name: Guardar lo que quedó si falló (capturas y registros)
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: resultado-navegador
           path: test-results/

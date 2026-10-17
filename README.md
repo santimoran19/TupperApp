@@ -195,6 +195,10 @@ from public.eventos order by created_at desc limit 100;
 
 Cada usuario puede agregar y leer solo lo suyo (sale en "Descargar mis datos"), nadie puede modificarlo ni borrarlo, hay un tope de 100 por usuario por día y se borra a los 90 días. El código está en `src/lib/eventos.js`.
 
+### Avisos automáticos
+
+Dos tareas programadas (se ven y se pausan desde la lista de tareas programadas de la app de escritorio), de solo lectura, que mandan notificación al teléfono: un aviso diario (8:47) con los errores nuevos de las últimas 24 horas, que no manda nada si no hubo, y una revisión mensual (día 1, 10:12) de los avisos de seguridad y rendimiento de Supabase, el tamaño de la base y el estado de las funciones. `npm audit` y el captcha se siguen mirando a mano.
+
 ## Carpetas
 
 ```
