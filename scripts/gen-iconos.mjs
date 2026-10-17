@@ -9,7 +9,7 @@ local_fire_department logout menu_book refresh remove restaurant search shopping
 swap_horiz takeout_dining trending_down trending_up wb_twilight
 glass_cup local_bar no_meals travel_explore undo water_drop
 bar_chart description download favorite history lock_reset mark_email_read person_remove replay visibility visibility_off
-cloud_off sync home group content_copy key`.split(/\s+/)
+cloud_off sync home group content_copy key share`.split(/\s+/)
 
 const carpeta = new URL('../node_modules/@material-symbols/svg-400/outlined/', import.meta.url)
 const trazo = (archivo) => readFileSync(new URL(archivo, carpeta), 'utf8').match(/ d="([^"]+)"/)[1]

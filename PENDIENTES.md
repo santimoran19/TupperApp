@@ -31,50 +31,49 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 2. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-3. F-05 · Compartir la lista de compras por WhatsApp
-4. F-19 · Gasto calórico y ejercicio (por fases; empezar por la 1, la 2 y la 4)
-5. F-18 · Registrarse e iniciar sesión con Google
-6. S-02 · CORS de la función de IA
-7. T-02 · Pruebas automáticas en cada push
-8. T-06 · Aviso de errores (va junto con S-05)
-9. S-05 · Revisión periódica
-10. F-01 · Escanear el código de barras (va junto con F-02)
-11. F-02 · Catálogo compartido de productos
-12. F-12 · Base propia de alimentos más grande
-13. IA-01 · Chat con IA (va junto con IA-02)
-14. IA-02 · Proveedor de respaldo
-15. F-04 · Vencimientos en la despensa
-16. D-07 · Revisión completa de accesibilidad
-17. L-04 · Consentimiento al registrarse
-18. C-05 · Opiniones desde la app
-19. T-03 · Pruebas en Safari
-20. T-04 · Base de pruebas aparte
-21. T-01 · Actualizar las herramientas
-22. F-06 · Recordatorios
+3. F-19 · Gasto calórico y ejercicio (por fases; empezar por la 1, la 2 y la 4)
+4. F-18 · Registrarse e iniciar sesión con Google
+5. S-02 · CORS de la función de IA
+6. T-02 · Pruebas automáticas en cada push
+7. T-06 · Aviso de errores (va junto con S-05)
+8. S-05 · Revisión periódica
+9. F-01 · Escanear el código de barras (va junto con F-02)
+10. F-02 · Catálogo compartido de productos
+11. F-12 · Base propia de alimentos más grande
+12. IA-01 · Chat con IA (va junto con IA-02)
+13. IA-02 · Proveedor de respaldo
+14. F-04 · Vencimientos en la despensa
+15. D-07 · Revisión completa de accesibilidad
+16. L-04 · Consentimiento al registrarse
+17. C-05 · Opiniones desde la app
+18. T-03 · Pruebas en Safari
+19. T-04 · Base de pruebas aparte
+20. T-01 · Actualizar las herramientas
+21. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-23. F-08 · Copiar un día entero
-24. D-06 · Deshacer en más lugares
-25. D-04 · Esqueletos de carga
-26. F-10 · Peso: gráfico y fecha estimada
-27. F-11 · Exportar el registro a planilla
-28. F-09 · Combos frecuentes
-29. F-13 · Categorías editables por el usuario
-30. D-08 · Revisión de los textos
-31. IA-04 · Cargar una receta desde un texto
-32. IA-03 · Foto de un plato
-33. C-06 · Métricas de uso
-34. T-05 · Partir `sincronizacion.js`
-35. T-07 · Mandar lo cargado sin conexión con la app cerrada
-36. S-06 · Verificación en dos pasos
-37. S-03 · Contraseñas filtradas también del lado de Supabase
+22. F-08 · Copiar un día entero
+23. D-06 · Deshacer en más lugares
+24. D-04 · Esqueletos de carga
+25. F-10 · Peso: gráfico y fecha estimada
+26. F-11 · Exportar el registro a planilla
+27. F-09 · Combos frecuentes
+28. F-13 · Categorías editables por el usuario
+29. D-08 · Revisión de los textos
+30. IA-04 · Cargar una receta desde un texto
+31. IA-03 · Foto de un plato
+32. C-06 · Métricas de uso
+33. T-05 · Partir `sincronizacion.js`
+34. T-07 · Mandar lo cargado sin conexión con la app cerrada
+35. S-06 · Verificación en dos pasos
+36. S-03 · Contraseñas filtradas también del lado de Supabase
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-38. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-39. C-02 · Dominio propio y página de presentación (va junto con C-03)
-40. C-01 · Planes y cobro (para empezar a cobrar)
-41. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-42. C-04 · Play Store (cuesta la cuenta de desarrollador)
+37. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+38. C-02 · Dominio propio y página de presentación (va junto con C-03)
+39. C-01 · Planes y cobro (para empezar a cobrar)
+40. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+41. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -92,7 +91,6 @@ Nada por ahora.
   - Si el producto no está en Open Food, se ofrece cargarlo a mano. Conviene hacerlo junto con F-02.
 - [ ] **F-02 · Catálogo compartido de productos** · P2 · M. Cada producto que alguien encuentra en Open Food o carga a mano queda guardado para todos, así el segundo ya no depende de Open Food. Necesita una tabla nueva y algún control para que nadie cargue datos falsos (por ejemplo, que un producto recién cargado lo vea solo quien lo cargó hasta que lo usen varios).
 - [ ] **F-04 · Vencimientos en la despensa** · P2 · M. Fecha de vencimiento opcional al comprar o cargar, aviso de "usá esto primero" y que las recetas sugeridas prioricen lo que vence antes.
-- [ ] **F-05 · Compartir la lista de compras por WhatsApp** · P2 · S. Botón que arma el texto de la lista y abre el menú de compartir del teléfono (o WhatsApp directo).
 - [ ] **F-06 · Recordatorios** · P2 · L. Tomar agua, comidas sin registrar y el resumen del domingo.
   - Necesita notificaciones del navegador y algo del lado del servidor que las mande a la hora.
   - En iPhone solo funcionan con la app instalada en la pantalla de inicio.
@@ -171,6 +169,10 @@ Nada por ahora.
 
 ## Hecho
 
+- **1.20.0** (solo la app, sin cambios en Supabase):
+  - F-05: en Lista de compras, "Compartir" arma el texto de lo que hay para comprar (lo que falta para el plan y lo anotado a mano), agrupado por categoría y con el formato de WhatsApp (negrita en el título y las categorías), por ejemplo `• Arroz: 500 g`. En el teléfono abre el menú de compartir (WhatsApp, Notas, mail, etc.); donde no existe (la compu) abre WhatsApp con el texto ya escrito. Al lado, un botón para copiar la lista. En un hogar el título lleva el nombre del hogar. Sin nada para comprar los botones no aparecen.
+  - Pruebas nuevas: `compartir` (unidad, 5 casos) y la de navegador `20-compartir-lista` (menú del teléfono, cancelar, WhatsApp directo, copiar y pantallas angostas). Se sumó el ícono `share` a los íconos de la app.
+- **17/10/2026, por tu lado:** borradas las funciones de plantilla `super-service` y `super-task` de Supabase y rotada la Secret Key de Turnstile.
 - **1.19.0** (solo la app, sin cambios en Supabase):
   - F-07: selector de porciones en el detalle de la receta (− y +, de a 1 y por debajo de 1 a la mitad, de 0,25 a 50). Recalcula los ingredientes (las unidades quedan en fracciones: 0,5 huevo), los tildes de lo que alcanza con la despensa y lo que "Anotar lo que falta en la lista" agrega, y "Cocinar" arranca con ese número. Arranca en lo que rinde la receta y vuelve ahí al abrir otra. Es solo una vista: no cambia la receta guardada ni nada de lo cargado.
   - Cambio chico: antes el tilde decía si alcanzaba para 1 porción; ahora dice si alcanza para las porciones que se están mirando (al entrar, las de la receta).
@@ -202,7 +204,7 @@ Nada por ahora.
   - Seguridad: solo letras sin tilde, números, punto, guion y guion bajo (de 3 a 20); no puede empezar ni terminar con símbolo, ni tener dos símbolos seguidos, ni ser solo números, ni parecer una dirección de internet. Se bloquean palabras reservadas (admin, root, tupper, soporte, postgres, null...) y los que llevan adentro tupper, admin, soporte, support, staff, moderador o supabase. Se repite el chequeo en la base (`actualizacion-12.sql`), así que no se puede saltear hablándole directo a Supabase. No se repite sin importar mayúsculas y se guarda en minúsculas.
   - Si se agrega una palabra reservada más adelante, nadie pierde el usuario que ya tiene (la base solo juzga un nombre cuando cambia).
   - La Política de privacidad ahora nombra el usuario entre los datos del perfil. Pruebas nuevas: `nombre-de-usuario` (reglas en la app y la base, y que las dos listas sean iguales), `entrar` y la de navegador `16-nombre-de-usuario`. Ahora las pruebas corren también la función `entrar` de verdad (con Deno).
-  - La función usa las claves de siempre de Supabase y, si las apagan a fin de 2026, las nuevas. Las dos funciones de plantilla `super-service` y `super-task` que quedaron en el panel hay que borrarlas (no hacen nada).
+  - La función usa las claves de siempre de Supabase y, si las apagan a fin de 2026, las nuevas. Las dos funciones de plantilla `super-service` y `super-task` que quedaron en el panel ya se borraron (17/10/2026).
   - Límite a vigilar: Supabase limita los inicios de sesión por IP y con la función todos salen desde el servidor; con pocos usuarios no se nota (detalle en `supabase/functions/LEEME.md`).
 - **1.14.0** (no hay que correr nada en Supabase):
   - F-16: el "Líquido" del día ya no suma las bebidas azucaradas. Una bebida con 4 g o más de hidratos cada 100 ml (gaseosa común, jugo, energizante, chocolatada) sigue sumando sus calorías al día pero no cuenta para la meta de líquido. Cuentan el agua, el mate, las infusiones, la soda, las bebidas sin azúcar y la leche. El alcohol sigue sin contar.

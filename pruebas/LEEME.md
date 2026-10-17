@@ -21,6 +21,7 @@ Tarda unos segundos y no abre ningún navegador. Corre todo lo que hay en `prueb
 | `hogares.test.js` | Los hogares (`actualizacion-13.sql`) contra la base de verdad: armar uno, unirse con el código (se suma lo de cada uno y lo suyo queda intacto), que cada uno vea lo mismo y nadie más vea nada, sacar a alguien, irse con una copia y un respaldo, relevo de quien lo armó, máximo de personas, código que se renueva y se apaga, límite de intentos, borrar cuentas (que no quede nada suelto) y que quien nunca entró a un hogar se comporte como siempre. |
 | `recorrido.test.js` | El recorrido inicial (`src/lib/recorrido.js`): que los 34 pasos estén completos, que cada ancla `data-tour` exista en su pantalla, que los textos nombren botones reales, cuándo se muestra y se borra la marca, y la geometría del cartel (arriba, abajo, al costado). |
 | `porciones.test.js` | Ver una receta para otras porciones (F-07): los pasos del selector (de a 1, y por debajo de 1 a la mitad), los topes, cómo se escriben las cantidades en unidades fraccionadas y lo que falta según las porciones que se miran. |
+| `compartir.test.js` | La lista de compras hecha texto para WhatsApp (F-05): agrupada por categoría, con las cantidades de la app, el título con el nombre del hogar y el enlace de WhatsApp bien escapado. |
 
 Si agregás una actualización de la base (`supabase/actualizacion-10.sql`, por ejemplo), sumala a la lista `ARCHIVOS` de `postgres.js` (el Postgres en memoria que comparten las pruebas de la base).
 

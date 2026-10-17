@@ -7,6 +7,7 @@ import { useDatos } from '../store/Datos'
 import { fechaCorta, hoy, mesDe, nombreMes } from '../lib/fechas'
 import { cantidadTexto, pasoDe, redondear, unidadDe } from '../lib/nutricion'
 import { convertir, nombreCorto } from '../lib/equivalencias'
+import { enlaceWhatsApp, textoDeLista } from '../lib/compartir'
 import { LIM, errCantidad, errNumero, maxEnStock } from '../lib/validar'
 
 // Redondea lo que falta a una cantidad razonable de comprar
@@ -38,6 +39,25 @@ export default function Compras() {
   const quienCompro = (c) => {
     const nombre = c.comprado_por && c.comprado_por !== d.usuario.id ? d.hogar?.miembros.find((m) => m.id === c.comprado_por)?.nombre : null
     return nombre ? `compró ${nombre}` : null
+  }
+  const texto = textoDeLista([...delPlan, ...manuales], { hogar: d.hogar?.nombre })
+  // El menú de compartir del teléfono si existe; si no (la compu), WhatsApp directo con el texto escrito
+  async function compartir() {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'Lista de compras', text: texto })
+      } catch (e) {
+        if (e?.name !== 'AbortError') window.open(enlaceWhatsApp(texto), '_blank', 'noopener')
+      }
+    } else window.open(enlaceWhatsApp(texto), '_blank', 'noopener')
+  }
+  async function copiar() {
+    try {
+      await navigator.clipboard.writeText(texto)
+      d.avisar('Lista copiada')
+    } catch {
+      d.avisar('No se pudo copiar la lista', 'error')
+    }
   }
   const gasto = comprasMes.reduce((s, c) => s + Number(c.price), 0)
 
@@ -101,10 +121,22 @@ export default function Compras() {
 
         <div className="xl:col-start-1 xl:row-start-1 xl:row-span-2 min-w-0">
           <div className="flex items-center justify-between mb-2" data-tour="com-lista">
-            <h2 className="text-lg font-semibold">Para comprar</h2>
-            <button onClick={() => setAgregando(true)} className="btn-chico bg-verde-suave text-verde-texto">
-              <Icono n="add" size={16} /> Anotar
-            </button>
+            <h2 className="text-lg font-semibold min-w-0 truncate">Para comprar</h2>
+            <div className="flex items-center gap-2 shrink-0">
+              {texto && (
+                <>
+                  <button onClick={copiar} className="toque w-8 h-8 rounded-full bg-campo text-gris" aria-label="Copiar la lista">
+                    <Icono n="content_copy" size={18} />
+                  </button>
+                  <button onClick={compartir} className="btn-chico bg-campo text-tinta">
+                    <Icono n="share" size={16} /> <span className="max-[380px]:sr-only">Compartir</span>
+                  </button>
+                </>
+              )}
+              <button onClick={() => setAgregando(true)} className="btn-chico bg-verde-suave text-verde-texto">
+                <Icono n="add" size={16} /> Anotar
+              </button>
+            </div>
           </div>
           {delPlan.length + manuales.length === 0 ? (
             <Vacio icono="shopping_cart" titulo="No falta nada" texto="Cuando al plan le falte un ingrediente, aparece acá solo." />
