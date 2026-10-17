@@ -11,6 +11,8 @@ const PUERTO = 54321
 // Las funciones de verdad, corriendo en Deno: cada una en su puerto
 const FUNCIONES_REALES = { 'analizar-semana': 8000, entrar: 8001 }
 const CLAVE_SERVICIO = 'service-role-de-prueba' // la que usa la función `entrar` para mirar usuarios, saltándose los permisos por fila
+// Las funciones solo contestan a páginas permitidas (S-02): en las pruebas, la de la app. La prueba 21 llama a las funciones directo.
+const ORIGEN_DE_LA_APP = 'http://localhost:5199'
 
 const db = {
   profiles: [],
@@ -976,13 +978,18 @@ async function levantarFunciones() {
   }
   ;[funcion.activa, funcion.entrar] = await Promise.all([
     arrancar('analizar-semana', FUNCIONES_REALES['analizar-semana'], {
+      ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
       IA_PROVEEDOR: '',
       GROQ_API_KEY: 'clave-de-prueba',
       GROQ_URL: base + '/groq/openai/v1/chat/completions',
       ANTHROPIC_API_KEY: 'clave-de-prueba',
       ANTHROPIC_URL: base + '/anthropic/v1/messages',
     }),
-    arrancar('entrar', FUNCIONES_REALES.entrar, { SUPABASE_ANON_KEY: 'anon-de-prueba', SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO }),
+    arrancar('entrar', FUNCIONES_REALES.entrar, {
+      ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
+      SUPABASE_ANON_KEY: 'anon-de-prueba',
+      SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO,
+    }),
   ])
 }
 

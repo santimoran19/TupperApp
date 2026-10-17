@@ -135,3 +135,26 @@ export function interpretar(respuesta: string) {
   if (!limpio) throw new Error('respuesta vacía')
   return { resumen: limpio.slice(0, 1500), bien: [], ajustar: [], acciones: [] }
 }
+
+// ---- Desde qué páginas se puede llamar a la función (CORS)
+// Solo la app. Otras páginas (o un servidor de pruebas) se agregan con el secreto ORIGENES_PERMITIDOS, separadas por coma
+// (por ejemplo: https://tupperapp.vercel.app,https://mi-dominio.com): se cambia en el panel de Supabase, sin publicar la función.
+export const ORIGEN_DE_LA_APP = 'https://tupperapp.vercel.app'
+
+export function origenesPermitidos(valor: string | null | undefined): string[] {
+  const lista = (valor ?? '')
+    .split(',')
+    .map((o) => o.trim().replace(/\/+$/, ''))
+    .filter(Boolean)
+  return lista.length ? lista : [ORIGEN_DE_LA_APP]
+}
+
+// Un navegador siempre manda "Origin" cuando una página llama a otra. Si no viene (curl, otro servidor) no hay página de por
+// medio y la función sigue como siempre: lo que protege es el JWT, la contraseña y el captcha, no el CORS.
+export const origenAjeno = (origen: string | null, permitidos: string[]) => !!origen && !permitidos.includes(origen)
+
+// Los encabezados de CORS para quien llama. Solo se le abre la puerta a un origen permitido (nunca "*").
+export function encabezadosCors(origen: string | null, permitidos: string[], cabeceras: string): Record<string, string> {
+  const base: Record<string, string> = { 'Access-Control-Allow-Headers': cabeceras, 'Access-Control-Allow-Methods': 'POST, OPTIONS', Vary: 'Origin' }
+  return origen && permitidos.includes(origen) ? { ...base, 'Access-Control-Allow-Origin': origen } : base
+}

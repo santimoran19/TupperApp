@@ -33,47 +33,46 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 **Después (P2)**
 3. F-19 · Gasto calórico y ejercicio (por fases; empezar por la 1, la 2 y la 4)
 4. F-18 · Registrarse e iniciar sesión con Google
-5. S-02 · CORS de la función de IA
-6. T-02 · Pruebas automáticas en cada push
-7. T-06 · Aviso de errores (va junto con S-05)
-8. S-05 · Revisión periódica
-9. F-01 · Escanear el código de barras (va junto con F-02)
-10. F-02 · Catálogo compartido de productos
-11. F-12 · Base propia de alimentos más grande
-12. IA-01 · Chat con IA (va junto con IA-02)
-13. IA-02 · Proveedor de respaldo
-14. F-04 · Vencimientos en la despensa
-15. D-07 · Revisión completa de accesibilidad
-16. L-04 · Consentimiento al registrarse
-17. C-05 · Opiniones desde la app
-18. T-03 · Pruebas en Safari
-19. T-04 · Base de pruebas aparte
-20. T-01 · Actualizar las herramientas
-21. F-06 · Recordatorios
+5. T-02 · Pruebas automáticas en cada push
+6. T-06 · Aviso de errores (va junto con S-05)
+7. S-05 · Revisión periódica
+8. F-01 · Escanear el código de barras (va junto con F-02)
+9. F-02 · Catálogo compartido de productos
+10. F-12 · Base propia de alimentos más grande
+11. IA-01 · Chat con IA (va junto con IA-02)
+12. IA-02 · Proveedor de respaldo
+13. F-04 · Vencimientos en la despensa
+14. D-07 · Revisión completa de accesibilidad
+15. L-04 · Consentimiento al registrarse
+16. C-05 · Opiniones desde la app
+17. T-03 · Pruebas en Safari
+18. T-04 · Base de pruebas aparte
+19. T-01 · Actualizar las herramientas
+20. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-22. F-08 · Copiar un día entero
-23. D-06 · Deshacer en más lugares
-24. D-04 · Esqueletos de carga
-25. F-10 · Peso: gráfico y fecha estimada
-26. F-11 · Exportar el registro a planilla
-27. F-09 · Combos frecuentes
-28. F-13 · Categorías editables por el usuario
-29. D-08 · Revisión de los textos
-30. IA-04 · Cargar una receta desde un texto
-31. IA-03 · Foto de un plato
-32. C-06 · Métricas de uso
-33. T-05 · Partir `sincronizacion.js`
-34. T-07 · Mandar lo cargado sin conexión con la app cerrada
-35. S-06 · Verificación en dos pasos
-36. S-03 · Contraseñas filtradas también del lado de Supabase
+21. F-08 · Copiar un día entero
+22. D-06 · Deshacer en más lugares
+23. D-04 · Esqueletos de carga
+24. F-10 · Peso: gráfico y fecha estimada
+25. F-11 · Exportar el registro a planilla
+26. F-09 · Combos frecuentes
+27. F-13 · Categorías editables por el usuario
+28. D-08 · Revisión de los textos
+29. IA-04 · Cargar una receta desde un texto
+30. IA-03 · Foto de un plato
+31. C-06 · Métricas de uso
+32. T-05 · Partir `sincronizacion.js`
+33. T-07 · Mandar lo cargado sin conexión con la app cerrada
+34. S-06 · Verificación en dos pasos
+35. S-03 · Contraseñas filtradas también del lado de Supabase
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-37. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-38. C-02 · Dominio propio y página de presentación (va junto con C-03)
-39. C-01 · Planes y cobro (para empezar a cobrar)
-40. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-41. C-04 · Play Store (cuesta la cuenta de desarrollador)
+36. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+37. C-02 · Dominio propio y página de presentación (va junto con C-03)
+38. C-01 · Planes y cobro (para empezar a cobrar)
+39. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+40. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -132,7 +131,6 @@ Nada por ahora.
 
 ## 4. Seguridad
 
-- [ ] **S-02 · CORS de la función de IA** · P2 · S. Hoy acepta pedidos de cualquier página (`*`); dejar solo el dominio de la app.
 - [ ] **S-03 · Contraseñas filtradas también del lado de Supabase** · P3 · S. Solo con el plan Pro; la app ya lo revisa por su cuenta.
 - [ ] **S-04 · Repo privado** · P1 · S. Al terminar la app, antes de venderla.
 - [ ] **S-05 · Revisión periódica** · P2 · S. Una vez por mes: avisos de seguridad del panel de Supabase, `npm audit` y que sigan andando el captcha y los topes de la base. Se puede dejar programado (ver T-06).
@@ -169,6 +167,11 @@ Nada por ahora.
 
 ## Hecho
 
+- **S-02 · CORS de las funciones** (solo las funciones de Supabase; la app no cambia, no hay versión nueva). Las dos funciones (`analizar-semana`, versión 7, y `entrar`, versión 2) ya están publicadas en Supabase desde el 17/10/2026. Verificado desde un navegador: desde `tupperapp.vercel.app` contestan normal y desde otra página (`example.com`) el navegador las bloquea.
+  - Las dos contestan solo a pedidos que vienen de `https://tupperapp.vercel.app`: a esa página le devuelven el permiso de CORS con su nombre (antes `*`) y a cualquier otra le contestan 403 sin procesar nada. Un pedido sin `Origin` (curl, otro servidor) sigue como siempre.
+  - Para sumar otro dominio (o probar desde `localhost` contra el Supabase real) se carga el secreto `ORIGENES_PERMITIDOS` en Supabase, sin volver a publicar. Detalle en `supabase/functions/LEEME.md`.
+  - Ojo: las previsualizaciones de Vercel y `npm run dev` contra el Supabase real dejan de andar hasta sumarlas en ese secreto.
+  - Pruebas nuevas: `cors` (unidad, 10 casos, las dos funciones) y la de navegador `21-cors-funciones` (con las funciones de verdad en Deno: la app sí, otra página no, y sin `Origin` pasa).
 - **1.20.0** (solo la app, sin cambios en Supabase):
   - F-05: en Lista de compras, "Compartir" arma el texto de lo que hay para comprar (lo que falta para el plan y lo anotado a mano), agrupado por categoría y con el formato de WhatsApp (negrita en el título y las categorías), por ejemplo `• Arroz: 500 g`. En el teléfono abre el menú de compartir (WhatsApp, Notas, mail, etc.); donde no existe (la compu) abre WhatsApp con el texto ya escrito. Al lado, un botón para copiar la lista. En un hogar el título lleva el nombre del hogar. Sin nada para comprar los botones no aparecen.
   - Pruebas nuevas: `compartir` (unidad, 5 casos) y la de navegador `20-compartir-lista` (menú del teléfono, cancelar, WhatsApp directo, copiar y pantallas angostas). Se sumó el ícono `share` a los íconos de la app.

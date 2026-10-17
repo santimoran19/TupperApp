@@ -8,15 +8,12 @@
 // Se publica SIN verificación de JWT: quien inicia sesión todavía no tiene ninguno. No hace falta: la función no hace
 // nada privilegiado si no llega la contraseña correcta, y el pedido lleva el captcha igual que el del email.
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { codigoDeError, EMAIL_DE_MENTIRA, FORMATO_USUARIO, leerPedido } from './logica.ts'
+import { codigoDeError, EMAIL_DE_MENTIRA, encabezadosCors, FORMATO_USUARIO, leerPedido, origenAjeno, origenesPermitidos } from './logica.ts'
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-api-version',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+const CABECERAS = 'authorization, x-client-info, apikey, content-type, x-supabase-api-version'
+const PERMITIDOS = origenesPermitidos(Deno.env.get('ORIGENES_PERMITIDOS'))
 const responder = (estado: number, cuerpo: unknown) =>
-  new Response(JSON.stringify(cuerpo), { status: estado, headers: { ...CORS, 'Content-Type': 'application/json' } })
+  new Response(JSON.stringify(cuerpo), { status: estado, headers: { 'Content-Type': 'application/json' } })
 
 // Las claves del proyecto: las de siempre si están y, si no, las nuevas (vienen en un JSON con el nombre de cada una)
 const nuevas = (nombre: string): string => {
@@ -31,8 +28,17 @@ const claveSecreta = () => Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || nuevas('
 
 const sinSesion = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } }
 
+// Antes de nada: desde otra página no se contesta, y a las permitidas se les agregan los encabezados de CORS
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  const origen = req.headers.get('Origin')
+  if (origenAjeno(origen, PERMITIDOS)) return responder(403, { codigo: 'origen' })
+  const respuesta = await manejar(req)
+  for (const [k, v] of Object.entries(encabezadosCors(origen, PERMITIDOS, CABECERAS))) respuesta.headers.set(k, v)
+  return respuesta
+})
+
+async function manejar(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') return new Response('ok')
   if (req.method !== 'POST') return responder(405, { codigo: 'metodo' })
   try {
     const pedido = leerPedido(await req.json().catch(() => null))
@@ -65,4 +71,4 @@ Deno.serve(async (req) => {
     console.error('entrar', err instanceof Error ? err.message : err)
     return responder(500, { codigo: 'error' })
   }
-})
+}

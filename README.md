@@ -110,6 +110,8 @@ La función que consulta a la IA está en `supabase/functions/analizar-semana/`;
 
 La función que deja iniciar sesión con el nombre de usuario está en `supabase/functions/entrar/`; hay que publicarla **sin verificación de JWT** (`supabase functions deploy entrar --no-verify-jwt`; también está explicado en `supabase/functions/LEEME.md`). Sin ella, escribir un usuario en la pantalla de acceso avisa que todavía no está disponible, y entrar con el email sigue andando igual.
 
+Las dos funciones solo contestan a pedidos que vienen de `https://tupperapp.vercel.app` (CORS cerrado, más un rechazo 403 para otras páginas). Para sumar otro dominio o probar desde `localhost` contra el Supabase real, se carga el secreto `ORIGENES_PERMITIDOS` (detalle en `supabase/functions/LEEME.md`).
+
 `scripts/seed-data.mjs` es de donde sale el seed. Para sumar alimentos o recetas base, editá ese archivo, corré `npm run seed` y ejecutá el SQL en Supabase.
 
 Cada registro del diario guarda cuánto descontó de la despensa (columna `descontado`, ver `src/lib/ajuste.js`): así, al cambiar la cantidad o borrarlo, la despensa se ajusta por la diferencia en un solo paso (`editar_registro` y `borrar_registro`). Los registros anteriores a la versión 1.10 no tienen ese dato: al editarlos solo se corrige el diario.

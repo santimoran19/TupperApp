@@ -4,14 +4,11 @@
 // Necesita la clave de un proveedor de IA como secreto: GROQ_API_KEY o ANTHROPIC_API_KEY (ver proveedores.ts).
 // Opcionales: IA_PROVEEDOR, GROQ_MODEL, ANTHROPIC_MODEL e IA_LIMITE_DIARIO.
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { armarDatos, esFecha, INSTRUCCIONES, interpretar, lunesDe, sumarDias } from './logica.ts'
+import { armarDatos, encabezadosCors, esFecha, INSTRUCCIONES, interpretar, lunesDe, origenAjeno, origenesPermitidos, sumarDias } from './logica.ts'
 import { proveedor } from './proveedores.ts'
 
-const CORS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
-}
+const CABECERAS = 'authorization, x-client-info, apikey, content-type'
+const PERMITIDOS = origenesPermitidos(Deno.env.get('ORIGENES_PERMITIDOS'))
 // Los dos topes que pone la base (supabase/actualizacion-8.sql): cuántos análisis guarda por cuenta, por día y en total.
 // Acá se corta antes de consultar al modelo; si no, se pagaría la consulta y después la base no dejaría guardarla.
 const TOPE_DIARIO_BASE = 10
@@ -20,11 +17,20 @@ const LIMITE_DIARIO = Math.min(Number(Deno.env.get('IA_LIMITE_DIARIO')) || 3, TO
 const MINIMO_DIAS = 2
 
 const responder = (estado: number, cuerpo: unknown) =>
-  new Response(JSON.stringify(cuerpo), { status: estado, headers: { ...CORS, 'Content-Type': 'application/json' } })
+  new Response(JSON.stringify(cuerpo), { status: estado, headers: { 'Content-Type': 'application/json' } })
 const fallo = (estado: number, codigo: string, mensaje: string) => responder(estado, { codigo, mensaje })
 
+// Antes de nada: desde otra página no se contesta, y a las permitidas se les agregan los encabezados de CORS
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS })
+  const origen = req.headers.get('Origin')
+  if (origenAjeno(origen, PERMITIDOS)) return fallo(403, 'origen', 'Pedido no permitido desde esta página.')
+  const respuesta = await manejar(req)
+  for (const [k, v] of Object.entries(encabezadosCors(origen, PERMITIDOS, CABECERAS))) respuesta.headers.set(k, v)
+  return respuesta
+})
+
+async function manejar(req: Request): Promise<Response> {
+  if (req.method === 'OPTIONS') return new Response('ok')
   if (req.method !== 'POST') return fallo(405, 'metodo', 'Método no permitido.')
   try {
     // ---- Quién llama
@@ -103,4 +109,4 @@ Deno.serve(async (req) => {
     const cortado = err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')
     return fallo(cortado ? 504 : 500, cortado ? 'demora' : 'error', cortado ? 'La IA tardó demasiado en responder. Probá de nuevo.' : 'Algo salió mal al generar el análisis.')
   }
-})
+}
