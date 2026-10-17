@@ -1,5 +1,5 @@
 // Piezas chicas de interfaz que se usan en todas las pantallas.
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { redondear } from '../lib/nutricion'
 import { ICONOS } from './iconos'
 
@@ -20,21 +20,67 @@ export function Icono({ n, className = '', lleno = false, size = 22 }) {
   )
 }
 
-// Hoja que sube desde abajo (para formularios cortos y selectores)
+// Hoja que sube desde abajo (para formularios cortos y selectores).
+// Se cierra con Escape, el foco queda adentro mientras está abierta (Tab da la vuelta) y al cerrarse vuelve al botón que la abrió.
+const FOCUSABLES =
+  'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
 export function Hoja({ titulo, onCerrar, children }) {
+  const panel = useRef(null)
+  const cerrar = useRef(onCerrar)
+  // Se guarda al armar la hoja, antes de que algún campo de adentro se quede con el foco
+  const quien = useRef(null)
+  if (quien.current === null) quien.current = document.activeElement || false
+  cerrar.current = onCerrar
   useEffect(() => {
+    const abridor = quien.current
     document.body.style.overflow = 'hidden'
+    if (!panel.current?.contains(document.activeElement)) panel.current?.focus({ preventScroll: true })
+    const tecla = (ev) => {
+      // Si hay un diálogo de confirmación arriba, la tecla es de él
+      if (document.querySelector('[role="alertdialog"]')) return
+      if (ev.key === 'Escape') {
+        ev.preventDefault()
+        cerrar.current()
+        return
+      }
+      if (ev.key !== 'Tab' || !panel.current) return
+      const items = [...panel.current.querySelectorAll(FOCUSABLES)].filter((el) => el.offsetParent !== null)
+      if (items.length === 0) {
+        ev.preventDefault()
+        return
+      }
+      const primero = items[0]
+      const ultimo = items[items.length - 1]
+      const actual = document.activeElement
+      if (ev.shiftKey && (actual === primero || actual === panel.current || !panel.current.contains(actual))) {
+        ev.preventDefault()
+        ultimo.focus()
+      } else if (!ev.shiftKey && (actual === ultimo || !panel.current.contains(actual))) {
+        ev.preventDefault()
+        primero.focus()
+      }
+    }
+    document.addEventListener('keydown', tecla)
     return () => {
+      document.removeEventListener('keydown', tecla)
       document.body.style.overflow = ''
+      if (abridor && abridor !== document.body && document.contains(abridor)) abridor.focus({ preventScroll: true })
     }
   }, [])
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center lg:items-center lg:p-6">
       <div className="absolute inset-0 bg-black/50" onClick={onCerrar} />
-      <div className="relative w-full max-w-[440px] lg:max-w-[560px] max-h-[88dvh] overflow-y-auto bg-superficie rounded-t-3xl lg:rounded-3xl shadow-flotante p-5 fin-hoja">
+      <div
+        ref={panel}
+        role="dialog"
+        aria-modal="true"
+        aria-label={titulo}
+        tabIndex={-1}
+        className="relative w-full max-w-[440px] lg:max-w-[560px] max-h-[88dvh] overflow-y-auto bg-superficie rounded-t-3xl lg:rounded-3xl shadow-flotante p-5 fin-hoja outline-none"
+      >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{titulo}</h2>
-          <button onClick={onCerrar} className="w-9 h-9 rounded-full bg-campo flex items-center justify-center" aria-label="Cerrar">
+          <button onClick={onCerrar} className="toque w-9 h-9 rounded-full bg-campo flex items-center justify-center" aria-label="Cerrar">
             <Icono n="close" size={20} />
           </button>
         </div>

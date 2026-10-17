@@ -237,6 +237,21 @@
     @apply inline-flex items-center justify-center gap-1 rounded-full px-3.5 h-9 font-semibold text-[13px] transition active:scale-[0.98] disabled:opacity-50;
   }
 
+  /* Botón de solo icono (D-02): se ve del tamaño que tenga, pero el área que responde al dedo mide al menos 44 px */
+  .toque {
+    @apply relative;
+  }
+
+  .toque::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: max(100%, 44px);
+    height: max(100%, 44px);
+    transform: translate(-50%, -50%);
+  }
+
   .campo {
     @apply w-full h-12 rounded-xl bg-campo px-4 outline-none border-[1.5px] border-transparent focus:bg-superficie focus:border-verde-medio placeholder:text-gris;
   }

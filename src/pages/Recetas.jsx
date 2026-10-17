@@ -146,7 +146,7 @@ export default function Recetas() {
               <button
                 onClick={(ev) => favorita(ev, r)}
                 aria-label={d.favoritas.has(r.id) ? `Quitar ${r.name} de favoritas` : `Marcar ${r.name} como favorita`}
-                className={`w-9 h-9 -mt-1.5 -mr-1.5 rounded-full flex items-center justify-center ${d.favoritas.has(r.id) ? 'text-coral-oscuro' : 'text-gris/80'}`}
+                className={`toque w-9 h-9 -mt-1.5 -mr-1.5 rounded-full flex items-center justify-center ${d.favoritas.has(r.id) ? 'text-coral-oscuro' : 'text-gris/80'}`}
               >
                 <Icono n="favorite" lleno={d.favoritas.has(r.id)} />
               </button>

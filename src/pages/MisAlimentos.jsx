@@ -51,10 +51,10 @@ export default function MisAlimentos() {
                       {d.base(a).id !== a.id && <span className="text-teal-oscuro"> · cuenta como {nombreCorto(d.base(a))}</span>}
                     </p>
                   </div>
-                  <button onClick={() => setEditando(a)} className="w-9 h-9 text-verde-texto" aria-label={`Editar ${a.name}`}>
+                  <button onClick={() => setEditando(a)} className="toque w-9 h-9 text-verde-texto" aria-label={`Editar ${a.name}`}>
                     <Icono n="edit" size={20} />
                   </button>
-                  <button onClick={() => borrar(a)} className="w-9 h-9 text-gris" aria-label={`Borrar ${a.name}`}>
+                  <button onClick={() => borrar(a)} className="toque w-9 h-9 text-gris" aria-label={`Borrar ${a.name}`}>
                     <Icono n="delete" size={20} />
                   </button>
                 </div>

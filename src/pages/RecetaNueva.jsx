@@ -194,7 +194,7 @@ export default function RecetaNueva() {
                   <span className="text-xs text-gris w-14">{unidadDe(a, Number(i.qty))}</span>
                   <button
                     onClick={() => setIngredientes((l) => l.filter((_, j) => j !== n))}
-                    className="w-7 h-7 text-gris"
+                    className="toque w-7 h-7 text-gris"
                     aria-label="Quitar"
                   >
                     <Icono n="close" size={18} />

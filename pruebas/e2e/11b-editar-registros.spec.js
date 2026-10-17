@@ -59,6 +59,28 @@ test('ver y cambiar la cantidad de lo anotado, con la despensa al día', async (
     await captura(pg, 'f14_01_cantidad_en_la_fila')
   })
 
+  await test.step('la hoja se cierra con Escape, el foco no se escapa y vuelve al botón que la abrió', async () => {
+    await filaHuevo().click()
+    const hoja = pg.getByRole('dialog', { name: 'Cambiar cantidad' })
+    await expect(hoja).toBeVisible()
+    const dentro = () => pg.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'))
+    expect(await dentro()).toBe(true)
+    // Tab y Mayús+Tab muchas veces: el foco da la vuelta adentro de la hoja
+    for (let i = 0; i < 12; i++) await pg.keyboard.press('Tab')
+    expect(await dentro()).toBe(true)
+    for (let i = 0; i < 12; i++) await pg.keyboard.press('Shift+Tab')
+    expect(await dentro()).toBe(true)
+    // La cruz mide 44 px de área de toque aunque se vea de 36
+    const cruz = await hoja.getByRole('button', { name: 'Cerrar' }).evaluate((el) => {
+      const r = getComputedStyle(el, '::after')
+      return [parseFloat(r.width), parseFloat(r.height)]
+    })
+    expect(Math.min(...cruz)).toBeGreaterThanOrEqual(44)
+    await pg.keyboard.press('Escape')
+    await expect(hoja).toHaveCount(0)
+    await expect(filaHuevo()).toBeFocused()
+  })
+
   await test.step('bajar la cantidad pregunta, cuenta qué pasa con la despensa y la devuelve', async () => {
     await filaHuevo().click()
     await pg.waitForSelector('text=Cambiar cantidad')
@@ -113,7 +135,7 @@ test('ver y cambiar la cantidad de lo anotado, con la despensa al día', async (
     await pg.fill('input[aria-label="Cantidad"]', '0')
     await expect(pg.locator('button:has-text("Guardar")')).toBeDisabled()
     await pg.keyboard.press('Escape')
-    await pg.click('button[aria-label="Cerrar"]')
+    await expect(pg.getByRole('dialog')).toHaveCount(0)
   })
 
   await test.step('sin conexión: se cambia en el teléfono y se manda al volver', async () => {

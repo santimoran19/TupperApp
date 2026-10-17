@@ -58,7 +58,11 @@ export default function AvisoVersion() {
         <button onClick={actualizar} disabled={aplicando} className="btn-chico bg-verde text-white">
           <Icono n="refresh" size={16} /> {aplicando ? 'Actualizando...' : 'Actualizar'}
         </button>
-        <button onClick={() => setHayNueva(false)} className="w-9 h-9 rounded-full flex items-center justify-center" aria-label="Después">
+        <button
+          onClick={() => setHayNueva(false)}
+          className="toque w-9 h-9 rounded-full flex items-center justify-center"
+          aria-label="Después"
+        >
           <Icono n="close" size={18} />
         </button>
       </div>

@@ -73,7 +73,7 @@ export default function Compras() {
         </p>
       </div>
       {id && (
-        <button onClick={() => d.quitarDeLista(id)} className="w-8 h-8 text-gris" aria-label={`Quitar ${a.name}`}>
+        <button onClick={() => d.quitarDeLista(id)} className="toque w-8 h-8 text-gris" aria-label={`Quitar ${a.name}`}>
           <Icono n="close" size={18} />
         </button>
       )}
@@ -139,7 +139,7 @@ export default function Compras() {
                         )
                           d.borrarCompra(c.id)
                       }}
-                      className="w-7 h-7 text-gris"
+                      className="toque w-7 h-7 text-gris"
                       aria-label="Borrar compra"
                     >
                       <Icono n="delete" size={18} />

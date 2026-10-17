@@ -335,7 +335,7 @@ export default function Registrar() {
                   <div className="flex items-start gap-2">
                     <p className="flex-1 font-medium">{a ? a.name : r.name}</p>
                     <span className="font-bold text-verde-texto whitespace-nowrap">{redondear(m.kcal)} kcal</span>
-                    <button onClick={() => quitar(i)} className="w-7 h-7 -mr-1 text-gris" aria-label="Quitar">
+                    <button onClick={() => quitar(i)} className="toque w-7 h-7 -mr-1 text-gris" aria-label="Quitar">
                       <Icono n="close" size={20} />
                     </button>
                   </div>
@@ -411,7 +411,7 @@ export default function Registrar() {
                             <button
                               onClick={() => cambiar(i, { cucharaditas: Math.max(0.5, p.cucharaditas - 0.5) })}
                               disabled={p.cucharaditas <= 0.5}
-                              className="w-9 h-9 flex items-center justify-center disabled:opacity-30"
+                              className="toque w-9 h-9 flex items-center justify-center disabled:opacity-30"
                               aria-label="Menos azúcar"
                             >
                               <Icono n="remove" size={18} />
@@ -422,7 +422,7 @@ export default function Registrar() {
                             <button
                               onClick={() => cambiar(i, { cucharaditas: Math.min(MAX_CUCHARADITAS, p.cucharaditas + 0.5) })}
                               disabled={p.cucharaditas >= MAX_CUCHARADITAS}
-                              className="w-9 h-9 flex items-center justify-center disabled:opacity-30"
+                              className="toque w-9 h-9 flex items-center justify-center disabled:opacity-30"
                               aria-label="Más azúcar"
                             >
                               <Icono n="add" size={18} />

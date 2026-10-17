@@ -303,7 +303,7 @@ export default function Plan() {
                         <button
                           onClick={() => alternarAfuera(f, c)}
                           aria-label={afuera ? 'Marcar en casa' : 'Marcar fuera de casa'}
-                          className={`w-9 h-9 rounded-full flex items-center justify-center ${afuera ? 'bg-naranja-fuerte text-white' : 'bg-campo text-gris/80'}`}
+                          className={`toque w-9 h-9 rounded-full flex items-center justify-center ${afuera ? 'bg-naranja-fuerte text-white' : 'bg-campo text-gris/80'}`}
                         >
                           <Icono n="takeout_dining" size={18} lleno={afuera} />
                         </button>

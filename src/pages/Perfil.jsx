@@ -205,7 +205,7 @@ export default function Perfil() {
                         onClick={async () => {
                           if (await confirmar({ titulo: `¿Borrar la medida del ${fechaCorta(m.date)}?` })) borrarMedida(m.date)
                         }}
-                        className="w-8 h-8 text-gris"
+                        className="toque w-8 h-8 text-gris"
                         aria-label={`Borrar la medida del ${fechaCorta(m.date)}`}
                       >
                         <Icono n="delete" size={18} />

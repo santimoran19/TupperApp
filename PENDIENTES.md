@@ -31,53 +31,51 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 2. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-3. D-01 · Hojas que suben desde abajo (va junto con D-02)
-4. D-02 · Botones del tamaño del dedo
-5. D-05 · Recorrido inicial
-6. F-07 · Ajustar las porciones de una receta
-7. F-05 · Compartir la lista de compras por WhatsApp
-8. S-02 · CORS de la función de IA
-9. T-02 · Pruebas automáticas en cada push
-10. T-06 · Aviso de errores (va junto con S-05)
-11. S-05 · Revisión periódica
-12. F-01 · Escanear el código de barras (va junto con F-02)
-13. F-02 · Catálogo compartido de productos
-14. F-12 · Base propia de alimentos más grande
-15. IA-01 · Chat con IA (va junto con IA-02)
-16. IA-02 · Proveedor de respaldo
-17. F-04 · Vencimientos en la despensa
-18. D-07 · Revisión completa de accesibilidad
-19. L-04 · Consentimiento al registrarse
-20. C-05 · Opiniones desde la app
-21. T-03 · Pruebas en Safari
-22. T-04 · Base de pruebas aparte
-23. T-01 · Actualizar las herramientas
-24. F-03 · Despensa compartida entre los de una misma casa
-25. F-06 · Recordatorios
+3. D-05 · Recorrido inicial
+4. F-07 · Ajustar las porciones de una receta
+5. F-05 · Compartir la lista de compras por WhatsApp
+6. S-02 · CORS de la función de IA
+7. T-02 · Pruebas automáticas en cada push
+8. T-06 · Aviso de errores (va junto con S-05)
+9. S-05 · Revisión periódica
+10. F-01 · Escanear el código de barras (va junto con F-02)
+11. F-02 · Catálogo compartido de productos
+12. F-12 · Base propia de alimentos más grande
+13. IA-01 · Chat con IA (va junto con IA-02)
+14. IA-02 · Proveedor de respaldo
+15. F-04 · Vencimientos en la despensa
+16. D-07 · Revisión completa de accesibilidad
+17. L-04 · Consentimiento al registrarse
+18. C-05 · Opiniones desde la app
+19. T-03 · Pruebas en Safari
+20. T-04 · Base de pruebas aparte
+21. T-01 · Actualizar las herramientas
+22. F-03 · Despensa compartida entre los de una misma casa
+23. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-26. F-08 · Copiar un día entero
-27. D-06 · Deshacer en más lugares
-28. D-04 · Esqueletos de carga
-29. F-10 · Peso: gráfico y fecha estimada
-30. F-11 · Exportar el registro a planilla
-31. F-09 · Combos frecuentes
-32. F-13 · Categorías editables por el usuario
-33. D-08 · Revisión de los textos
-34. IA-04 · Cargar una receta desde un texto
-35. IA-03 · Foto de un plato
-36. C-06 · Métricas de uso
-37. T-05 · Partir `sincronizacion.js`
-38. T-07 · Mandar lo cargado sin conexión con la app cerrada
-39. S-06 · Verificación en dos pasos
-40. S-03 · Contraseñas filtradas también del lado de Supabase
+24. F-08 · Copiar un día entero
+25. D-06 · Deshacer en más lugares
+26. D-04 · Esqueletos de carga
+27. F-10 · Peso: gráfico y fecha estimada
+28. F-11 · Exportar el registro a planilla
+29. F-09 · Combos frecuentes
+30. F-13 · Categorías editables por el usuario
+31. D-08 · Revisión de los textos
+32. IA-04 · Cargar una receta desde un texto
+33. IA-03 · Foto de un plato
+34. C-06 · Métricas de uso
+35. T-05 · Partir `sincronizacion.js`
+36. T-07 · Mandar lo cargado sin conexión con la app cerrada
+37. S-06 · Verificación en dos pasos
+38. S-03 · Contraseñas filtradas también del lado de Supabase
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-41. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-42. C-02 · Dominio propio y página de presentación (va junto con C-03)
-43. C-01 · Planes y cobro (para empezar a cobrar)
-44. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-45. C-04 · Play Store (cuesta la cuenta de desarrollador)
+39. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+40. C-02 · Dominio propio y página de presentación (va junto con C-03)
+41. C-01 · Planes y cobro (para empezar a cobrar)
+42. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+43. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -123,8 +121,6 @@ Nada por ahora.
 
 ## 3. Diseño y uso
 
-- [ ] **D-01 · Hojas que suben desde abajo** · P2 · S. Que se cierren con Escape, que el foco no se escape de la hoja abierta y que vuelva al botón que la abrió. El diálogo de confirmación ya lo hace.
-- [ ] **D-02 · Botones del tamaño del dedo** · P2 · S. El tachito y la cruz miden 32 px; lo recomendado es 44.
 - [ ] **D-04 · Esqueletos de carga** · P3 · S. Mostrar la forma de la pantalla mientras trae los datos, en vez de "Cargando...".
 - [ ] **D-05 · Recorrido inicial** · P2 · S. Tres pantallas que expliquen despensa, plan y registro. Hoy el usuario nuevo cae directo al diario.
 - [ ] **D-06 · Deshacer en más lugares** · P3 · S. "No comí" ya tiene Deshacer; sumarlo a borrar un registro, quitar de la despensa y quitar de la lista.
@@ -170,6 +166,9 @@ Nada por ahora.
 
 ## Hecho
 
+- **1.16.0** (solo la app, sin cambios en Supabase):
+  - D-01: las hojas que suben desde abajo se cierran con Escape, el foco no se sale de la hoja abierta (Tab y Mayús+Tab dan la vuelta adentro), al abrirse el foco entra a la hoja y al cerrarse vuelve al botón que la abrió. Si hay una pregunta de confirmación encima, Escape es de ella.
+  - D-02: los botones de solo icono (cruz, tachito, quitar, más/menos, editar, corazón, "afuera") tienen un área de toque de al menos 44 px sin cambiar cómo se ven ni el diseño.
 - **S-01 · Copias de seguridad propias** (14/10/2026): repo privado `tupper-respaldos` en GitHub con copia diaria cifrada (3:17 AR, guardada 90 días) y scripts para abrirla y restaurarla. Respaldo verificado el 14/10 (4 cuentas, 174 registros, 309 alimentos, 91 recetas, 42 del plan). Contraseña de la base cambiada, `RESPALDO_CLAVE` guardada aparte y prueba de restauración hecha.
 - **Verificado el 13/10/2026:** el análisis con IA anda (V-02, función `analizar-semana` versión 4) y `actualizacion-9.sql` está aplicada en Supabase.
 - **L-02 · Revisión de los textos legales** (15/10/2026): hecha por tu lado; Términos y Política quedan como están.

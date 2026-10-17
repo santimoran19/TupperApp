@@ -409,7 +409,7 @@ export default function Diario() {
                             <span className="text-gris"> · {cantidadDeRegistro(r, d.alimentosPorId.get(r.food_id))}</span>
                           </button>
                           <span className="text-gris">{redondear(r.kcal)} kcal</span>
-                          <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
+                          <button onClick={() => quitarRegistro(r)} className="toque w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
                             <Icono n="close" size={18} />
                           </button>
                         </div>
@@ -493,7 +493,7 @@ export default function Diario() {
                           <span className="text-gris"> · {cantidadDeRegistro(r, a)}</span>
                         </button>
                         <span className="text-gris">{redondear(r.kcal)} kcal</span>
-                        <button onClick={() => quitarRegistro(r)} className="w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
+                        <button onClick={() => quitarRegistro(r)} className="toque w-7 h-7 text-gris" aria-label={`Borrar ${r.name}`}>
                           <Icono n="close" size={18} />
                         </button>
                       </div>

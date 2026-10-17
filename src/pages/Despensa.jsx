@@ -121,7 +121,7 @@ export default function Despensa() {
                     </Link>
                     <button
                       onClick={() => d.fijarPreparado(p.recipe_id, Number(p.portions) - 1)}
-                      className="w-8 h-8 rounded-full bg-superficie flex items-center justify-center"
+                      className="toque w-8 h-8 rounded-full bg-superficie flex items-center justify-center"
                       aria-label="Restar porción"
                     >
                       <Icono n="remove" size={18} />
@@ -132,7 +132,7 @@ export default function Despensa() {
                     <button
                       onClick={() => d.fijarPreparado(p.recipe_id, Number(p.portions) + 1)}
                       disabled={Number(p.portions) >= 50}
-                      className="w-8 h-8 rounded-full bg-superficie flex items-center justify-center disabled:opacity-30"
+                      className="toque w-8 h-8 rounded-full bg-superficie flex items-center justify-center disabled:opacity-30"
                       aria-label="Sumar porción"
                     >
                       <Icono n="add" size={18} />
@@ -189,7 +189,7 @@ export default function Despensa() {
                       {qty <= 0 && <span className="pill bg-naranja-suave text-naranja-oscuro">Agotado</span>}
                       <button
                         onClick={() => quitar(a)}
-                        className="w-8 h-8 -mt-1 -mr-1.5 flex items-center justify-center text-gris"
+                        className="toque w-8 h-8 -mt-1 -mr-1.5 flex items-center justify-center text-gris"
                         aria-label={`Quitar ${a.name} de la despensa`}
                       >
                         <Icono n="delete" size={19} />
@@ -200,7 +200,7 @@ export default function Despensa() {
                         <button
                           onClick={() => d.ajustarStock(a.id, -pasoDe(a))}
                           disabled={qty <= 0}
-                          className="w-10 h-10 flex items-center justify-center disabled:opacity-30"
+                          className="toque w-10 h-10 flex items-center justify-center disabled:opacity-30"
                           aria-label={`Restar ${a.name}`}
                         >
                           <Icono n="remove" size={20} />
@@ -214,7 +214,7 @@ export default function Despensa() {
                         <button
                           onClick={() => d.ajustarStock(a.id, pasoDe(a))}
                           disabled={qty + pasoDe(a) > maxEnStock(a)}
-                          className="w-10 h-10 flex items-center justify-center disabled:opacity-30"
+                          className="toque w-10 h-10 flex items-center justify-center disabled:opacity-30"
                           aria-label={`Sumar ${a.name}`}
                         >
                           <Icono n="add" size={20} />
