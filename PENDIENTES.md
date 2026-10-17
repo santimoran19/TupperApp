@@ -31,49 +31,50 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 2. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-3. F-07 · Ajustar las porciones de una receta
-4. F-05 · Compartir la lista de compras por WhatsApp
-5. S-02 · CORS de la función de IA
-6. T-02 · Pruebas automáticas en cada push
-7. T-06 · Aviso de errores (va junto con S-05)
-8. S-05 · Revisión periódica
-9. F-01 · Escanear el código de barras (va junto con F-02)
-10. F-02 · Catálogo compartido de productos
-11. F-12 · Base propia de alimentos más grande
-12. IA-01 · Chat con IA (va junto con IA-02)
-13. IA-02 · Proveedor de respaldo
-14. F-04 · Vencimientos en la despensa
-15. D-07 · Revisión completa de accesibilidad
-16. L-04 · Consentimiento al registrarse
-17. C-05 · Opiniones desde la app
-18. T-03 · Pruebas en Safari
-19. T-04 · Base de pruebas aparte
-20. T-01 · Actualizar las herramientas
-21. F-06 · Recordatorios
+3. F-05 · Compartir la lista de compras por WhatsApp
+4. F-19 · Gasto calórico y ejercicio (por fases; empezar por la 1, la 2 y la 4)
+5. F-18 · Registrarse e iniciar sesión con Google
+6. S-02 · CORS de la función de IA
+7. T-02 · Pruebas automáticas en cada push
+8. T-06 · Aviso de errores (va junto con S-05)
+9. S-05 · Revisión periódica
+10. F-01 · Escanear el código de barras (va junto con F-02)
+11. F-02 · Catálogo compartido de productos
+12. F-12 · Base propia de alimentos más grande
+13. IA-01 · Chat con IA (va junto con IA-02)
+14. IA-02 · Proveedor de respaldo
+15. F-04 · Vencimientos en la despensa
+16. D-07 · Revisión completa de accesibilidad
+17. L-04 · Consentimiento al registrarse
+18. C-05 · Opiniones desde la app
+19. T-03 · Pruebas en Safari
+20. T-04 · Base de pruebas aparte
+21. T-01 · Actualizar las herramientas
+22. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-22. F-08 · Copiar un día entero
-23. D-06 · Deshacer en más lugares
-24. D-04 · Esqueletos de carga
-25. F-10 · Peso: gráfico y fecha estimada
-26. F-11 · Exportar el registro a planilla
-27. F-09 · Combos frecuentes
-28. F-13 · Categorías editables por el usuario
-29. D-08 · Revisión de los textos
-30. IA-04 · Cargar una receta desde un texto
-31. IA-03 · Foto de un plato
-32. C-06 · Métricas de uso
-33. T-05 · Partir `sincronizacion.js`
-34. T-07 · Mandar lo cargado sin conexión con la app cerrada
-35. S-06 · Verificación en dos pasos
-36. S-03 · Contraseñas filtradas también del lado de Supabase
+23. F-08 · Copiar un día entero
+24. D-06 · Deshacer en más lugares
+25. D-04 · Esqueletos de carga
+26. F-10 · Peso: gráfico y fecha estimada
+27. F-11 · Exportar el registro a planilla
+28. F-09 · Combos frecuentes
+29. F-13 · Categorías editables por el usuario
+30. D-08 · Revisión de los textos
+31. IA-04 · Cargar una receta desde un texto
+32. IA-03 · Foto de un plato
+33. C-06 · Métricas de uso
+34. T-05 · Partir `sincronizacion.js`
+35. T-07 · Mandar lo cargado sin conexión con la app cerrada
+36. S-06 · Verificación en dos pasos
+37. S-03 · Contraseñas filtradas también del lado de Supabase
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-37. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-38. C-02 · Dominio propio y página de presentación (va junto con C-03)
-39. C-01 · Planes y cobro (para empezar a cobrar)
-40. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-41. C-04 · Play Store (cuesta la cuenta de desarrollador)
+38. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+39. C-02 · Dominio propio y página de presentación (va junto con C-03)
+40. C-01 · Planes y cobro (para empezar a cobrar)
+41. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+42. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -95,13 +96,21 @@ Nada por ahora.
 - [ ] **F-06 · Recordatorios** · P2 · L. Tomar agua, comidas sin registrar y el resumen del domingo.
   - Necesita notificaciones del navegador y algo del lado del servidor que las mande a la hora.
   - En iPhone solo funcionan con la app instalada en la pantalla de inicio.
-- [ ] **F-07 · Ajustar las porciones de una receta** · P2 · S. Ver las cantidades para 1, 2 o N porciones, y cocinar más o menos de lo que rinde la receta.
-  - La hoja de elegir comida ofrece dos caminos: receta o alimento (con el mismo buscador y las mismas medidas del diario).
-  - Que cuente como cualquier otra comida del plan: calorías del día, "Comí esto" en el diario (anota el alimento con esa cantidad), lo que falta de la despensa y la lista de compras.
-  - Hace falta guardar el alimento y la cantidad en la tabla del plan (hoy solo guarda la receta): un SQL nuevo, y que "Armar con lo que tengo" respete lo que se puso a mano.
 - [ ] **F-08 · Copiar un día entero** · P3 · S. Hoy se puede repetir la comida de ayer; falta copiar el día completo (o un día cualquiera) a otra fecha.
 - [ ] **F-09 · Combos frecuentes** · P3 · M. Guardar "mi desayuno de siempre" con varios alimentos y registrarlo con un toque.
 - [ ] **F-18 · Registrarse e iniciar sesión con Google** · P2 · M. Un botón "Continuar con Google" en la pantalla de acceso, para crear la cuenta o entrar sin escribir mail ni contraseña. **Qué hace falta de tu lado:** crear un proyecto en Google Cloud, configurar la pantalla de consentimiento y las credenciales OAuth (cliente web), y activar el proveedor Google en Supabase (Authentication > Providers) con las direcciones de vuelta de la app y de Supabase. Gratis. **Cosas a resolver:** (1) el consentimiento de Google en modo de prueba solo deja entrar a 100 usuarios que vos agregues a mano; para abrirlo a cualquiera hay que publicarlo, y Google pide la Política de privacidad y la página de inicio en un dominio propio (esto se cruza con C-02, dominio propio); (2) si ya existe una cuenta con el mismo mail, Supabase puede unirla con la de Google; hay que dejarlo bien configurado para que nadie tome una cuenta ajena; (3) quien entra con Google no tiene contraseña: la pantalla de "Olvidé mi contraseña" y el Perfil tienen que explicarlo, y se podría ofrecer crear una; (4) igual hay que pasar por el perfil (fecha de nacimiento, para cumplir los 18 años de L-01) y, con F-17, elegir el nombre de usuario; (5) sumar a la Política de privacidad que Google es un proveedor y qué datos se reciben (mail y nombre; la foto no se guarda); (6) probarlo en el navegador del teléfono y en la app instalada (PWA), donde el regreso desde Google a veces se comporta distinto. Va con pruebas (el simulador de las pruebas tiene que fingir el regreso de Google) y los textos del botón. Borrar la cuenta y descargar los datos siguen igual.
+- [ ] **F-19 · Gasto calórico y ejercicio, por fases** · P2 · L. Hoy el objetivo sale de una fórmula general (Mifflin-St Jeor por un factor de actividad fijo de 1,2 a 1,725), que no sabe qué hacés cada día. La idea es estimar cuánto se gasta de verdad por día, anotar el ejercicio y comparar contra lo comido. Se hace en fases, cada una se publica sola y ninguna toca lo que ya cargó cada usuario (tablas y columnas nuevas, con valores por defecto).
+  - **El gasto de un día se separa en cuatro partes:** metabolismo basal (TMB), movimiento del día a día sin entrenar (NEAT: trabajo y pasos), efecto térmico de la comida (TEF, se calcula con los macros ya registrados: la proteína gasta mucho más que la grasa) y ejercicio (EAT). Hoy el factor de actividad mezcla NEAT y ejercicio: al sumar el ejercicio registrado hay que **separarlos**, o se cuenta dos veces.
+  - **Fase 1 · Motor de gasto y perfil ampliado (M).** Datos opcionales nuevos en el perfil: % de grasa corporal, tipo de trabajo (de escritorio, de pie, físico), pasos por día y pulso en reposo. Fórmula según lo que haya: Mifflin-St Jeor (la de hoy), Katch-McArdle si hay % de grasa. Pantalla "Cómo se calcula tu gasto" con cada parte, la fórmula y un rango (no un número falso de exacto). El objetivo actual de cada usuario **no cambia solo**: el modo nuevo se activa a mano.
+  - **Fase 2 · Registrar ejercicio de resistencia y deporte (L).** Tipo (correr, caminar, bici, natación, fútbol, pádel, baile, yoga, HIIT, lo que sea), duración y, según el tipo, distancia, desnivel, pulso promedio o cómo se sintió (esfuerzo de 1 a 10). Catálogo propio de unas 100 actividades con sus METs del Compendio de Actividades Físicas (se pueden crear otras). El cálculo usa el dato más preciso disponible, en este orden: lo que marca el reloj si lo cargás a mano, pulso promedio (fórmula de Keytel), distancia y ritmo (ecuaciones del ACSM para correr y caminar), y METs por duración e intensidad. Se cuenta el gasto **neto** (sin el basal de esos minutos, que ya está en el TMB). En el Diario: gasto estimado del día, comido contra gastado y balance.
+  - **Objetivo dinámico (opcional, en la fase 2):** objetivo = gasto del día menos el déficit elegido (o más el superávit), y de lo quemado entrenando se "devuelve" solo una parte configurable (se sugiere 50 %, porque las estimaciones de ejercicio se pasan seguido). Sigue existiendo el objetivo fijo de hoy.
+  - **Fase 3 · Gimnasio (L).** Rutinas (Día A, Día B), catálogo de unos 150 ejercicios (grupo muscular, equipo; se pueden crear otros), series con repeticiones, peso, esfuerzo (RPE o repeticiones en reserva) y marca de calentamiento. Muestra lo de la última vez al anotar, temporizador de descanso, copiar la sesión anterior, récord personal, 1RM estimado (Epley), volumen por grupo muscular y gráfico de progreso por ejercicio. **Aviso honesto:** las calorías de una sesión de pesas son difíciles de estimar (repeticiones por peso casi no dice nada del gasto): se estiman por METs, duración e intensidad, con un rango amplio. El valor de esta fase es el seguimiento del entrenamiento, no afinar las calorías. Es casi una app dentro de la app: conviene hacerla simple.
+  - **Fase 4 · Gasto real calculado con tus propios datos (M).** Con el peso (tendencia suavizada) y lo comido de 2 a 4 semanas se despeja cuánto gastás realmente (ingesta menos el cambio de peso, con 7700 kcal por kg como aproximación). Corrige la fórmula general con un factor propio, avisa qué tan confiable es (según cuántos días hay registrados) y sugiere ajustar el objetivo. **Es la parte que más afina el cálculo**, porque las fórmulas son promedios de población con un error de 10 a 15 %. Necesita días de datos, por eso conviene que corra desde temprano. No necesita tablas nuevas.
+  - **Orden sugerido:** 1, 2, 4 y al final 3. La fase 4 depende de la 1; la 3 es independiente y la más grande.
+  - **Base de datos (SQL nuevo por fase, todo aditivo):** columnas nuevas y opcionales en `profiles`; `exercise_types` (catálogo global y propios, como `foods`); `workouts` (fecha, duración, tipo, esfuerzo, pulso, calorías calculadas guardadas con el peso de ese día, calorías del reloj si las cargó); `workout_sets` (ejercicio, serie, repeticiones, peso, RPE, calentamiento); `routines` y `routine_exercises`; y opcionalmente `daily_activity` (pasos). Todo con RLS de cada usuario; los entrenamientos son personales, **no se comparten en el hogar**.
+  - **Lo que hay que tocar además de las tablas:** la cola de cambios y la copia del teléfono (`sincronizacion.js` y `store`) para que se pueda cargar sin conexión, el simulador de las pruebas, `borrar_mi_cuenta()`, la descarga de datos, la copia de seguridad diaria (S-01), el recorrido inicial (D-05) y la Política de privacidad: el ejercicio y el peso son datos de salud, que la Ley 25.326 trata como sensibles, así que el texto legal y el consentimiento (L-04) hay que revisarlos **antes** de publicar.
+  - **Límites a decir en la app:** son estimaciones con rango, no mediciones; el reloj o la pulsera también se equivocan entre 20 y 40 %; el piso mínimo de calorías que ya existe se mantiene, y a menores de 18 no se les calcula déficit (igual que hoy). Conviene que alguien que estudió nutrición revise las fórmulas y los textos antes de publicar.
+  - **Después, si se quiere:** importar entrenamientos desde archivos (.gpx, .tcx, .fit o la exportación de Apple Salud). Conectar Strava o Garmin directo necesita algo del lado del servidor. Leer Apple Salud o Health Connect directo no se puede desde una PWA.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
 - [ ] **F-11 · Exportar el registro a planilla** · P3 · S. Hoy "Descargar mis datos" baja un JSON; sumar un CSV que abra en Excel, útil para llevarle al nutricionista.
 - [ ] **F-12 · Base propia de alimentos más grande** · P2 · M (y continuo). Sumar alimentos, categorías y recetas a medida que aparecen productos nuevos en las despensas, para depender menos de Open Food.
@@ -162,6 +171,11 @@ Nada por ahora.
 
 ## Hecho
 
+- **1.19.0** (solo la app, sin cambios en Supabase):
+  - F-07: selector de porciones en el detalle de la receta (− y +, de a 1 y por debajo de 1 a la mitad, de 0,25 a 50). Recalcula los ingredientes (las unidades quedan en fracciones: 0,5 huevo), los tildes de lo que alcanza con la despensa y lo que "Anotar lo que falta en la lista" agrega, y "Cocinar" arranca con ese número. Arranca en lo que rinde la receta y vuelve ahí al abrir otra. Es solo una vista: no cambia la receta guardada ni nada de lo cargado.
+  - Cambio chico: antes el tilde decía si alcanzaba para 1 porción; ahora dice si alcanza para las porciones que se están mirando (al entrar, las de la receta).
+  - Qué no se hizo: el plan guarda una comida por casilla (siempre 1 porción), así que no hay "porciones del plan" para ajustar. Cocinar para varias personas en el plan necesitaría una columna nueva en `plan`: queda anotado como idea, no se hizo.
+  - Pruebas nuevas: `porciones` (unidad, 6 casos) y la de navegador `19-porciones-receta`.
 - **1.18.0** (solo la app, sin cambios en Supabase):
   - D-05: recorrido inicial. Al crear la cuenta, la persona nueva ve una guía de 34 pasos que oscurece la pantalla y hace brillar lo que hay que tocar: diario, cómo registrar una comida, cómo crear un alimento, recetas (cómo crear una), despensa, compras, plan, objetivos, peso, hogar y atajos. Algunos pasos se avanzan tocando de verdad el botón resaltado.
   - No crea ningún dato. Se puede saltar (con confirmación) o volver atrás; al terminar o saltar se borra la marca del teléfono y no vuelve a aparecer. Las cuentas que ya existían no lo ven nunca.

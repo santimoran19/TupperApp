@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Marco from '../components/Marco'
 import { Err, Hoja, Icono, Macros, Numero } from '../components/ui'
 import { useDatos } from '../store/Datos'
-import { cantidadTexto, listaComidas, redondear } from '../lib/nutricion'
+import { cantidadEscalada, cantidadTexto, listaComidas, porcionesMas, porcionesMenos, redondear } from '../lib/nutricion'
 import { disponibilidad } from '../lib/planificador'
 import { convertir, nombreCorto } from '../lib/equivalencias'
 import { LIM, errNumero } from '../lib/validar'
@@ -15,6 +15,7 @@ export default function RecetaDetalle() {
   const nav = useNavigate()
   const receta = d.recetasPorId.get(id)
   const [cocinando, setCocinando] = useState(null) // porciones a cocinar (texto)
+  const [vista, setVista] = useState({ id, n: null }) // porciones para las que se ven los ingredientes (null: lo que rinde)
 
   if (!receta)
     return (
@@ -24,6 +25,9 @@ export default function RecetaDetalle() {
     )
 
   const items = d.itemsDe(id)
+  const rinde = receta.servings || 1
+  const verPor = vista.id === id && vista.n ? vista.n : rinde
+  const cambiarVista = (n) => setVista({ id, n })
   // Para saber si alcanza se mira por el alimento base: ahí ya está sumado lo de los productos que valen por él
   const itemsBase = d.itemsPlan(id)
   const m = d.macrosPorReceta.get(id)
@@ -41,7 +45,7 @@ export default function RecetaDetalle() {
     }
   }
   async function anotarFaltantes() {
-    for (const f of disponibilidad(receta, itemsBase, d.stockRecetas, 1).faltan) {
+    for (const f of disponibilidad(receta, itemsBase, d.stockRecetas, verPor).faltan) {
       const a = d.alimentosPorId.get(f.food_id)
       await d.agregarALista(f.food_id, a.unit === 'u' ? Math.ceil(f.falta) : Math.ceil(f.falta / 50) * 50)
     }
@@ -111,14 +115,50 @@ export default function RecetaDetalle() {
 
         <div className="xl:grid xl:grid-cols-2 xl:gap-6 xl:items-start">
           <section className="tarjeta p-4 mb-4 xl:mb-0">
-            <h3 className="font-semibold mb-1">Ingredientes{receta.servings > 1 ? ` (para ${receta.servings} porciones)` : ''}</h3>
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold flex-1">Ingredientes</h3>
+              <div className="flex items-center gap-1" role="group" aria-label="Porciones">
+                <button
+                  type="button"
+                  onClick={() => cambiarVista(porcionesMenos(verPor, LIM.porciones[0]))}
+                  disabled={verPor <= LIM.porciones[0]}
+                  aria-label="Menos porciones"
+                  className="w-9 h-9 rounded-full bg-campo text-tinta flex items-center justify-center disabled:opacity-40"
+                >
+                  <Icono n="remove" size={20} />
+                </button>
+                <span className="min-w-[5.5rem] text-center text-sm font-semibold" aria-live="polite" data-testid="porciones-vista">
+                  {redondear(verPor, 2)} {verPor === 1 ? 'porción' : 'porciones'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => cambiarVista(porcionesMas(verPor, LIM.porciones[1]))}
+                  disabled={verPor >= LIM.porciones[1]}
+                  aria-label="Más porciones"
+                  className="w-9 h-9 rounded-full bg-campo text-tinta flex items-center justify-center disabled:opacity-40"
+                >
+                  <Icono n="add" size={20} />
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-gris mb-1">
+              {verPor === rinde
+                ? `La receta rinde ${redondear(rinde, 2)}.`
+                : `Cantidades para ${redondear(verPor, 2)}, no para las ${redondear(rinde, 2)} de la receta.`}{' '}
+              {verPor !== rinde && (
+                <button type="button" onClick={() => cambiarVista(null)} className="font-semibold text-verde-texto">
+                  Volver a {redondear(rinde, 2)}
+                </button>
+              )}
+            </p>
             <div className="divide-y divide-linea">
               {items.map((it) => {
                 const a = d.alimentosPorId.get(it.food_id)
                 if (!a) return null
                 const b = d.base(a)
                 const hay = convertir(b, a, d.stockRecetas.get(b.id) || 0)
-                const alcanza = hay + 0.001 >= it.qty / receta.servings
+                const necesita = (it.qty / rinde) * verPor
+                const alcanza = hay + 0.001 >= necesita
                 const producto = d.enUso.get(b.id)
                 return (
                   <div key={a.id} className="flex items-center gap-3 py-2.5">
@@ -130,8 +170,8 @@ export default function RecetaDetalle() {
                     />
                     <span className="flex-1 text-sm">{a.name.split(' (')[0]}</span>
                     <span className="text-sm text-right">
-                      <b>{cantidadTexto(a, it.qty)}</b>
-                      <span className="block text-xs text-gris">tenés {cantidadTexto(a, hay)}</span>
+                      <b>{cantidadEscalada(a, necesita)}</b>
+                      <span className="block text-xs text-gris">tenés {cantidadEscalada(a, hay)}</span>
                       {producto && producto.id !== a.id && (
                         <span className="block text-xs text-teal-oscuro">con {nombreCorto(producto)}</span>
                       )}
@@ -140,7 +180,7 @@ export default function RecetaDetalle() {
                 )
               })}
             </div>
-            {!disponibilidad(receta, itemsBase, d.stockRecetas, 1).ok && (
+            {!disponibilidad(receta, itemsBase, d.stockRecetas, verPor).ok && (
               <button onClick={anotarFaltantes} className="btn-suave w-full mt-3">
                 <Icono n="add_shopping_cart" size={20} /> Anotar lo que falta en la lista
               </button>
@@ -166,7 +206,7 @@ export default function RecetaDetalle() {
             </section>
 
             <div className="flex gap-2">
-              <button onClick={() => setCocinando(String(receta.servings))} className="btn-primario flex-1">
+              <button onClick={() => setCocinando(String(redondear(verPor, 2)))} className="btn-primario flex-1">
                 <Icono n="skillet" /> Cocinar
               </button>
               <button onClick={() => nav(`/registrar?receta=${id}`)} className="btn-suave flex-1">

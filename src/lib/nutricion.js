@@ -238,6 +238,22 @@ export function cantidadTexto(alimento, qty) {
   return `${q} ${alimento.unit}`
 }
 
+// Lo mismo que cantidadTexto, pero para cantidades escaladas a otras porciones: lo que se cuenta en unidades puede quedar en
+// fracciones (1 huevo para 4 porciones, hecho para 2, son 0,5) y no se redondea al entero.
+export function cantidadEscalada(alimento, qty) {
+  if (alimento.unit !== 'u') return cantidadTexto(alimento, qty)
+  const q = redondear(qty, 2)
+  return `${q} ${unidadDe(alimento, q)}`
+}
+
+// Siguiente cantidad de porciones al tocar más o menos: de a 1, y por debajo de 1 se parte a la mitad (1 → 0,5 → 0,25)
+export function porcionesMas(n, max = 50) {
+  return Math.min(max, n < 1 ? n * 2 : Math.floor(n) + 1)
+}
+export function porcionesMenos(n, min = 0.25) {
+  return Math.max(min, n <= 1 ? n / 2 : Math.ceil(n) - 1)
+}
+
 // Paso cómodo para sumar o restar del stock
 export const pasoDe = (alimento) => (alimento.unit === 'u' ? 1 : 50)
 // Cantidad que se propone al agregar un alimento a un plato

@@ -3,7 +3,7 @@
 PWA para llevar la despensa, las recetas, el plan de la semana y lo que se come cada día.
 
 - **Despensa:** stock de cada alimento. Se descuenta solo al cocinar o al registrar una comida.
-- **Recetas:** muestra cuáles se pueden hacer con lo que hay y qué falta para las demás. Se pueden marcar favoritas, ocultar las que no gustan y editar las propias.
+- **Recetas:** muestra cuáles se pueden hacer con lo que hay y qué falta para las demás. Se pueden marcar favoritas, ocultar las que no gustan y editar las propias. En el detalle, un selector de porciones (− y +, de 0,25 a 50) recalcula los ingredientes, los tildes de lo que alcanza y lo que se anota en la lista, y "Cocinar" arranca con ese número; es solo una vista, no cambia la receta guardada.
 - **Plan semanal:** se arma con el stock y marca las comidas que se hacen fuera de casa. Esas comidas usan recetas que se pueden llevar.
 - **Diario:** lo que se comió contra el objetivo, con un consejo para cerrar el día y el contador de líquido. Se puede marcar "no comí" y cargar bebidas (con sus medidas y el azúcar) o cosas entre comidas.
 - **Resumen semanal:** promedios contra el objetivo, días cumplidos y peso, más una devolución de la semana escrita con IA (opcional, ver `supabase/functions/LEEME.md`).
