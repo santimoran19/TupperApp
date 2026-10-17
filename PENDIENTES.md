@@ -50,32 +50,31 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 19. T-03 · Pruebas en Safari
 20. T-04 · Base de pruebas aparte
 21. T-01 · Actualizar las herramientas
-22. F-03 · Despensa compartida entre los de una misma casa
-23. F-06 · Recordatorios
+22. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-24. F-08 · Copiar un día entero
-25. D-06 · Deshacer en más lugares
-26. D-04 · Esqueletos de carga
-27. F-10 · Peso: gráfico y fecha estimada
-28. F-11 · Exportar el registro a planilla
-29. F-09 · Combos frecuentes
-30. F-13 · Categorías editables por el usuario
-31. D-08 · Revisión de los textos
-32. IA-04 · Cargar una receta desde un texto
-33. IA-03 · Foto de un plato
-34. C-06 · Métricas de uso
-35. T-05 · Partir `sincronizacion.js`
-36. T-07 · Mandar lo cargado sin conexión con la app cerrada
-37. S-06 · Verificación en dos pasos
-38. S-03 · Contraseñas filtradas también del lado de Supabase
+23. F-08 · Copiar un día entero
+24. D-06 · Deshacer en más lugares
+25. D-04 · Esqueletos de carga
+26. F-10 · Peso: gráfico y fecha estimada
+27. F-11 · Exportar el registro a planilla
+28. F-09 · Combos frecuentes
+29. F-13 · Categorías editables por el usuario
+30. D-08 · Revisión de los textos
+31. IA-04 · Cargar una receta desde un texto
+32. IA-03 · Foto de un plato
+33. C-06 · Métricas de uso
+34. T-05 · Partir `sincronizacion.js`
+35. T-07 · Mandar lo cargado sin conexión con la app cerrada
+36. S-06 · Verificación en dos pasos
+37. S-03 · Contraseñas filtradas también del lado de Supabase
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-39. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-40. C-02 · Dominio propio y página de presentación (va junto con C-03)
-41. C-01 · Planes y cobro (para empezar a cobrar)
-42. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-43. C-04 · Play Store (cuesta la cuenta de desarrollador)
+38. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+39. C-02 · Dominio propio y página de presentación (va junto con C-03)
+40. C-01 · Planes y cobro (para empezar a cobrar)
+41. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+42. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -92,7 +91,6 @@ Nada por ahora.
   - Hay que habilitar la cámara en `vercel.json`: hoy dice `camera=()`.
   - Si el producto no está en Open Food, se ofrece cargarlo a mano. Conviene hacerlo junto con F-02.
 - [ ] **F-02 · Catálogo compartido de productos** · P2 · M. Cada producto que alguien encuentra en Open Food o carga a mano queda guardado para todos, así el segundo ya no depende de Open Food. Necesita una tabla nueva y algún control para que nadie cargue datos falsos (por ejemplo, que un producto recién cargado lo vea solo quien lo cargó hasta que lo usen varios).
-- [ ] **F-03 · Despensa compartida entre los de una misma casa** · P2 · L. Un "hogar" con varios miembros que ven y mueven la misma despensa y la misma lista de compras; cada uno sigue con su diario. Invitación por link o por código. Toca las reglas de acceso de varias tablas.
 - [ ] **F-04 · Vencimientos en la despensa** · P2 · M. Fecha de vencimiento opcional al comprar o cargar, aviso de "usá esto primero" y que las recetas sugeridas prioricen lo que vence antes.
 - [ ] **F-05 · Compartir la lista de compras por WhatsApp** · P2 · S. Botón que arma el texto de la lista y abre el menú de compartir del teléfono (o WhatsApp directo).
 - [ ] **F-06 · Recordatorios** · P2 · L. Tomar agua, comidas sin registrar y el resumen del domingo.
@@ -166,6 +164,15 @@ Nada por ahora.
 
 ## Hecho
 
+- **1.17.0** (necesita `supabase/actualizacion-13.sql` en Supabase **antes** de publicar la app; no modifica, mueve ni borra nada de lo que ya cargó cada usuario):
+  - F-03: hogares. Desde Perfil se arma un hogar (con nombre) o se entra a uno con un código de 6 caracteres. Hasta 6 personas comparten la **despensa, la lista de compras, las comidas preparadas y las compras**; el diario, el plan, las medidas y el perfil siguen siendo de cada uno. Los alimentos y recetas propios los ven todas las personas del hogar (solo los edita quien los creó).
+  - Quien armó el hogar ve el código (lo puede copiar, cambiar —el anterior deja de servir— o apagar), puede cambiarle el nombre y sacar a otras personas; cualquiera puede salir. Si se va quien lo armó, pasa a manejarlo la persona que lleva más tiempo; si se va la última, el hogar se borra.
+  - Al unirse, lo que la persona tenía se **suma** a la despensa del hogar (la lista queda con la cantidad mayor y se copian las compras de los últimos 90 días); lo suyo de antes no se toca y queda guardado. Al salir (o si la sacan) se lleva una **copia** de lo del hogar y antes se guarda un respaldo de lo que tenía (los últimos 5).
+  - Las compras del hogar dicen quién las hizo ("compró Ana"); en Despensa aparece "Despensa compartida · nombre". Si te sacan del hogar, al abrir la app avisa. Armar un hogar, unirse y salir necesitan conexión y que no haya cambios sin enviar.
+  - Seguridad: las tablas del hogar no se pueden tocar directo (solo con funciones de la base); 5 códigos equivocados por hora y hay que esperar; el código lo ve solo quien armó el hogar. Las cuatro tablas compartidas guardan en `user_id` a la persona o al hogar (`despensa_de()`); quien no está en un hogar se comporta exactamente como antes. La Política de privacidad ahora explica qué se comparte.
+  - Pruebas nuevas: `hogares` (la base de verdad, 22 casos), un caso más en `sin-conexion` (la copia del teléfono cuenta igual que la base dentro de un hogar) y la de navegador `17-hogar` (dos personas).
+  - Limitación conocida: si alguien sale de un hogar y vuelve a entrar al mismo, se le suma otra vez su copia personal y las cantidades se duplican (se corrigen a mano en la despensa).
+  - Una app anterior a la 1.17 usada por alguien que ya está en un hogar ve la despensa vacía (no se pierde nada; se arregla actualizando).
 - **1.16.0** (solo la app, sin cambios en Supabase):
   - D-01: las hojas que suben desde abajo se cierran con Escape, el foco no se sale de la hoja abierta (Tab y Mayús+Tab dan la vuelta adentro), al abrirse el foco entra a la hoja y al cerrarse vuelve al botón que la abrió. Si hay una pregunta de confirmación encima, Escape es de ella.
   - D-02: los botones de solo icono (cruz, tachito, quitar, más/menos, editar, corazón, "afuera") tienen un área de toque de al menos 44 px sin cambiar cómo se ven ni el diseño.

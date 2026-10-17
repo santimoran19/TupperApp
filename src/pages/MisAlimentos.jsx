@@ -10,7 +10,10 @@ import { nombreCorto } from '../lib/equivalencias'
 export default function MisAlimentos() {
   const d = useDatos()
   const [editando, setEditando] = useState(null) // un alimento, o 'nuevo'
-  const propios = useMemo(() => d.alimentos.filter((a) => a.owner).sort((a, b) => a.name.localeCompare(b.name, 'es')), [d.alimentos])
+  const propios = useMemo(
+    () => d.alimentos.filter((a) => a.owner === d.usuario.id).sort((a, b) => a.name.localeCompare(b.name, 'es')),
+    [d.alimentos, d.usuario.id],
+  )
 
   async function borrar(a) {
     const usos = d.items.filter((i) => i.food_id === a.id).length

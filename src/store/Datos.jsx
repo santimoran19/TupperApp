@@ -4,12 +4,13 @@
 //   derivados.js        lo que se calcula con eso (mapas por id, stock visto por las recetas, estado del plan)
 //   sincronizacion.js   cuándo se trae, la copia en el teléfono y los cambios hechos sin conexión
 //   cambios.js, envios.js   esos cambios: cómo quedan en el teléfono y cómo se mandan a la base
-//   acciones/           lo que se puede hacer, por tema (despensa, registros, compras, recetas, plan, perfil)
+//   acciones/           lo que se puede hacer, por tema (despensa, hogar, registros, compras, recetas, plan, perfil)
 //   avisos.jsx          el cartel flotante y la pregunta de confirmación
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { descartadas, descartar } from '../lib/equivalencias'
 import { accionesDeCompras } from './acciones/compras'
 import { accionesDeDespensa } from './acciones/despensa'
+import { accionesDeHogar } from './acciones/hogar'
 import { accionesDePerfil } from './acciones/perfil'
 import { accionesDePlan } from './acciones/plan'
 import { accionesDeRecetas } from './acciones/recetas'
@@ -42,6 +43,19 @@ function Datos({ usuario, children }) {
 
   const derivados = useDerivados(e)
 
+  // Si dejás de estar en un hogar sin haberlo pedido (la persona que lo armó te sacó, o lo hiciste desde otro dispositivo),
+  // se avisa: la despensa que ves pasa a ser la tuya de nuevo.
+  const hogarPropio = useRef(false) // lo pidió esta sesión: no hace falta avisarlo
+  const hogarVisto = useRef(null)
+  useEffect(() => {
+    if (e.cargando) return
+    const antes = hogarVisto.current
+    hogarVisto.current = e.hogar ? { id: e.hogar.id, nombre: e.hogar.nombre } : null
+    if (antes && !e.hogar && !hogarPropio.current)
+      avisar(`Ya no estás en el hogar "${antes.nombre}". Volvés a ver tu despensa de antes, con una copia de la del hogar.`, 'aviso')
+    if (!e.hogar) hogarPropio.current = false
+  }, [e.cargando, e.hogar, avisar])
+
   // Las acciones se arman una sola vez y no cambian nunca. Para trabajar con los datos como están en el momento en que
   // se las llama (y no como estaban cuando se dibujó la pantalla), los leen de acá con `ver()`.
   const vista = useRef(null)
@@ -61,6 +75,9 @@ function Datos({ usuario, children }) {
       tocar: sinc.tocar,
       pendientes: sinc.pendientes,
       vaciar: sinc.vaciar,
+      hogarPropio: (si = true) => {
+        hogarPropio.current = si
+      },
     }
     return {
       recargar: sinc.reintentar,
@@ -70,6 +87,7 @@ function Datos({ usuario, children }) {
       noPreguntar,
       ...accionesDePerfil(k),
       ...accionesDeDespensa(k),
+      ...accionesDeHogar(k),
       ...accionesDeRegistros(k),
       ...accionesDeCompras(k),
       ...accionesDeRecetas(k),

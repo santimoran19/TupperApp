@@ -8,10 +8,10 @@ test('cortes de conexión, dos teléfonos, pantalla de error y registro de error
   const ctx = await contexto(browser, { sesion: true })
   const pg = await ctx.newPage()
   const errores = escuchar(pg)
-  // Todo lo que la app le manda a la base para cambiar algo (los pedidos que no son de lectura)
+  // Todo lo que la app le manda a la base para cambiar algo (los pedidos que no son de lectura: mi_hogar y despensa_de solo preguntan)
   const cambios = []
   pg.on('request', (r) => {
-    if (r.url().includes('/rest/v1/') && r.method() !== 'GET')
+    if (r.url().includes('/rest/v1/') && r.method() !== 'GET' && !/\/rpc\/(mi_hogar|despensa_de)$/.test(r.url()))
       cambios.push(r.method() + ' ' + new URL(r.url()).pathname.replace('/rest/v1/', ''))
   })
   const sinConexion = (ruta) => pg.route(ruta, (r) => r.abort('internetdisconnected'))

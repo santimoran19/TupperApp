@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { PGlite } from '@electric-sql/pglite'
 
 const SQL = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../supabase')
-// Si agregás una actualización de la base (supabase/actualizacion-12.sql), sumala acá
+// Si agregás una actualización de la base (supabase/actualizacion-13.sql), sumala acá
 const ARCHIVOS = [
   'schema.sql',
   'actualizacion-2.sql',
@@ -20,6 +20,7 @@ const ARCHIVOS = [
   'actualizacion-10.sql',
   'actualizacion-11.sql',
   'actualizacion-12.sql',
+  'actualizacion-13.sql',
   'seed.sql',
 ]
 

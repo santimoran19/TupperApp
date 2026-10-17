@@ -36,12 +36,12 @@ export default function Despensa() {
   const parecidos = useMemo(() => {
     const m = new Map()
     for (const { a } of filas) {
-      if (!a.owner || a.same_as || d.sinEquivalencia.has(a.id) || d.equivalentes.has(a.id)) continue
+      if (a.owner !== d.usuario.id || a.same_as || d.sinEquivalencia.has(a.id) || d.equivalentes.has(a.id)) continue
       const b = sugerirBase(a, d.ingredientes, d.deLaBase)
       if (b) m.set(a.id, b)
     }
     return m
-  }, [filas, d.sinEquivalencia, d.ingredientes, d.deLaBase, d.equivalentes])
+  }, [filas, d.usuario.id, d.sinEquivalencia, d.ingredientes, d.deLaBase, d.equivalentes])
   const cocinado = d.preparado.filter((p) => Number(p.portions) > 0 && d.recetasPorId.has(p.recipe_id))
 
   // El alimento de la hoja, al día (la hoja guarda una copia de cuando se abrió)
@@ -70,6 +70,11 @@ export default function Despensa() {
     <Marco titulo="Despensa">
       <div className="con-lateral">
         <div>
+          {d.hogar && (
+            <Link to="/perfil" className="pill bg-verde-claro text-verde-texto mb-3">
+              <Icono n="home" size={14} /> Despensa compartida · {d.hogar.nombre}
+            </Link>
+          )}
           <div className="grid grid-cols-3 gap-2 mb-4">
             <div className="tarjeta p-3">
               <Icono n="inventory_2" className="text-verde-texto" size={20} />
@@ -102,7 +107,7 @@ export default function Despensa() {
               <p className="text-xs text-gris">
                 {faltanPlan + d.lista.length === 0
                   ? 'No falta nada para tu plan'
-                  : `${faltanPlan} para el plan · ${d.lista.length} anotados por vos`}
+                  : `${faltanPlan} para el plan · ${d.lista.length} anotados${d.hogar ? '' : ' por vos'}`}
               </p>
             </div>
             <Icono n="chevron_right" className="text-gris" />
@@ -286,7 +291,7 @@ export default function Despensa() {
           />
           <Err>{editar.qty !== '' && errorEditar}</Err>
           {editar.alimento.unit !== 'u' && <p className="text-xs text-gris mt-1.5">1 kg son 1000 g y 1 litro son 1000 ml.</p>}
-          {editar.alimento.owner && (
+          {editar.alimento.owner === d.usuario.id && (
             <div className="mt-4 space-y-3">
               <div>
                 <label className="etiqueta" htmlFor="dp-categoria">

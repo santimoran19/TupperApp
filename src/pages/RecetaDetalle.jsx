@@ -173,7 +173,7 @@ export default function RecetaDetalle() {
                 <Icono n="restaurant" /> La comí
               </button>
             </div>
-            {receta.owner ? (
+            {receta.owner === d.usuario.id ? (
               <div className="flex justify-center gap-6 mt-5 text-sm">
                 <button onClick={() => nav(`/recetas/${id}/editar`)} className="font-semibold text-verde-texto flex items-center gap-1">
                   <Icono n="edit" size={16} /> Editar

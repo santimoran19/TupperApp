@@ -34,6 +34,11 @@ export default function Compras() {
     .map((l) => ({ id: l.id, a: d.alimentosPorId.get(l.food_id), qty: Number(l.qty) }))
   const mes = mesDe(hoy())
   const comprasMes = d.compras.filter((c) => mesDe(c.date) === mes).sort((a, b) => b.date.localeCompare(a.date))
+  // En un hogar, las compras de las otras personas dicen quién las hizo (mientras siga en el hogar)
+  const quienCompro = (c) => {
+    const nombre = c.comprado_por && c.comprado_por !== d.usuario.id ? d.hogar?.miembros.find((m) => m.id === c.comprado_por)?.nombre : null
+    return nombre ? `compró ${nombre}` : null
+  }
   const gasto = comprasMes.reduce((s, c) => s + Number(c.price), 0)
 
   const errCompra = comprando
@@ -60,7 +65,7 @@ export default function Compras() {
     })
     if (listo) {
       setComprando(null)
-      d.avisar('Sumado a tu despensa')
+      d.avisar(d.hogar ? 'Sumado a la despensa del hogar' : 'Sumado a tu despensa')
     }
   }
 
@@ -109,7 +114,7 @@ export default function Compras() {
                 <Fila key={x.a.id} a={x.a} qty={x.qty} origen="falta para el plan" />
               ))}
               {manuales.map((x) => (
-                <Fila key={x.id} a={x.a} qty={x.qty} origen="anotado por vos" id={x.id} />
+                <Fila key={x.id} a={x.a} qty={x.qty} origen={d.hogar ? 'anotado en el hogar' : 'anotado por vos'} id={x.id} />
               ))}
             </div>
           )}
@@ -127,6 +132,7 @@ export default function Compras() {
                     <span className="flex-1 min-w-0 truncate">
                       {c.name}
                       {a ? ` · ${cantidadTexto(a, Number(c.qty))}` : ''}
+                      {quienCompro(c) && <span className="text-gris"> · {quienCompro(c)}</span>}
                     </span>
                     <span className="font-semibold">{pesos(c.price)}</span>
                     <button
@@ -212,7 +218,9 @@ export default function Compras() {
               <Err>{errCompra.price}</Err>
             </div>
           </div>
-          <p className="text-xs text-gris mt-2">Se suma a tu despensa y el precio cuenta para el gasto del mes.</p>
+          <p className="text-xs text-gris mt-2">
+            {d.hogar ? 'Se suma a la despensa del hogar' : 'Se suma a tu despensa'} y el precio cuenta para el gasto del mes.
+          </p>
           <button onClick={confirmar} disabled={!!errCompra.qty || !!errCompra.price} className="btn-primario w-full mt-4">
             Confirmar compra
           </button>

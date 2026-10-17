@@ -28,6 +28,9 @@ const db = {
   recipe_prefs: [],
   ai_analyses: [],
   eventos: [],
+  // Los hogares (supabase/actualizacion-13.sql): no se leen ni se escriben directo, solo con las funciones
+  hogares: [],
+  hogar_miembros: [],
 }
 let numeroDeEvento = 0
 // IA simulada: lo que recibió el "modelo" y cómo tiene que responder (ok | texto | error | saturado)
@@ -88,18 +91,125 @@ const redondo = (n, decimales) => Math.round(n * 10 ** decimales) / 10 ** decima
 const entre = (n, max, decimales) => Math.min(max, Math.max(0, redondo(n, decimales)))
 const ahora = () => new Date().toISOString()
 
+// ---------- Hogares (supabase/actualizacion-13.sql). Las de verdad se prueban en pruebas/unidad/hogares.test.js ----------
+const HOGAR_MAXIMO = 6
+const miembroDe = (uid) => db.hogar_miembros.find((m) => m.user_id === uid)
+// De quién son la despensa, la lista de compras, las comidas preparadas y las compras: del hogar si la persona está en uno
+const ambito = (uid) => miembroDe(uid)?.hogar_id ?? uid
+// Las personas cuyos alimentos y recetas propios se ven: ella y las de su hogar
+const companeros = (uid) => {
+  const m = miembroDe(uid)
+  return m ? db.hogar_miembros.filter((x) => x.hogar_id === m.hogar_id).map((x) => x.user_id) : [uid]
+}
+const puedeVer = (dueno, uid) => dueno === null || companeros(uid).includes(dueno)
+const DEL_AMBITO = ['stock', 'prepared', 'shopping_items', 'purchases']
+
+function codigoNuevo() {
+  const alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
+  let c
+  do c = Array.from({ length: 6 }, () => alfabeto[Math.floor(Math.random() * alfabeto.length)]).join('')
+  while (db.hogares.some((h) => h.codigo === c))
+  return c
+}
+
+function miHogar(uid) {
+  const m = miembroDe(uid)
+  if (!m) return null
+  const h = db.hogares.find((x) => x.id === m.hogar_id)
+  return {
+    id: h.id,
+    nombre: h.nombre,
+    codigo: m.rol === 'creador' ? h.codigo : null,
+    soy_creador: m.rol === 'creador',
+    maximo: HOGAR_MAXIMO,
+    miembros: db.hogar_miembros
+      .filter((x) => x.hogar_id === h.id)
+      .map((x) => {
+        const p = db.profiles.find((q) => q.id === x.user_id)
+        return { id: x.user_id, nombre: p?.name ?? '', usuario: p?.username ?? null, creador: x.rol === 'creador', desde: x.desde }
+      }),
+  }
+}
+
+// Suma lo de una persona a la despensa del hogar (lo suyo no se toca)
+function hogarSumar(uid, hogar) {
+  for (const s of db.stock.filter((x) => x.user_id === uid)) {
+    const h = db.stock.find((x) => x.user_id === hogar && x.food_id === s.food_id)
+    if (h) h.qty = entre(Number(h.qty) + Number(s.qty), 1000000, 2)
+    else db.stock.push({ user_id: hogar, food_id: s.food_id, qty: s.qty, updated_at: ahora() })
+  }
+  for (const l of db.shopping_items.filter((x) => x.user_id === uid)) {
+    const h = db.shopping_items.find((x) => x.user_id === hogar && x.food_id === l.food_id)
+    if (h) h.qty = Math.max(Number(h.qty), Number(l.qty))
+    else db.shopping_items.push({ id: randomUUID(), user_id: hogar, food_id: l.food_id, qty: l.qty, created_at: ahora() })
+  }
+  for (const p of db.prepared.filter((x) => x.user_id === uid && Number(x.portions) > 0)) {
+    const h = db.prepared.find((x) => x.user_id === hogar && x.recipe_id === p.recipe_id)
+    if (h) h.portions = entre(Number(h.portions) + Number(p.portions), 1000, 1)
+    else db.prepared.push({ user_id: hogar, recipe_id: p.recipe_id, portions: p.portions })
+  }
+  const desde = new Date(Date.now() - 90 * 86400000).toISOString().slice(0, 10)
+  for (const c of db.purchases.filter((x) => x.user_id === uid && x.date >= desde)) {
+    const repetida = db.purchases.some(
+      (h) =>
+        h.user_id === hogar && h.food_id === c.food_id && h.name === c.name && h.qty === c.qty && h.price === c.price && h.date === c.date,
+    )
+    if (!repetida) db.purchases.push({ ...c, id: randomUUID(), user_id: hogar, comprado_por: null })
+  }
+}
+
+// Lo que se lleva quien se va: una copia de lo del hogar (sin lo que apunta a alimentos o recetas de otras personas)
+function hogarLlevarse(uid, hogar) {
+  const alimentoPropio = (id) => {
+    const f = db.foods.find((x) => x.id === id)
+    return !!f && (f.owner === null || f.owner === uid)
+  }
+  const recetaPropia = (id) => {
+    const r = db.recipes.find((x) => x.id === id)
+    return !!r && (r.owner === null || r.owner === uid)
+  }
+  const delHogar = (tabla) => db[tabla].filter((x) => x.user_id === hogar)
+  for (const t of ['stock', 'shopping_items', 'prepared']) db[t] = db[t].filter((x) => x.user_id !== uid)
+  for (const x of delHogar('stock')) if (alimentoPropio(x.food_id)) db.stock.push({ ...x, user_id: uid, updated_at: ahora() })
+  for (const x of delHogar('shopping_items'))
+    if (alimentoPropio(x.food_id)) db.shopping_items.push({ ...x, id: randomUUID(), user_id: uid })
+  for (const x of delHogar('prepared')) if (recetaPropia(x.recipe_id)) db.prepared.push({ ...x, user_id: uid })
+  for (const c of delHogar('purchases').filter((x) => x.comprado_por === uid))
+    db.purchases.push({ ...c, id: randomUUID(), user_id: uid, comprado_por: null, food_id: alimentoPropio(c.food_id) ? c.food_id : null })
+  // Lo que es de ella sale del hogar
+  const suyos = new Set(db.foods.filter((f) => f.owner === uid).map((f) => f.id))
+  const suyas = new Set(db.recipes.filter((r) => r.owner === uid).map((r) => r.id))
+  db.stock = db.stock.filter((x) => !(x.user_id === hogar && suyos.has(x.food_id)))
+  db.shopping_items = db.shopping_items.filter((x) => !(x.user_id === hogar && suyos.has(x.food_id)))
+  db.prepared = db.prepared.filter((x) => !(x.user_id === hogar && suyas.has(x.recipe_id)))
+  for (const c of db.purchases) if (c.user_id === hogar && suyos.has(c.food_id)) c.food_id = null
+}
+
+// Saca a una persona del hogar. Si era la última, el hogar se borra con su despensa; si era quien lo armó, pasa a la que lleva más tiempo.
+function dejarElHogar(uid) {
+  const m = miembroDe(uid)
+  if (!m) return
+  db.hogar_miembros = db.hogar_miembros.filter((x) => x !== m)
+  const quedan = db.hogar_miembros.filter((x) => x.hogar_id === m.hogar_id)
+  if (quedan.length === 0) {
+    db.hogares = db.hogares.filter((h) => h.id !== m.hogar_id)
+    for (const t of DEL_AMBITO) db[t] = db[t].filter((x) => x.user_id !== m.hogar_id)
+  } else if (m.rol === 'creador') quedan[0].rol = 'creador'
+}
+
 function moverStock(uid, cambios, soloSiExiste = false) {
   const juntos = new Map()
   for (const c of Array.isArray(cambios) ? cambios : []) juntos.set(c.food_id, (juntos.get(c.food_id) || 0) + Number(c.delta))
   const tocadas = []
+  const dueno = ambito(uid)
   for (const [food_id, delta] of juntos) {
-    let fila = db.stock.find((s) => s.user_id === uid && s.food_id === food_id)
+    let fila = db.stock.find((s) => s.user_id === dueno && s.food_id === food_id)
     if (fila) fila.qty = entre(Number(fila.qty) + delta, 1000000, 2)
     else if (soloSiExiste) continue
     else {
       if (!db.foods.some((f) => f.id === food_id))
         throw errorPg('23503', 'insert or update on table "stock" violates foreign key constraint "stock_food_id_fkey"')
-      fila = { user_id: uid, food_id, qty: entre(delta, 1000000, 2) }
+      fila = { user_id: dueno, food_id, qty: entre(delta, 1000000, 2) }
       db.stock.push(fila)
     }
     fila.updated_at = ahora()
@@ -156,13 +266,14 @@ const FUNCIONES = {
   cocinar(uid, a) {
     if (!(a.p_porciones > 0 && a.p_porciones <= 1000)) throw errorPg('P0001', 'La cantidad de porciones no es válida.')
     if (repetido(uid, a.p_clave)) return { repetida: true }
+    const dueno = ambito(uid)
     const stock = moverStock(uid, a.p_stock)
     if (!db.recipes.some((r) => r.id === a.p_receta))
       throw errorPg('23503', 'insert or update on table "prepared" violates foreign key constraint')
-    let fila = db.prepared.find((p) => p.user_id === uid && p.recipe_id === a.p_receta)
+    let fila = db.prepared.find((p) => p.user_id === dueno && p.recipe_id === a.p_receta)
     if (fila) fila.portions = Math.min(1000, entre(Number(fila.portions) + a.p_porciones, 1000, 1))
     else {
-      fila = { user_id: uid, recipe_id: a.p_receta, portions: entre(a.p_porciones, 1000, 1) }
+      fila = { user_id: dueno, recipe_id: a.p_receta, portions: entre(a.p_porciones, 1000, 1) }
       db.prepared.push(fila)
     }
     return { stock, preparado: fila }
@@ -173,6 +284,7 @@ const FUNCIONES = {
     if (!['desayuno', 'almuerzo', 'merienda', 'cena', 'extra'].includes(a.p_comida))
       throw errorPg('23514', 'new row for relation "log_entries" violates check constraint "log_entries_meal_check"')
     if (repetido(uid, a.p_clave)) return { repetida: true }
+    const dueno = ambito(uid)
     db.log_entries = db.log_entries.filter((l) => !(l.user_id === uid && l.date === a.p_fecha && l.meal === a.p_comida && l.skipped))
     const tocadas = new Set()
     const listas = new Set()
@@ -184,7 +296,7 @@ const FUNCIONES = {
       if (f.s !== undefined || f.p !== undefined) {
         descontado = { s: [], p: 0, pn: 0 }
         for (const x of f.s || []) {
-          const fila = db.stock.find((s) => s.user_id === uid && s.food_id === x.f)
+          const fila = db.stock.find((s) => s.user_id === dueno && s.food_id === x.f)
           if (!fila) continue
           const toma = redondo(Math.min(Number(x.q), Number(fila.qty)), 2)
           if (toma > 0) {
@@ -194,7 +306,7 @@ const FUNCIONES = {
           }
           descontado.s.push({ f: x.f, q: toma, n: redondo(Number(x.q), 2) })
         }
-        const lista = f.recipe_id && Number(f.p) > 0 ? db.prepared.find((q) => q.user_id === uid && q.recipe_id === f.recipe_id) : null
+        const lista = f.recipe_id && Number(f.p) > 0 ? db.prepared.find((q) => q.user_id === dueno && q.recipe_id === f.recipe_id) : null
         if (lista) {
           descontado.p = redondo(Math.min(Number(f.p), Number(lista.portions)), 1)
           descontado.pn = redondo(Number(f.p), 1)
@@ -224,7 +336,7 @@ const FUNCIONES = {
     const stock = [...tocadas, ...moverStock(uid, a.p_stock, true)]
     const preparado = [...listas]
     for (const c of Array.isArray(a.p_preparado) ? a.p_preparado : []) {
-      const fila = db.prepared.find((p) => p.user_id === uid && p.recipe_id === c.recipe_id)
+      const fila = db.prepared.find((p) => p.user_id === dueno && p.recipe_id === c.recipe_id)
       if (!fila) continue
       fila.portions = entre(Number(fila.portions) + Number(c.delta), 1000, 1)
       preparado.push(fila)
@@ -235,6 +347,7 @@ const FUNCIONES = {
   // Cambiar la cantidad de un registro (supabase/actualizacion-9.sql). Las de verdad se prueban en editar-registros.test.js.
   editar_registro(uid, a) {
     const r = db.log_entries.find((l) => l.id === a.p_id && l.user_id === uid)
+    const dueno = ambito(uid)
     if (!r) throw errorPg('P0001', 'Ese registro ya no existe.')
     const qty = redondo(Number(a.p_qty), 2)
     if (!(qty > 0 && qty <= 1000000)) throw errorPg('P0001', 'La cantidad no es válida.')
@@ -250,7 +363,7 @@ const FUNCIONES = {
       for (const x of r.descontado.s) {
         const objetivo = redondo(Number(x.n ?? x.q) * razon, 2)
         let hecho = Number(x.q)
-        const fila = db.stock.find((s) => s.user_id === uid && s.food_id === x.f)
+        const fila = db.stock.find((s) => s.user_id === dueno && s.food_id === x.f)
         if (objetivo > hecho) {
           if (fila) {
             const toma = redondo(Math.min(objetivo - hecho, Number(fila.qty)), 2)
@@ -271,7 +384,7 @@ const FUNCIONES = {
       const pn = Number(r.descontado.pn ?? p) || 0
       if (pn > 0 && r.recipe_id) {
         const objetivo = redondo(pn * razon, 1)
-        const lista = db.prepared.find((q) => q.user_id === uid && q.recipe_id === r.recipe_id)
+        const lista = db.prepared.find((q) => q.user_id === dueno && q.recipe_id === r.recipe_id)
         if (objetivo > p && lista) {
           const toma = redondo(Math.min(objetivo - p, Number(lista.portions)), 1)
           lista.portions = entre(Number(lista.portions) - toma, 1000, 1)
@@ -301,17 +414,18 @@ const FUNCIONES = {
 
   borrar_registro(uid, a) {
     const r = db.log_entries.find((l) => l.id === a.p_id && l.user_id === uid)
+    const dueno = ambito(uid)
     const stock = []
     const preparado = []
     if (r?.descontado) {
       for (const x of r.descontado.s) {
-        const fila = db.stock.find((s) => s.user_id === uid && s.food_id === x.f)
+        const fila = db.stock.find((s) => s.user_id === dueno && s.food_id === x.f)
         if (!fila) continue
         fila.qty = entre(Number(fila.qty) + Number(x.q), 1000000, 2)
         stock.push(fila)
       }
       const lista =
-        Number(r.descontado.p) > 0 && r.recipe_id ? db.prepared.find((p) => p.user_id === uid && p.recipe_id === r.recipe_id) : null
+        Number(r.descontado.p) > 0 && r.recipe_id ? db.prepared.find((p) => p.user_id === dueno && p.recipe_id === r.recipe_id) : null
       if (lista) {
         lista.portions = entre(Number(lista.portions) + Number(r.descontado.p), 1000, 1)
         preparado.push(lista)
@@ -322,14 +436,16 @@ const FUNCIONES = {
   },
 
   comprar(uid, a) {
-    const alimento = db.foods.find((f) => f.id === a.p_alimento && (f.owner === null || f.owner === uid))
+    const alimento = db.foods.find((f) => f.id === a.p_alimento && puedeVer(f.owner, uid))
     if (!alimento) throw errorPg('P0001', 'Ese alimento ya no existe.')
     if (!(a.p_cantidad > 0 && a.p_cantidad <= 1000000))
       throw errorPg('23514', 'new row for relation "purchases" violates check constraint "purchases_qty_chk"')
     if (repetido(uid, a.p_clave)) return { repetida: true }
+    const dueno = ambito(uid)
     const compra = {
       id: randomUUID(),
-      user_id: uid,
+      user_id: dueno,
+      comprado_por: dueno !== uid ? uid : null,
       food_id: alimento.id,
       name: alimento.name,
       qty: a.p_cantidad,
@@ -338,7 +454,7 @@ const FUNCIONES = {
     }
     db.purchases.push(compra)
     const stock = moverStock(uid, [{ food_id: alimento.id, delta: a.p_cantidad }])
-    const mias = db.shopping_items.filter((l) => l.user_id === uid)
+    const mias = db.shopping_items.filter((l) => l.user_id === dueno)
     const anotada = mias.find((l) => l.food_id === a.p_anotado) || mias.find((l) => l.food_id === a.p_alimento)
     if (anotada) db.shopping_items = db.shopping_items.filter((l) => l !== anotada)
     return { compra, stock, lista: anotada ? anotada.id : null }
@@ -373,6 +489,71 @@ const FUNCIONES = {
     })
     db.recipe_items.push(...items)
     return { receta, items }
+  },
+
+  despensa_de: (uid) => ambito(uid),
+  mi_hogar: (uid) => miHogar(uid),
+
+  crear_hogar(uid, a) {
+    const nombre = String(a.p_nombre ?? '').trim()
+    if (nombre.length < 1 || nombre.length > 40) throw errorPg('P0001', 'El nombre del hogar tiene que tener entre 1 y 40 letras.')
+    if (miembroDe(uid)) throw errorPg('P0001', 'Ya estás en un hogar. Salí de ese antes de armar otro.')
+    const hogar = { id: randomUUID(), nombre, codigo: codigoNuevo(), created_at: ahora() }
+    db.hogares.push(hogar)
+    db.hogar_miembros.push({ user_id: uid, hogar_id: hogar.id, rol: 'creador', desde: ahora() })
+    hogarSumar(uid, hogar.id)
+    return miHogar(uid)
+  },
+
+  unirse_al_hogar(uid, a) {
+    const codigo = String(a.p_codigo ?? '')
+      .trim()
+      .toUpperCase()
+    if (miembroDe(uid)) throw errorPg('P0001', 'Ya estás en un hogar. Salí de ese antes de unirte a otro.')
+    if (!/^[A-HJ-NP-Z2-9]{6}$/.test(codigo)) return { ok: false, error: 'Ese código no es válido: tiene 6 letras o números.' }
+    const hogar = db.hogares.find((h) => h.codigo === codigo)
+    if (!hogar) return { ok: false, error: 'No encontramos ese código. Revisalo con quien te invitó: puede que lo hayan cambiado.' }
+    if (db.hogar_miembros.filter((m) => m.hogar_id === hogar.id).length >= HOGAR_MAXIMO)
+      throw errorPg('P0001', `Ese hogar ya está completo (hasta ${HOGAR_MAXIMO} personas).`)
+    db.hogar_miembros.push({ user_id: uid, hogar_id: hogar.id, rol: 'miembro', desde: ahora() })
+    hogarSumar(uid, hogar.id)
+    return { ok: true }
+  },
+
+  salir_del_hogar(uid) {
+    const m = miembroDe(uid)
+    if (!m) throw errorPg('P0001', 'No estás en ningún hogar.')
+    hogarLlevarse(uid, m.hogar_id)
+    dejarElHogar(uid)
+    return null
+  },
+
+  sacar_del_hogar(uid, a) {
+    const yo = miembroDe(uid)
+    if (yo?.rol !== 'creador') throw errorPg('P0001', 'Solo quien armó el hogar puede sacar a otras personas.')
+    if (a.p_usuario === uid) throw errorPg('P0001', 'Para irte del hogar usá "Salir del hogar".')
+    const otra = db.hogar_miembros.find((m) => m.user_id === a.p_usuario && m.hogar_id === yo.hogar_id)
+    if (!otra) throw errorPg('P0001', 'Esa persona ya no está en tu hogar.')
+    hogarLlevarse(otra.user_id, otra.hogar_id)
+    dejarElHogar(otra.user_id)
+    return null
+  },
+
+  renovar_codigo(uid, a) {
+    const yo = miembroDe(uid)
+    if (yo?.rol !== 'creador') throw errorPg('P0001', 'Solo quien armó el hogar puede cambiar el código.')
+    const hogar = db.hogares.find((h) => h.id === yo.hogar_id)
+    hogar.codigo = a.p_apagar ? null : codigoNuevo()
+    return hogar.codigo
+  },
+
+  renombrar_hogar(uid, a) {
+    const yo = miembroDe(uid)
+    if (yo?.rol !== 'creador') throw errorPg('P0001', 'Solo quien armó el hogar puede cambiarle el nombre.')
+    const nombre = String(a.p_nombre ?? '').trim()
+    if (nombre.length < 1 || nombre.length > 40) throw errorPg('P0001', 'El nombre del hogar tiene que tener entre 1 y 40 letras.')
+    db.hogares.find((h) => h.id === yo.hogar_id).nombre = nombre
+    return null
   },
 }
 
@@ -625,6 +806,8 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/rest/v1/rpc/borrar_mi_cuenta') {
       const uid = uidDe(req)
       for (const [email, u] of users) if (u.id === uid) users.delete(email)
+      dejarElHogar(uid)
+      for (const c of db.purchases) if (c.comprado_por === uid) c.comprado_por = null
       for (const t of Object.keys(db))
         db[t] = db[t].filter((r) => r.user_id !== uid && r.owner !== uid && !(t === 'profiles' && r.id === uid))
       return send(204)
@@ -653,11 +836,15 @@ const server = http.createServer(async (req, res) => {
     const servicio = esServicio(req)
     const uid = uidDe(req)
     if (!uid && !servicio) return send(401, { message: 'sin sesión' })
+    if (!servicio && (tabla === 'hogares' || tabla === 'hogar_miembros'))
+      return send(403, { message: 'permission denied for table ' + tabla })
+    const dueno = uid ? ambito(uid) : null
     const visible = (row) => {
       if (servicio) return true
-      if (tabla === 'foods' || tabla === 'recipes') return row.owner === null || row.owner === uid
+      if (tabla === 'foods' || tabla === 'recipes') return puedeVer(row.owner, uid)
       if (tabla === 'recipe_items') return true
       if (tabla === 'profiles') return row.id === uid
+      if (DEL_AMBITO.includes(tabla)) return row.user_id === dueno
       return row.user_id === uid
     }
     const pasa = filtros(url)
@@ -685,7 +872,8 @@ const server = http.createServer(async (req, res) => {
       for (const f of filas) {
         if ((tabla === 'foods' || tabla === 'recipes') && f.owner !== uid)
           return send(403, { message: 'new row violates row-level security policy' })
-        if (f.user_id && f.user_id !== uid) return send(403, { message: 'new row violates row-level security policy' })
+        if (f.user_id && f.user_id !== (DEL_AMBITO.includes(tabla) ? dueno : uid))
+          return send(403, { message: 'new row violates row-level security policy' })
         let existente = null
         if (upsert && conflicto) {
           const cols = conflicto.split(',')

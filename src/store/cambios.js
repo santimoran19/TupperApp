@@ -14,6 +14,11 @@ import { conFilas, entre, reemplazar } from './listas'
 const cantidad = (n) => entre(redondear(n, 2), 0, 1000000)
 const porciones = (n) => entre(redondear(n, 1), 0, 1000)
 
+// De quién son las filas de la despensa, la lista, las comidas preparadas y las compras: del hogar si la persona está
+// en uno y, si no, suyas (ver supabase/actualizacion-13.sql). Se saca del estado, así los cambios que esperan en la cola
+// se aplican bien sobre lo que se está viendo.
+const ambito = (s, uid) => s.hogar?.id ?? uid
+
 // Lo que hace `mover_stock`: suma o resta, nunca baja de cero y junta los repetidos.
 // Con `soloSiExiste` no agrega a la despensa lo que no estaba.
 function moverStock(stock, cambios, uid, soloSiExiste = false) {
@@ -98,7 +103,7 @@ export const LOCAL = {
           pendiente: true,
         })),
       ],
-      stock: moverStock(s.stock, [...(d.stock || []), ...stock], uid, true),
+      stock: moverStock(s.stock, [...(d.stock || []), ...stock], ambito(s, uid), true),
       preparado: s.preparado.map((p) =>
         usadas.has(p.recipe_id) ? { ...p, portions: porciones(Number(p.portions) + usadas.get(p.recipe_id)) } : p,
       ),
@@ -115,7 +120,7 @@ export const LOCAL = {
     return {
       ...s,
       registros: sinFila(s.registros, 'id', d.id),
-      stock: moverStock(s.stock, vuelve.stock, uid, true),
+      stock: moverStock(s.stock, vuelve.stock, ambito(s, uid), true),
       preparado: s.preparado.map((p) => {
         const c = vuelve.preparado.find((x) => x.recipe_id === p.recipe_id)
         return c ? { ...p, portions: porciones(Number(p.portions) + c.delta) } : p
@@ -129,7 +134,7 @@ export const LOCAL = {
     return {
       ...s,
       registros: s.registros.map((x) => (x.id === d.id ? r.registro : x)),
-      stock: moverStock(s.stock, r.stock, uid, true),
+      stock: moverStock(s.stock, r.stock, ambito(s, uid), true),
       preparado: s.preparado.map((p) => {
         const c = r.preparado.find((x) => x.recipe_id === p.recipe_id)
         return c ? { ...p, portions: porciones(Number(p.portions) + c.delta) } : p
@@ -140,16 +145,20 @@ export const LOCAL = {
     const lista = s.preparado.find((p) => p.recipe_id === d.receta)
     const fila = lista
       ? { ...lista, portions: porciones(Number(lista.portions) + d.porciones) }
-      : { user_id: uid, recipe_id: d.receta, portions: porciones(d.porciones) }
-    return { ...s, stock: moverStock(s.stock, d.stock, uid), preparado: reemplazar(s.preparado, fila, (x) => x.recipe_id === d.receta) }
+      : { user_id: ambito(s, uid), recipe_id: d.receta, portions: porciones(d.porciones) }
+    return {
+      ...s,
+      stock: moverStock(s.stock, d.stock, ambito(s, uid)),
+      preparado: reemplazar(s.preparado, fila, (x) => x.recipe_id === d.receta),
+    }
   },
   fijarPreparado: (s, d) => GUARDADO.fijarPreparado(s, [d.fila]),
-  ajustarStock: (s, d, uid) => ({ ...s, stock: moverStock(s.stock, [d], uid) }),
+  ajustarStock: (s, d, uid) => ({ ...s, stock: moverStock(s.stock, [d], ambito(s, uid)) }),
   fijarStock: (s, d) => ({ ...s, stock: reemplazar(s.stock, d.fila, (x) => x.food_id === d.fila.food_id) }),
   quitarDeDespensa: (s, d) => GUARDADO.quitarDeDespensa(s, null, d),
   agregarALista: (s, d, uid) => {
     const estaba = s.lista.find((x) => x.food_id === d.food_id)
-    const fila = estaba ? { ...estaba, qty: d.qty } : { id: d.id, user_id: uid, food_id: d.food_id, qty: d.qty, pendiente: true }
+    const fila = estaba ? { ...estaba, qty: d.qty } : { id: d.id, user_id: ambito(s, uid), food_id: d.food_id, qty: d.qty, pendiente: true }
     return { ...s, lista: reemplazar(s.lista, fila, (x) => x.food_id === d.food_id) }
   },
   quitarDeLista: (s, d) => GUARDADO.quitarDeLista(s, null, d),
@@ -160,9 +169,19 @@ export const LOCAL = {
       ...s,
       compras: [
         ...s.compras,
-        { id: d.id, user_id: uid, food_id: d.alimento, name: d.nombre, qty: d.cantidad, price: d.precio, date: d.fecha, pendiente: true },
+        {
+          id: d.id,
+          user_id: ambito(s, uid),
+          comprado_por: s.hogar ? uid : null,
+          food_id: d.alimento,
+          name: d.nombre,
+          qty: d.cantidad,
+          price: d.precio,
+          date: d.fecha,
+          pendiente: true,
+        },
       ],
-      stock: moverStock(s.stock, [{ food_id: d.alimento, delta: d.cantidad }], uid),
+      stock: moverStock(s.stock, [{ food_id: d.alimento, delta: d.cantidad }], ambito(s, uid)),
       lista: anotada ? s.lista.filter((x) => x !== anotada) : s.lista,
     }
   },

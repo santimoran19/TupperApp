@@ -65,7 +65,7 @@ export default function RecetaNueva() {
   }
 
   // Solo se pueden editar las recetas propias
-  if (id && !original?.owner) return <Navigate to="/recetas" replace />
+  if (id && original?.owner !== d.usuario.id) return <Navigate to="/recetas" replace />
 
   const alternarComida = (c) => set('meal_types')(f.meal_types.includes(c) ? f.meal_types.filter((x) => x !== c) : [...f.meal_types, c])
 

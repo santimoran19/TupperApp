@@ -60,10 +60,12 @@ export const accionesDePerfil = (k) => ({
   // Todo lo del usuario en un solo objeto, para descargarlo.
   exportar: k.accion('exportar', async () => {
     const uid = k.uid
+    // Las compras son del hogar si la persona está en uno; las de antes de entrar siguen siendo suyas
+    const duenos = [...new Set([uid, k.ver().e.hogar?.id].filter(Boolean))]
     const [registros, plan, compras, eventos] = await Promise.all([
       traerTodo(() => supabase.from('log_entries').select('*').eq('user_id', uid).order('id')),
       traerTodo(() => supabase.from('plan').select('*').eq('user_id', uid).order('id')),
-      traerTodo(() => supabase.from('purchases').select('*').eq('user_id', uid).order('id')),
+      traerTodo(() => supabase.from('purchases').select('*').in('user_id', duenos).order('id')),
       traerTodo(() =>
         supabase.from('eventos').select('created_at,tipo,nombre,detalle,version,ruta,dispositivo').eq('user_id', uid).order('id'),
       ),
@@ -85,13 +87,13 @@ export const accionesDePerfil = (k) => ({
       lista_de_compras: e.lista.map((l) => ({ alimento: nombreAlimento(l.food_id), cantidad: Number(l.qty) })),
       compras: compras.map((c) => ({ fecha: c.date, producto: c.name, cantidad: Number(c.qty), precio: Number(c.price) })),
       alimentos_propios: e.alimentos
-        .filter((a) => a.owner)
+        .filter((a) => a.owner === k.uid)
         .map(({ same_as, ...resto }) => {
           const b = v.base({ ...resto, same_as })
           return { ...resto, cuenta_como: b.id === resto.id ? null : b.name }
         }),
       recetas_propias: e.recetas
-        .filter((r) => r.owner)
+        .filter((r) => r.owner === k.uid)
         .map((r) => ({ ...r, ingredientes: v.itemsDe(r.id).map((i) => ({ alimento: nombreAlimento(i.food_id), cantidad: i.qty })) })),
       recetas_favoritas: [...v.favoritas].map(nombreReceta),
       recetas_ocultas: [...v.ocultas].map(nombreReceta),

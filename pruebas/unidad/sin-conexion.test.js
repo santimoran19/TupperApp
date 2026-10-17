@@ -11,17 +11,21 @@ beforeAll(async () => {
   ;({ db, id, receta, como, filas, rpc } = await abrirBase())
 }, 60000)
 
+// De quién son la despensa, la lista, las comidas preparadas y las compras: de Ana o, dentro de un hogar, del hogar
+let AMBITO = ANA
+
 // El estado de Ana como lo tiene la app: las tablas tal cual
 async function estado() {
   // Las fechas van como texto (AAAA-MM-DD), que es como le llegan a la app
-  const de = async (tabla, orden) =>
-    (await filas(`select * from public.${tabla} where user_id = $1 order by ${orden}`, [ANA])).map((x) =>
+  const de = async (tabla, orden, dueno = AMBITO) =>
+    (await filas(`select * from public.${tabla} where user_id = $1 order by ${orden}`, [dueno])).map((x) =>
       x.date instanceof Date ? { ...x, date: x.date.toISOString().slice(0, 10) } : x,
     )
   return {
+    hogar: AMBITO === ANA ? null : { id: AMBITO },
     stock: await de('stock', 'food_id'),
     preparado: await de('prepared', 'recipe_id'),
-    registros: await de('log_entries', 'created_at, id'),
+    registros: await de('log_entries', 'created_at, id', ANA),
     lista: await de('shopping_items', 'food_id'),
     compras: await de('purchases', 'id'),
   }
@@ -58,7 +62,7 @@ function comparable(s) {
       )
       .sort(),
     lista: porClave(s.lista, 'food_id', 'qty'),
-    compras: s.compras.map((c) => [c.food_id, c.name, n(c.qty), n(c.price), c.date].join('|')).sort(),
+    compras: s.compras.map((c) => [c.food_id, c.name, n(c.qty), n(c.price), c.date, c.comprado_por ?? ''].join('|')).sort(),
   }
 }
 
@@ -498,4 +502,79 @@ test('borrar un registro devuelve lo que había descontado (y no agrega lo que y
   const despues = comparable(await estado())
   expect(despues.stock[id['pechuga-cruda']]).toBe(antes.stock[id['pechuga-cruda']] + 300)
   expect(despues.stock[id.fideos]).toBeUndefined()
+})
+
+test('dentro de un hogar: la copia y la base cuentan igual sobre la despensa del hogar, y las compras dicen quién las hizo', async () => {
+  const hogar = (await como(ANA, () => rpc('crear_hogar', ['Casa de Ana']))).id
+  AMBITO = hogar
+  try {
+    await mover(id.huevo, 6)
+    const s = comparable(await mover(id.huevo, -2))
+    expect(s.stock[id.huevo]).toBe(4)
+    // Lo de Ana de antes no se tocó: está donde estaba
+    expect(await filas('select 1 from public.stock where user_id = $1 and food_id = $2', [hogar, id.huevo])).toHaveLength(1)
+
+    const cocinar = (porciones, stock) =>
+      lasDos('cocinar', { receta: receta['desayuno-avena'], porciones, stock }, () =>
+        rpc('cocinar', [receta['desayuno-avena'], porciones, j(stock)]),
+      )
+    await mover(id.leche, 600)
+    await cocinar(2, [{ food_id: id.leche, delta: -400 }])
+    const c = comparable(await cocinar(1, [{ food_id: id.leche, delta: -100 }]))
+    expect(c.preparado[receta['desayuno-avena']]).toBeGreaterThanOrEqual(3)
+    expect(c.stock[id.leche]).toBe(100)
+
+    // Una compra anotada en la lista del hogar: se saca de la lista y queda anotado quién la hizo
+    await lasDos('agregarALista', { food_id: id.arroz, qty: 2, id: 'x' }, () =>
+      filas('insert into public.shopping_items (user_id, food_id, qty) values ($1, $2, 2) returning *', [hogar, id.arroz]),
+    )
+    const compra = {
+      id: 'c',
+      alimento: id.arroz,
+      nombre: 'Arroz largo fino (crudo)',
+      cantidad: 1000,
+      precio: 900,
+      fecha: '2026-10-07',
+      anotado: id.arroz,
+    }
+    const k = comparable(
+      await lasDos('comprar', compra, () =>
+        rpc('comprar', [compra.alimento, compra.cantidad, compra.precio, compra.fecha, compra.anotado]),
+      ),
+    )
+    expect(k.lista).toEqual({})
+    expect(k.compras.filter((x) => x.endsWith('|2026-10-07|' + ANA))).toHaveLength(1)
+
+    const datos = {
+      fecha: '2026-10-07',
+      comida: 'cena',
+      filas: [
+        { name: 'Huevo', food_id: id.huevo, qty: 2, kcal: 156, protein: 12.6, carbs: 1.1, fat: 10.6, s: [{ f: id.huevo, q: 2 }], p: 0 },
+      ],
+      stock: [],
+      preparado: [],
+      ids: ['h'],
+      cuando: '2026-10-07T21:00:00Z',
+    }
+    const r = comparable(
+      await lasDos('registrar', datos, () => rpc('registrar_comida', ['2026-10-07', 'cena', j(datos.filas), '[]', '[]'])),
+    )
+    expect(r.stock[id.huevo]).toBe(2)
+    // Las filas nuevas que arma la copia llevan de dueño al hogar, no a la persona
+    const base = { ...(await estado()), stock: [], preparado: [], lista: [], compras: [] }
+    expect(LOCAL.ajustarStock(base, { food_id: id.sal, delta: 1 }, ANA).stock[0].user_id).toBe(hogar)
+    expect(LOCAL.agregarALista(base, { food_id: id.sal, qty: 1, id: 'z' }, ANA).lista[0].user_id).toBe(hogar)
+    expect(LOCAL.cocinar(base, { receta: receta['desayuno-avena'], porciones: 1, stock: [] }, ANA).preparado[0].user_id).toBe(hogar)
+    const comprada = LOCAL.comprar(base, { id: 'c', alimento: id.sal, nombre: 'Sal', cantidad: 1, precio: 1, fecha: '2026-10-08' }, ANA)
+    expect(comprada.compras[0]).toMatchObject({ user_id: hogar, comprado_por: ANA })
+    // Fuera de un hogar siguen siendo de la persona, sin "comprado por"
+    const sola = LOCAL.comprar(
+      { ...base, hogar: null },
+      { id: 'c', alimento: id.sal, nombre: 'Sal', cantidad: 1, precio: 1, fecha: '2026-10-08' },
+      ANA,
+    )
+    expect(sola.compras[0]).toMatchObject({ user_id: ANA, comprado_por: null })
+  } finally {
+    AMBITO = ANA
+  }
 })

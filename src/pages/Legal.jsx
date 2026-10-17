@@ -100,7 +100,17 @@ const TEXTOS = {
           'Cuando elegís una contraseña, se consulta un servicio público (Have I Been Pwned) para saber si apareció en filtraciones de otros sitios. La contraseña no sale de tu dispositivo: se manda solo un fragmento de su huella, que no alcanza para reconstruirla.',
         ],
       ],
-      ['Cómo los protegemos', ['La conexión va cifrada y cada cuenta puede leer y modificar únicamente sus propios datos.']],
+      [
+        'Hogares',
+        [
+          'Si armás un hogar o te unís a uno, las demás personas del hogar ven tu nombre y tu usuario, y comparten con vos la despensa, la lista de compras, las comidas preparadas, el historial de compras y los alimentos y recetas que cargaste. Tu diario, tu plan, tus medidas y tu perfil no se comparten.',
+          'Al irte del hogar dejás de ver lo compartido y te llevás una copia de la despensa. Si borrás tu cuenta, tu lugar en el hogar se borra y la despensa sigue para las demás personas.',
+        ],
+      ],
+      [
+        'Cómo los protegemos',
+        ['La conexión va cifrada y cada cuenta puede leer y modificar únicamente sus propios datos, y los que compartís en un hogar.'],
+      ],
       [
         'Tus derechos',
         [

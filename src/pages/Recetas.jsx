@@ -76,7 +76,7 @@ export default function Recetas() {
     if (filtro === 'llevar') return r.portable
     if (filtro === 'principal') return r.meal_types.includes('almuerzo') || r.meal_types.includes('cena')
     if (filtro === 'desayuno' || filtro === 'merienda') return r.meal_types.includes(filtro)
-    if (filtro === 'mias') return r.owner !== null
+    if (filtro === 'mias') return r.owner === d.usuario.id
     return true
   })
 

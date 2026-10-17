@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Marco from '../components/Marco'
 import FormularioPerfil from '../components/FormularioPerfil'
+import Hogar from '../components/Hogar'
 import { Err, Hoja, Icono, Numero } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { diasCortos, fechaCorta, hoy } from '../lib/fechas'
@@ -58,6 +59,7 @@ export default function Perfil() {
   const {
     perfil,
     usuario,
+    hogar,
     medidas,
     reglas,
     guardarPerfil,
@@ -252,6 +254,8 @@ export default function Perfil() {
         </div>
 
         <div className="min-w-0">
+          <Hogar />
+
           <section className="tarjeta p-5 mb-4">
             <h2 className="font-semibold">Apariencia</h2>
             <p className="text-sm text-gris mt-1 mb-3">En automático la app sigue el modo claro u oscuro de tu teléfono.</p>
@@ -329,7 +333,8 @@ export default function Perfil() {
       {borrando !== null && (
         <Hoja titulo="Borrar mi cuenta" onCerrar={() => !trabajando && setBorrando(null)}>
           <p className="text-sm">
-            Se borran tu perfil, tus registros, tu despensa, tus recetas y tu plan. <b>No se puede deshacer.</b>
+            Se borran tu perfil, tus registros, tu despensa, tus recetas y tu plan
+            {hogar ? ' y tu lugar en el hogar (la despensa compartida sigue para las demás personas)' : ''}. <b>No se puede deshacer.</b>
           </p>
           <p className="text-sm text-gris mt-2">Si querés quedarte con una copia, cerrá esto y tocá "Descargar mis datos" antes.</p>
           <label className="etiqueta mt-4" htmlFor="bc-confirmar">

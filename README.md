@@ -9,9 +9,10 @@ PWA para llevar la despensa, las recetas, el plan de la semana y lo que se come 
 - **Resumen semanal:** promedios contra el objetivo, días cumplidos y peso, más una devolución de la semana escrita con IA (opcional, ver `supabase/functions/LEEME.md`).
 - **Alimentos:** base propia (se busca también por sinónimos y marcas: "spaghetti" encuentra "Fideos secos") más búsqueda de productos de marca en Open Food Facts (gratis, sin clave; prueba sus dos buscadores y reintenta sola). Un producto propio puede valer por un alimento de las recetas ("Aceite girasol Natura" cuenta como "Aceite"): las recetas lo usan, lo descuentan al cocinar y calculan las calorías con sus valores.
 - **Lista de compras:** lo que falta para el plan y lo anotado a mano, con el precio de cada compra y el gasto del mes.
+- **Hogar:** varias personas (hasta 6) comparten la despensa, la lista de compras, las comidas preparadas y las compras. Se arma desde el Perfil y se entra con un código de 6 caracteres. El diario, el plan, las medidas y el perfil siguen siendo de cada uno.
 - **Perfil:** objetivos de calorías, proteína y líquido, peso y cintura con gráfico, descarga de los datos y borrado de la cuenta.
 
-Cada usuario entra con email y contraseña y ve solo lo suyo. La cuenta se confirma con un código de 6 dígitos que llega por mail, y la contraseña se recupera de la misma forma.
+Cada usuario entra con email y contraseña y ve solo lo suyo (más lo que comparte en un hogar). La cuenta se confirma con un código de 6 dígitos que llega por mail, y la contraseña se recupera de la misma forma.
 
 ## Stack
 
@@ -101,7 +102,8 @@ Para crear la base desde cero, se ejecutan en este orden:
 10. `supabase/actualizacion-10.sql`: la regla de que la app es solo para mayores de 18 años, también del lado de la base. No toca ninguna cuenta que ya exista. Tiene que estar aplicada antes de publicar la versión 1.12 de la app.
 11. `supabase/actualizacion-11.sql`: los alimentos sueltos en el plan (cada comida del plan puede ser una receta o un alimento con su cantidad). No toca ninguna fila que ya exista. Tiene que estar aplicada antes de publicar la versión 1.13 de la app.
 12. `supabase/actualizacion-12.sql`: el nombre de usuario (columna `username` en los perfiles, con sus reglas y la consulta de si está libre). No toca ninguna cuenta que ya exista. Tiene que estar aplicada **antes** de publicar la versión 1.15 de la app. Va junto con la función `entrar` (ver abajo).
-13. `supabase/seed.sql`: los 274 alimentos y las 88 recetas base, comunes a todos. Se puede ejecutar de nuevo: agrega solo lo que falta.
+13. `supabase/actualizacion-13.sql`: los hogares (despensa, lista de compras, comidas preparadas y compras compartidas). No modifica, mueve ni borra nada de lo que ya cargó cada usuario. Tiene que estar aplicada **antes** de publicar la versión 1.17 de la app. Se corre una sola vez.
+14. `supabase/seed.sql`: los 274 alimentos y las 88 recetas base, comunes a todos. Se puede ejecutar de nuevo: agrega solo lo que falta.
 
 La función que consulta a la IA está en `supabase/functions/analizar-semana/`; cómo activarla, en `supabase/functions/LEEME.md`.
 
@@ -112,6 +114,20 @@ La función que deja iniciar sesión con el nombre de usuario está en `supabase
 Cada registro del diario guarda cuánto descontó de la despensa (columna `descontado`, ver `src/lib/ajuste.js`): así, al cambiar la cantidad o borrarlo, la despensa se ajusta por la diferencia en un solo paso (`editar_registro` y `borrar_registro`). Los registros anteriores a la versión 1.10 no tienen ese dato: al editarlos solo se corrige el diario.
 
 Cocinar, registrar una comida, comprar y guardar una receta tocan varias tablas: cada una es una función de la base (`cocinar`, `registrar_comida`, `comprar`, `guardar_receta`) que hace todo junto o no hace nada, así un corte de conexión no deja nada a medias. El stock se mueve por diferencias ("restá 2"), no pisando el total, para que dos teléfonos con la misma cuenta no se pisen. Como sumar o restar dos veces no es lo mismo que una, cocinar, registrar y comprar viajan con una clave: si la conexión se corta justo después de que la base guardó y la persona toca de nuevo, el segundo pedido no se aplica (tabla `operaciones`).
+
+### Hogares
+
+Un hogar junta hasta 6 personas que comparten la despensa, la lista de compras, las comidas preparadas y el historial de compras. Se arma y se maneja desde el Perfil; se entra con un código de 6 caracteres que ve solo quien armó el hogar (lo puede cambiar o apagar). Lo demás (diario, plan, medidas, perfil) sigue siendo de cada uno. Los alimentos y recetas propios los ven las personas del hogar, pero solo los edita quien los creó.
+
+Cómo está hecho (`supabase/actualizacion-13.sql`):
+
+- `stock`, `prepared`, `shopping_items` y `purchases` siguen con su columna `user_id`, que ahora guarda el id de **quien es dueño de la despensa**: el de la persona o, si está en un hogar, el del hogar. La función `despensa_de()` lo resuelve y las reglas de acceso (RLS) de esas cuatro tablas comparan contra ella. Quien no está en un hogar se comporta exactamente como antes. Esas columnas ya no apuntan a `auth.users` (apuntan a una persona o a un hogar): borrar una cuenta limpia esas tablas con `borrar_mi_cuenta()` y con un trigger sobre `profiles`.
+- Las tablas `hogares`, `hogar_miembros`, `hogar_intentos` y `hogar_respaldos` no se tocan directo (sin permisos para la app): todo pasa por funciones (`mi_hogar`, `crear_hogar`, `unirse_al_hogar`, `salir_del_hogar`, `sacar_del_hogar`, `renovar_codigo`, `renombrar_hogar`). Después de 5 códigos equivocados en una hora hay que esperar. Cada compra del hogar guarda quién la hizo (`purchases.comprado_por`).
+- **Al unirse:** lo que la persona tenía en su despensa se **suma** a la del hogar (la lista de compras queda con la cantidad mayor; las compras de los últimos 90 días se copian). Sus filas de antes no se tocan: quedan guardadas y no se ven mientras esté en el hogar.
+- **Al irse (o si la sacan):** se lleva una **copia** de lo que hay en el hogar (sin lo que apunta a alimentos o recetas de otras personas) y antes se guarda un respaldo de lo que tenía (`hogar_respaldos`, los últimos 5). Sus alimentos y recetas propios se van con ella y salen del hogar. Si se va quien armó el hogar, pasa a manejarlo la persona que lleva más tiempo; si se va la última, el hogar se borra con su despensa.
+- **Limitación conocida:** si alguien sale de un hogar y vuelve a entrar al mismo, se le suma otra vez su copia personal y las cantidades se duplican; hay que corregirlas a mano en la despensa.
+- **Al publicar:** aplicá `actualizacion-13.sql` en Supabase **antes** de publicar la app 1.17. Una app anterior a la 1.17 usada por alguien que ya esté en un hogar vería la despensa vacía (no se pierde nada: se arregla actualizando la app).
+- Unirse, armar y salir necesitan conexión y que no haya cambios sin enviar. Las pruebas de la base están en `pruebas/unidad/hogares.test.js`; la de navegador, en `pruebas/e2e/17-hogar.spec.js`.
 
 Los topes de cada dato (altura, peso, calorías, cantidades) están en `src/lib/validar.js` y repetidos como restricciones en la base, así que un valor fuera de rango no entra aunque se saltee el formulario.
 

@@ -17,7 +17,8 @@ Tarda unos segundos y no abre ningún navegador. Corre todo lo que hay en `prueb
 | `editar-registros.test.js` | Cambiar la cantidad de un registro y borrarlo con la despensa al día, contra la base de verdad: stock que no alcanza, producto que ya no está, registros viejos, recetas con comida lista, otra cuenta. |
 | `ajuste.test.js` | La cuenta y los textos de esos cambios en la app (`src/lib/ajuste.js`). |
 | `filtradas.test.js` | La consulta de contraseñas filtradas: qué se le manda al servicio, cómo se lee la respuesta y qué pasa si no contesta. |
-| `sin-conexion.test.js` | Lo que la app hace en el teléfono cuando no hay conexión contra lo que hace la base cuando el cambio llega: tienen que dar lo mismo (stock, comida lista, registros, lista y compras). |
+| `sin-conexion.test.js` | Lo que la app hace en el teléfono cuando no hay conexión contra lo que hace la base cuando el cambio llega: tienen que dar lo mismo (stock, comida lista, registros, lista y compras), también dentro de un hogar. |
+| `hogares.test.js` | Los hogares (`actualizacion-13.sql`) contra la base de verdad: armar uno, unirse con el código (se suma lo de cada uno y lo suyo queda intacto), que cada uno vea lo mismo y nadie más vea nada, sacar a alguien, irse con una copia y un respaldo, relevo de quien lo armó, máximo de personas, código que se renueva y se apaga, límite de intentos, borrar cuentas (que no quede nada suelto) y que quien nunca entró a un hogar se comporte como siempre. |
 
 Si agregás una actualización de la base (`supabase/actualizacion-10.sql`, por ejemplo), sumala a la lista `ARCHIVOS` de `postgres.js` (el Postgres en memoria que comparten las pruebas de la base).
 
