@@ -140,7 +140,7 @@ export default function Perfil() {
     <Marco titulo="Perfil" atras>
       <div className="dos-columnas">
         <div className="min-w-0">
-          <section className="tarjeta p-5 mb-4">
+          <section className="tarjeta p-5 mb-4" data-tour="perfil-objetivos">
             <div className="flex items-center gap-3">
               <div className="w-14 h-14 rounded-full bg-verde text-white text-xl font-semibold flex items-center justify-center">
                 {perfil.name.charAt(0).toUpperCase()}
@@ -171,7 +171,7 @@ export default function Perfil() {
             <p className="text-xs text-gris mt-2">Objetivos por día.</p>
           </section>
 
-          <section className="tarjeta p-5 mb-4">
+          <section className="tarjeta p-5 mb-4" data-tour="perfil-progreso">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">Progreso</h2>
               <button onClick={() => setNueva({ date: hoy(), peso: '', cintura: '' })} className="btn-chico bg-verde text-white">
@@ -277,7 +277,7 @@ export default function Perfil() {
             </div>
           </section>
 
-          <section className="tarjeta px-4 mb-4 divide-y divide-linea">
+          <section className="tarjeta px-4 mb-4 divide-y divide-linea" data-tour="perfil-atajos">
             {[
               ['/resumen', 'bar_chart', 'Resumen de la semana'],
               ['/alimentos', 'eco', 'Mis alimentos'],

@@ -360,3 +360,31 @@
     color: rgb(var(--c-tinta));
   }
 }
+
+/* ---------- Recorrido inicial (D-05) ----------
+   El aro que hace brillar lo que se está explicando. Todo lo demás se oscurece con las franjas del componente. */
+.recorrido-aro {
+  position: absolute;
+  border-radius: 18px;
+  pointer-events: none;
+  box-shadow:
+    0 0 0 3px #fff,
+    0 0 0 6px rgb(95 191 143),
+    0 0 22px 8px rgb(95 191 143 / 0.55);
+  animation: recorrido-brillo 1.8s ease-in-out infinite;
+}
+
+@keyframes recorrido-brillo {
+  50% {
+    box-shadow:
+      0 0 0 3px #fff,
+      0 0 0 6px rgb(95 191 143),
+      0 0 32px 14px rgb(95 191 143 / 0.8);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .recorrido-aro {
+    animation: none;
+  }
+}

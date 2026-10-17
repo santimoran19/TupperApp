@@ -100,7 +100,7 @@ export default function Compras() {
         </section>
 
         <div className="xl:col-start-1 xl:row-start-1 xl:row-span-2 min-w-0">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2" data-tour="com-lista">
             <h2 className="text-lg font-semibold">Para comprar</h2>
             <button onClick={() => setAgregando(true)} className="btn-chico bg-verde-suave text-verde-texto">
               <Icono n="add" size={16} /> Anotar

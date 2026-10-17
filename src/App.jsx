@@ -3,6 +3,7 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import { sesionGuardada, supabase } from './lib/supabase'
 import { ProveedorDatos, useDatos } from './store/Datos'
 import { borrarLocal } from './store/local'
+import { leerRecorrido } from './lib/recorrido'
 import { Logo } from './components/Marco'
 import Acceso from './pages/Acceso'
 import Diario from './pages/Diario'
@@ -22,6 +23,9 @@ const MisAlimentos = lazy(() => import('./pages/MisAlimentos'))
 const Resumen = lazy(() => import('./pages/Resumen'))
 const Legal = lazy(() => import('./pages/Legal'))
 const NoEncontrada = lazy(() => import('./pages/NoEncontrada'))
+// Solo lo bajan las cuentas que están haciendo el recorrido inicial
+// (si no se puede bajar, por ejemplo sin conexión, el recorrido espera: no tiene que romper la app)
+const Recorrido = lazy(() => import('./components/Recorrido').catch(() => ({ default: () => null })))
 
 const Hueco = <div className="min-h-screen bg-fondo" />
 
@@ -46,7 +50,7 @@ const dejoElUsuarioParaDespues = () => {
 }
 
 function Pantallas() {
-  const { cargando, errorCarga, perfil, recargar } = useDatos()
+  const { cargando, errorCarga, perfil, recargar, usuario } = useDatos()
   const [despues, setDespues] = useState(dejoElUsuarioParaDespues)
   if (cargando) return <Cargando />
   if (errorCarga) {
@@ -100,6 +104,11 @@ function Pantallas() {
         <Route path="/perfil" element={<Perfil />} />
         <Route path="*" element={<NoEncontrada />} />
       </Routes>
+      {leerRecorrido(usuario.id) !== null && (
+        <Suspense fallback={null}>
+          <Recorrido />
+        </Suspense>
+      )}
     </Suspense>
   )
 }

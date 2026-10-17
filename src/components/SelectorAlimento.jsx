@@ -114,7 +114,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
 
   return (
     <div>
-      <div className="relative mb-3">
+      <div className="relative mb-3" data-tour="selector-buscar">
         <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
         <input
           className="campo pl-11"
@@ -217,7 +217,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
         </div>
       )}
 
-      <button onClick={() => setCreando(true)} className="btn-suave w-full mt-4">
+      <button onClick={() => setCreando(true)} className="btn-suave w-full mt-4" data-tour="selector-crear">
         <Icono n="add" size={20} /> Crear {bebidas ? 'bebida nueva' : 'alimento nuevo'}
       </button>
     </div>
@@ -343,40 +343,42 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
           ? 'Los cambios valen de acá en adelante: lo que ya registraste queda como estaba.'
           : 'Copiá los valores de la etiqueta del producto, cada 100 g o 100 ml. Queda guardado para siempre.'}
       </p>
-      <div>
-        <label className="etiqueta" htmlFor="na-nombre">
-          Nombre
-        </label>
-        <input
-          id="na-nombre"
-          className="campo"
-          maxLength={LIM.nombre}
-          value={f.name}
-          onChange={(e) => set('name')(e.target.value)}
-          placeholder="Ej.: Galletitas de avena"
-        />
-        <Err>{ver('name')}</Err>
-      </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div data-tour="na-datos" className="space-y-3">
         <div>
-          <label className="etiqueta" htmlFor="na-unidad">
-            Se mide en
+          <label className="etiqueta" htmlFor="na-nombre">
+            Nombre
           </label>
-          <select id="na-unidad" className="campo" value={f.unit} onChange={(e) => set('unit')(e.target.value)}>
-            <option value="g">Gramos</option>
-            <option value="ml">Mililitros</option>
-            <option value="u">Unidades</option>
-          </select>
+          <input
+            id="na-nombre"
+            className="campo"
+            maxLength={LIM.nombre}
+            value={f.name}
+            onChange={(e) => set('name')(e.target.value)}
+            placeholder="Ej.: Galletitas de avena"
+          />
+          <Err>{ver('name')}</Err>
         </div>
-        <div>
-          <label className="etiqueta" htmlFor="na-cat">
-            Categoría
-          </label>
-          <select id="na-cat" className="campo" value={f.category} onChange={(e) => set('category')(e.target.value)}>
-            {[...new Set([...CATEGORIAS, f.category])].map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="etiqueta" htmlFor="na-unidad">
+              Se mide en
+            </label>
+            <select id="na-unidad" className="campo" value={f.unit} onChange={(e) => set('unit')(e.target.value)}>
+              <option value="g">Gramos</option>
+              <option value="ml">Mililitros</option>
+              <option value="u">Unidades</option>
+            </select>
+          </div>
+          <div>
+            <label className="etiqueta" htmlFor="na-cat">
+              Categoría
+            </label>
+            <select id="na-cat" className="campo" value={f.category} onChange={(e) => set('category')(e.target.value)}>
+              {[...new Set([...CATEGORIAS, f.category])].map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
       {f.unit === 'u' && (
@@ -412,7 +414,7 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
           </div>
         </div>
       )}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3" data-tour="na-macros">
         <div>
           <label className="etiqueta" htmlFor="na-kcal">
             Calorías cada 100
@@ -457,7 +459,7 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
           Tiene alcohol (no cuenta para el líquido del día)
         </label>
       )}
-      <div className="flex gap-2 pt-2">
+      <div className="flex gap-2 pt-2" data-tour="na-botones">
         <button onClick={onCancelar} className="btn-suave flex-1">
           Volver
         </button>

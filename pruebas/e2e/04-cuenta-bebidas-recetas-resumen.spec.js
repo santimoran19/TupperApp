@@ -3,7 +3,20 @@
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import { expect, test } from '@playwright/test'
-import { API, APP, aviso, captura, contexto, escuchar, guardarSesion, hoyEnLaPagina, rest, simulador, sinErrores } from './apoyo.js'
+import {
+  API,
+  APP,
+  aviso,
+  captura,
+  contexto,
+  escuchar,
+  guardarSesion,
+  hoyEnLaPagina,
+  rest,
+  saltarRecorrido,
+  simulador,
+  sinErrores,
+} from './apoyo.js'
 
 test('cuenta con código, bebidas, recetas y resumen', async ({ browser }) => {
   const errores = []
@@ -101,6 +114,7 @@ test('cuenta con código, bebidas, recetas y resumen', async ({ browser }) => {
     await pg.waitForSelector('text=Tupper es solo para mayores de 18 años.', { state: 'detached' })
     await pg.click('button:has-text("Empezar")')
     await pg.waitForSelector('text=¡Hola, Ana!')
+    await saltarRecorrido(pg)
   })
 
   await test.step('acceso: con un email que ya tiene cuenta no se dice que la tiene', async () => {

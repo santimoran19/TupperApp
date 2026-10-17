@@ -124,7 +124,7 @@ function BarraLateral({ nombre, inicial }) {
         <Logo size={40} />
         <span className="text-xl font-bold tracking-tight">Tupper</span>
       </Link>
-      <Link to="/registrar" className="btn-primario w-full mb-5">
+      <Link to="/registrar" className="btn-primario w-full mb-5" data-tour="nav-registrar">
         <Icono n="add" size={22} /> Registrar
       </Link>
       <nav aria-label="Principal" className="flex-1 min-h-0 overflow-y-auto space-y-1">
@@ -241,7 +241,12 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
                   )}
                 </NavLink>
               ) : (
-                <Link key={i} to="/registrar" className="flex flex-col items-center text-[11px] font-semibold text-tinta -mt-7">
+                <Link
+                  key={i}
+                  to="/registrar"
+                  className="flex flex-col items-center text-[11px] font-semibold text-tinta -mt-7"
+                  data-tour="nav-registrar"
+                >
                   <span className="w-14 h-14 rounded-full bg-verde text-white shadow-flotante flex items-center justify-center mb-0.5">
                     <Icono n="add" size={30} />
                   </span>

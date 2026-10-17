@@ -217,7 +217,7 @@ export default function Registrar() {
       {fecha !== hoy() && <p className="text-sm text-gris mb-2">{fechaLarga(fecha)}</p>}
       <div className="con-lateral">
         <div>
-          <div className="chips-hilera sin-scroll mb-4">
+          <div className="chips-hilera sin-scroll mb-4" data-tour="reg-momentos">
             {MOMENTOS.map((c) => (
               <Chip key={c} activo={c === comida} onClick={() => setComida(c)}>
                 {NOMBRE_COMIDA[c]}
@@ -225,8 +225,8 @@ export default function Registrar() {
             ))}
           </div>
 
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <button onClick={() => setBuscando('alimento')} className="tarjeta p-3 text-left">
+          <div className="grid grid-cols-3 gap-2 mb-4" data-tour="reg-tipos">
+            <button onClick={() => setBuscando('alimento')} className="tarjeta p-3 text-left" data-tour="reg-alimento">
               <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2">
                 <Icono n="search" />
               </div>
@@ -310,7 +310,7 @@ export default function Registrar() {
         </div>
 
         <div className="min-w-0">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2" data-tour="reg-plato">
             <h2 className="text-lg font-semibold">Tu plato</h2>
             <span className="pill bg-campo text-gris">
               {platos.length} {platos.length === 1 ? 'cosa' : 'cosas'}
@@ -479,7 +479,12 @@ export default function Registrar() {
             </section>
           )}
 
-          <button onClick={confirmar} disabled={!valido || guardando} className="btn-primario w-full h-14 text-base mt-5">
+          <button
+            onClick={confirmar}
+            disabled={!valido || guardando}
+            className="btn-primario w-full h-14 text-base mt-5"
+            data-tour="reg-confirmar"
+          >
             <Icono n="check_circle" /> {BOTON[comida]}
           </button>
         </div>

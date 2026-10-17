@@ -161,7 +161,7 @@ export default function Hogar() {
 
   return (
     <>
-      <section className="tarjeta p-5 mb-4" aria-labelledby="hogar-titulo">
+      <section className="tarjeta p-5 mb-4" aria-labelledby="hogar-titulo" data-tour="perfil-hogar">
         <div className="flex items-center gap-2">
           <Icono n="home" className="text-verde-texto" size={22} />
           <h2 id="hogar-titulo" className="font-semibold flex-1 min-w-0 truncate">

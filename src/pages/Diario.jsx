@@ -175,7 +175,7 @@ export default function Diario() {
           </h2>
         </div>
 
-        <div className="flex items-center gap-1 mb-4 xl:mb-0 xl:w-[30rem] xl:shrink-0">
+        <div className="flex items-center gap-1 mb-4 xl:mb-0 xl:w-[30rem] xl:shrink-0" data-tour="diario-semana">
           <button
             onClick={() => mover(-7)}
             disabled={fecha <= rango.min}
@@ -217,7 +217,7 @@ export default function Diario() {
 
       <div className="con-lateral [--lat:24rem]">
         <div>
-          <section className="tarjeta rounded-3xl p-5 mb-4">
+          <section className="tarjeta rounded-3xl p-5 mb-4" data-tour="diario-resumen">
             <div className="flex items-center gap-5">
               <Anillo valor={total.kcal} total={d.perfil.kcal_target}>
                 <span className="text-2xl font-bold leading-none">{redondear(total.kcal).toLocaleString('es-AR')}</span>
@@ -355,7 +355,7 @@ export default function Diario() {
           </div>
 
           <div className="space-y-3">
-            {COMIDAS.map((comida) => {
+            {COMIDAS.map((comida, n) => {
               const entradas = delDia.filter((r) => r.meal === comida && !r.skipped)
               const salteada = delDia.find((r) => r.meal === comida && r.skipped)
               const fila = planDia.get(comida)
@@ -368,6 +368,7 @@ export default function Diario() {
               return (
                 <section
                   key={comida}
+                  data-tour={n === 0 ? 'diario-comida' : undefined}
                   className={`tarjeta p-4 ${entradas.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}
                 >
                   <div className="flex items-center gap-3">
@@ -459,7 +460,10 @@ export default function Diario() {
               )
             })}
 
-            <section className={`tarjeta p-4 ${extras.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}>
+            <section
+              data-tour="diario-extras"
+              className={`tarjeta p-4 ${extras.length === 0 ? 'border-dashed border-linea shadow-none bg-superficie/60' : ''}`}
+            >
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-teal-suave text-teal-oscuro flex items-center justify-center">
                   <Icono n={ICONO_COMIDA[EXTRA]} />

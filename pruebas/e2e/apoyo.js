@@ -77,6 +77,14 @@ const TURNSTILE_DE_PRUEBA = `
   }
 `
 
+// Las cuentas nuevas ven un recorrido al entrar por primera vez. Las pruebas que no son del recorrido lo saltan (la
+// prueba 18 lo recorre entero).
+export async function saltarRecorrido(pg) {
+  await pg.click('button:has-text("Saltar recorrido")')
+  await pg.click('button:has-text("Sí, saltar")')
+  await pg.waitForSelector('[data-recorrido-capa]', { state: 'detached' })
+}
+
 // Espera a que lo que muestra la app sea lo de la base (si hay sesión; en la pantalla de acceso no hay nada que esperar).
 // Cuando la prueba sabe que eso no va a pasar (sin conexión, o con la base rechazando), pone `ctx.sinEsperarDatos = true`.
 export const datosDeLaBase = (pg) =>

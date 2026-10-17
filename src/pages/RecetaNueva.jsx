@@ -91,78 +91,82 @@ export default function RecetaNueva() {
     <Marco titulo={original ? 'Editar receta' : 'Nueva receta'} atras sinNav>
       <div className="dos-columnas">
         <div className="space-y-3">
-          <div>
-            <label className="etiqueta" htmlFor="rn-nombre">
-              Nombre
+          <div className="space-y-3" data-tour="rn-datos">
+            <div>
+              <label className="etiqueta" htmlFor="rn-nombre">
+                Nombre
+              </label>
+              <input
+                id="rn-nombre"
+                className="campo bg-superficie shadow-tarjeta"
+                maxLength={LIM.nombre}
+                value={f.name}
+                onChange={(e) => set('name')(e.target.value)}
+                placeholder="Ej.: Pollo con arroz"
+              />
+              <Err>{intento && errores.name}</Err>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="etiqueta" htmlFor="rn-min">
+                  Minutos
+                </label>
+                <Numero
+                  id="rn-min"
+                  valor={f.minutes}
+                  onChange={set('minutes')}
+                  decimales={0}
+                  largo={3}
+                  className="campo bg-superficie shadow-tarjeta"
+                  error={!!errores.minutes && (intento || f.minutes !== '')}
+                />
+                <Err>{(intento || f.minutes !== '') && errores.minutes}</Err>
+              </div>
+              <div>
+                <label className="etiqueta" htmlFor="rn-rinde">
+                  Porciones que rinde
+                </label>
+                <Numero
+                  id="rn-rinde"
+                  valor={f.servings}
+                  onChange={set('servings')}
+                  decimales={0}
+                  largo={2}
+                  className="campo bg-superficie shadow-tarjeta"
+                  error={!!errores.servings && (intento || f.servings !== '')}
+                />
+                <Err>{(intento || f.servings !== '') && errores.servings}</Err>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-3" data-tour="rn-sirve">
+            <div>
+              <label className="etiqueta">Sirve para</label>
+              <div className="flex flex-wrap gap-2">
+                {COMIDAS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => alternarComida(c)}
+                    className={`rounded-full px-4 h-9 text-[13px] font-semibold ${f.meal_types.includes(c) ? 'bg-verde text-white' : 'bg-superficie border border-linea'}`}
+                  >
+                    {NOMBRE_COMIDA[c]}
+                  </button>
+                ))}
+              </div>
+              <Err>{intento && errores.meal_types}</Err>
+            </div>
+            <label className="flex items-center gap-3 text-sm">
+              <input
+                type="checkbox"
+                checked={f.portable}
+                onChange={(e) => set('portable')(e.target.checked)}
+                className="w-5 h-5 accent-verde"
+              />
+              Se puede llevar en un tupper
             </label>
-            <input
-              id="rn-nombre"
-              className="campo bg-superficie shadow-tarjeta"
-              maxLength={LIM.nombre}
-              value={f.name}
-              onChange={(e) => set('name')(e.target.value)}
-              placeholder="Ej.: Pollo con arroz"
-            />
-            <Err>{intento && errores.name}</Err>
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="etiqueta" htmlFor="rn-min">
-                Minutos
-              </label>
-              <Numero
-                id="rn-min"
-                valor={f.minutes}
-                onChange={set('minutes')}
-                decimales={0}
-                largo={3}
-                className="campo bg-superficie shadow-tarjeta"
-                error={!!errores.minutes && (intento || f.minutes !== '')}
-              />
-              <Err>{(intento || f.minutes !== '') && errores.minutes}</Err>
-            </div>
-            <div>
-              <label className="etiqueta" htmlFor="rn-rinde">
-                Porciones que rinde
-              </label>
-              <Numero
-                id="rn-rinde"
-                valor={f.servings}
-                onChange={set('servings')}
-                decimales={0}
-                largo={2}
-                className="campo bg-superficie shadow-tarjeta"
-                error={!!errores.servings && (intento || f.servings !== '')}
-              />
-              <Err>{(intento || f.servings !== '') && errores.servings}</Err>
-            </div>
-          </div>
-          <div>
-            <label className="etiqueta">Sirve para</label>
-            <div className="flex flex-wrap gap-2">
-              {COMIDAS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => alternarComida(c)}
-                  className={`rounded-full px-4 h-9 text-[13px] font-semibold ${f.meal_types.includes(c) ? 'bg-verde text-white' : 'bg-superficie border border-linea'}`}
-                >
-                  {NOMBRE_COMIDA[c]}
-                </button>
-              ))}
-            </div>
-            <Err>{intento && errores.meal_types}</Err>
-          </div>
-          <label className="flex items-center gap-3 text-sm">
-            <input
-              type="checkbox"
-              checked={f.portable}
-              onChange={(e) => set('portable')(e.target.checked)}
-              className="w-5 h-5 accent-verde"
-            />
-            Se puede llevar en un tupper
-          </label>
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center justify-between pt-2" data-tour="rn-ingredientes">
             <h2 className="font-semibold">Ingredientes {porciones > 1 ? `(para las ${porciones} porciones)` : ''}</h2>
             <button
               onClick={() => setBuscando(true)}
@@ -212,7 +216,7 @@ export default function RecetaNueva() {
           )}
         </div>
 
-        <div className="space-y-3 mt-3 xl:mt-0">
+        <div className="space-y-3 mt-3 xl:mt-0" data-tour="rn-guardar">
           <div>
             <label className="etiqueta">Pasos (uno por renglón)</label>
             <textarea

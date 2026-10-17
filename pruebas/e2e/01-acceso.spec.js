@@ -1,6 +1,6 @@
 // Crear la cuenta y armar el perfil, con las validaciones de los dos formularios. Deja la sesión para las pruebas que siguen.
 import { expect, test } from '@playwright/test'
-import { APP, captura, contexto, escuchar, guardarSesion, sinErrores } from './apoyo.js'
+import { APP, captura, contexto, escuchar, guardarSesion, saltarRecorrido, sinErrores } from './apoyo.js'
 
 test('crear cuenta y armar el perfil', async ({ browser }) => {
   const ctx = await contexto(browser)
@@ -108,6 +108,7 @@ test('crear cuenta y armar el perfil', async ({ browser }) => {
     await captura(pg, 's02_bienvenida')
     await pg.click('button:has-text("Empezar")')
     await pg.waitForSelector('text=¡Hola, Santi!')
+    await saltarRecorrido(pg)
     await pg.waitForTimeout(300)
     await captura(pg, 's03_diario_vacio')
   })

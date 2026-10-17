@@ -4,15 +4,20 @@ import FormularioPerfil from '../components/FormularioPerfil'
 import { Logo } from '../components/Marco'
 import { useDatos } from '../store/Datos'
 import { hoy } from '../lib/fechas'
+import { iniciarRecorrido, terminarRecorrido } from '../lib/recorrido'
 
 export default function Bienvenida() {
-  const { guardarPerfil, guardarMedida, salir } = useDatos()
+  const { guardarPerfil, guardarMedida, salir, usuario } = useDatos()
   useEffect(() => {
     document.title = 'Tu perfil · Tupper'
   }, [])
 
   async function guardar(datos) {
+    // Quien arma su perfil por primera vez ve el recorrido de la app: la marca va antes de guardar, porque al guardarse el
+    // perfil se pasa de esta pantalla al diario
+    iniciarRecorrido(usuario.id)
     const listo = await guardarPerfil(datos)
+    if (!listo) terminarRecorrido(usuario.id)
     if (listo && datos.weight_kg) await guardarMedida({ date: hoy(), weight_kg: datos.weight_kg, waist_cm: null })
   }
 

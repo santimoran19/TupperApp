@@ -83,7 +83,7 @@ export default function Recetas() {
   return (
     <Marco titulo="Recetas">
       <div className="lg:flex lg:gap-6 lg:items-start lg:mb-2">
-        <section className="rounded-3xl bg-verde text-white p-5 mb-4 lg:w-[22rem] lg:shrink-0">
+        <section className="rounded-3xl bg-verde text-white p-5 mb-4 lg:w-[22rem] lg:shrink-0" data-tour="rec-resumen">
           <p className="text-[11px] font-bold tracking-wider opacity-80 flex items-center gap-1.5">
             <Icono n="kitchen" size={16} /> CON TU DESPENSA
           </p>
@@ -93,7 +93,7 @@ export default function Recetas() {
           <p className="text-sm opacity-85 mt-1">Se actualiza sola cada vez que cambia tu stock.</p>
         </section>
 
-        <div className="lg:flex-1 lg:min-w-0">
+        <div className="lg:flex-1 lg:min-w-0" data-tour="rec-buscar">
           <div className="flex gap-2 mb-3">
             <div className="relative flex-1 min-w-0">
               <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
@@ -105,7 +105,7 @@ export default function Recetas() {
                 onChange={(e) => setTexto(e.target.value)}
               />
             </div>
-            <Link to="/recetas/nueva" className="btn-primario px-4 shrink-0">
+            <Link to="/recetas/nueva" className="btn-primario px-4 shrink-0" data-tour="rec-nueva">
               <Icono n="add" size={20} /> Nueva
             </Link>
           </div>

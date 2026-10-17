@@ -2,7 +2,7 @@
 // y sirve para iniciar sesión igual que el email (con la función `entrar` corriendo de verdad en Deno).
 // Usa la sesión de las pruebas anteriores (la cuenta de Santi, que eligió "santi.m" en la primera).
 import { expect, test } from '@playwright/test'
-import { APP, captura, contexto, escuchar, simulador, sinErrores } from './apoyo.js'
+import { APP, captura, contexto, escuchar, saltarRecorrido, simulador, sinErrores } from './apoyo.js'
 
 const iniciar = async (pg, dato, clave) => {
   await pg.fill('#email', dato)
@@ -32,6 +32,7 @@ test('nombre de usuario: elegirlo, cambiarlo, pedirlo y entrar con él', async (
     await pg.fill('#pf-peso', '60')
     await pg.click('button:has-text("Empezar")')
     await pg.waitForSelector('text=¡Hola, Lucía!')
+    await saltarRecorrido(pg)
     await ctx.close()
   })
 

@@ -31,50 +31,49 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 2. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-3. D-05 · Recorrido inicial
-4. F-07 · Ajustar las porciones de una receta
-5. F-05 · Compartir la lista de compras por WhatsApp
-6. S-02 · CORS de la función de IA
-7. T-02 · Pruebas automáticas en cada push
-8. T-06 · Aviso de errores (va junto con S-05)
-9. S-05 · Revisión periódica
-10. F-01 · Escanear el código de barras (va junto con F-02)
-11. F-02 · Catálogo compartido de productos
-12. F-12 · Base propia de alimentos más grande
-13. IA-01 · Chat con IA (va junto con IA-02)
-14. IA-02 · Proveedor de respaldo
-15. F-04 · Vencimientos en la despensa
-16. D-07 · Revisión completa de accesibilidad
-17. L-04 · Consentimiento al registrarse
-18. C-05 · Opiniones desde la app
-19. T-03 · Pruebas en Safari
-20. T-04 · Base de pruebas aparte
-21. T-01 · Actualizar las herramientas
-22. F-06 · Recordatorios
+3. F-07 · Ajustar las porciones de una receta
+4. F-05 · Compartir la lista de compras por WhatsApp
+5. S-02 · CORS de la función de IA
+6. T-02 · Pruebas automáticas en cada push
+7. T-06 · Aviso de errores (va junto con S-05)
+8. S-05 · Revisión periódica
+9. F-01 · Escanear el código de barras (va junto con F-02)
+10. F-02 · Catálogo compartido de productos
+11. F-12 · Base propia de alimentos más grande
+12. IA-01 · Chat con IA (va junto con IA-02)
+13. IA-02 · Proveedor de respaldo
+14. F-04 · Vencimientos en la despensa
+15. D-07 · Revisión completa de accesibilidad
+16. L-04 · Consentimiento al registrarse
+17. C-05 · Opiniones desde la app
+18. T-03 · Pruebas en Safari
+19. T-04 · Base de pruebas aparte
+20. T-01 · Actualizar las herramientas
+21. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-23. F-08 · Copiar un día entero
-24. D-06 · Deshacer en más lugares
-25. D-04 · Esqueletos de carga
-26. F-10 · Peso: gráfico y fecha estimada
-27. F-11 · Exportar el registro a planilla
-28. F-09 · Combos frecuentes
-29. F-13 · Categorías editables por el usuario
-30. D-08 · Revisión de los textos
-31. IA-04 · Cargar una receta desde un texto
-32. IA-03 · Foto de un plato
-33. C-06 · Métricas de uso
-34. T-05 · Partir `sincronizacion.js`
-35. T-07 · Mandar lo cargado sin conexión con la app cerrada
-36. S-06 · Verificación en dos pasos
-37. S-03 · Contraseñas filtradas también del lado de Supabase
+22. F-08 · Copiar un día entero
+23. D-06 · Deshacer en más lugares
+24. D-04 · Esqueletos de carga
+25. F-10 · Peso: gráfico y fecha estimada
+26. F-11 · Exportar el registro a planilla
+27. F-09 · Combos frecuentes
+28. F-13 · Categorías editables por el usuario
+29. D-08 · Revisión de los textos
+30. IA-04 · Cargar una receta desde un texto
+31. IA-03 · Foto de un plato
+32. C-06 · Métricas de uso
+33. T-05 · Partir `sincronizacion.js`
+34. T-07 · Mandar lo cargado sin conexión con la app cerrada
+35. S-06 · Verificación en dos pasos
+36. S-03 · Contraseñas filtradas también del lado de Supabase
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-38. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-39. C-02 · Dominio propio y página de presentación (va junto con C-03)
-40. C-01 · Planes y cobro (para empezar a cobrar)
-41. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-42. C-04 · Play Store (cuesta la cuenta de desarrollador)
+37. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+38. C-02 · Dominio propio y página de presentación (va junto con C-03)
+39. C-01 · Planes y cobro (para empezar a cobrar)
+40. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+41. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -120,7 +119,6 @@ Nada por ahora.
 ## 3. Diseño y uso
 
 - [ ] **D-04 · Esqueletos de carga** · P3 · S. Mostrar la forma de la pantalla mientras trae los datos, en vez de "Cargando...".
-- [ ] **D-05 · Recorrido inicial** · P2 · S. Tres pantallas que expliquen despensa, plan y registro. Hoy el usuario nuevo cae directo al diario.
 - [ ] **D-06 · Deshacer en más lugares** · P3 · S. "No comí" ya tiene Deshacer; sumarlo a borrar un registro, quitar de la despensa y quitar de la lista.
 - [ ] **D-07 · Revisión completa de accesibilidad** · P2 · M. Lector de pantalla, etiquetas de los campos, contraste en los dos temas y letra grande del sistema (que nada se corte).
 - [ ] **D-08 · Revisión de los textos** · P3 · S. Que se digan las mismas cosas con las mismas palabras en toda la app, y que los errores digan qué hacer.
@@ -164,6 +162,10 @@ Nada por ahora.
 
 ## Hecho
 
+- **1.18.0** (solo la app, sin cambios en Supabase):
+  - D-05: recorrido inicial. Al crear la cuenta, la persona nueva ve una guía de 34 pasos que oscurece la pantalla y hace brillar lo que hay que tocar: diario, cómo registrar una comida, cómo crear un alimento, recetas (cómo crear una), despensa, compras, plan, objetivos, peso, hogar y atajos. Algunos pasos se avanzan tocando de verdad el botón resaltado.
+  - No crea ningún dato. Se puede saltar (con confirmación) o volver atrás; al terminar o saltar se borra la marca del teléfono y no vuelve a aparecer. Las cuentas que ya existían no lo ven nunca.
+  - Pruebas nuevas: `recorrido` (unidad, 12 casos) y la de navegador `18-recorrido` (celular y compu).
 - **1.17.0** (necesita `supabase/actualizacion-13.sql` en Supabase **antes** de publicar la app; no modifica, mueve ni borra nada de lo que ya cargó cada usuario):
   - F-03: hogares. Desde Perfil se arma un hogar (con nombre) o se entra a uno con un código de 6 caracteres. Hasta 6 personas comparten la **despensa, la lista de compras, las comidas preparadas y las compras**; el diario, el plan, las medidas y el perfil siguen siendo de cada uno. Los alimentos y recetas propios los ven todas las personas del hogar (solo los edita quien los creó).
   - Quien armó el hogar ve el código (lo puede copiar, cambiar —el anterior deja de servir— o apagar), puede cambiarle el nombre y sacar a otras personas; cualquiera puede salir. Si se va quien lo armó, pasa a manejarlo la persona que lleva más tiempo; si se va la última, el hogar se borra.

@@ -19,6 +19,7 @@ Tarda unos segundos y no abre ningún navegador. Corre todo lo que hay en `prueb
 | `filtradas.test.js` | La consulta de contraseñas filtradas: qué se le manda al servicio, cómo se lee la respuesta y qué pasa si no contesta. |
 | `sin-conexion.test.js` | Lo que la app hace en el teléfono cuando no hay conexión contra lo que hace la base cuando el cambio llega: tienen que dar lo mismo (stock, comida lista, registros, lista y compras), también dentro de un hogar. |
 | `hogares.test.js` | Los hogares (`actualizacion-13.sql`) contra la base de verdad: armar uno, unirse con el código (se suma lo de cada uno y lo suyo queda intacto), que cada uno vea lo mismo y nadie más vea nada, sacar a alguien, irse con una copia y un respaldo, relevo de quien lo armó, máximo de personas, código que se renueva y se apaga, límite de intentos, borrar cuentas (que no quede nada suelto) y que quien nunca entró a un hogar se comporte como siempre. |
+| `recorrido.test.js` | El recorrido inicial (`src/lib/recorrido.js`): que los 34 pasos estén completos, que cada ancla `data-tour` exista en su pantalla, que los textos nombren botones reales, cuándo se muestra y se borra la marca, y la geometría del cartel (arriba, abajo, al costado). |
 
 Si agregás una actualización de la base (`supabase/actualizacion-10.sql`, por ejemplo), sumala a la lista `ARCHIVOS` de `postgres.js` (el Postgres en memoria que comparten las pruebas de la base).
 
@@ -50,6 +51,7 @@ Cosas a saber:
 
   En Windows (PowerShell) las variables se ponen antes: `$env:REUSAR=1; npx playwright test 08-`.
 
+- **`18-recorrido` y las cuentas nuevas:** el recorrido inicial aparece al crear un perfil. Las pruebas que arman una cuenta (`01`, `04`, `16`) lo saltan con `saltarRecorrido(pg)` de `apoyo.js`; `18-recorrido` lo recorre entero en celular y en compu, prueba que se puede saltar y que una cuenta que ya existía no lo ve. Necesita la sesión que deja `01-acceso`.
 - **Anchos de pantalla:** todas las pruebas corren con pantalla de celular (412 px), salvo `14-escritorio`, que prueba la compu: barra lateral, columnas, ventanas centradas y que nada se salga de la pantalla de 360 a 2560 px.
 - **El navegador cree que siempre es sábado 3/10/2026 a las 21:30.** Varias pruebas dependen del día de la semana; así dan lo mismo cualquier día.
 - **Al abrir, la app muestra un instante lo que tenía guardado en el teléfono y enseguida lo que trae la base.** Para que ninguna prueba lea lo viejo, `goto` y `reload` esperan solos a que estén los datos de la base (`apoyo.js`; la app lo deja marcado en `<html data-datos="base">`). Cuando la prueba sabe que eso no va a pasar (sin conexión, o con la base rechazando un cambio), se apaga con `ctx.sinEsperarDatos = true`.

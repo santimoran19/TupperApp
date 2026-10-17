@@ -75,7 +75,7 @@ export default function Despensa() {
               <Icono n="home" size={14} /> Despensa compartida · {d.hogar.nombre}
             </Link>
           )}
-          <div className="grid grid-cols-3 gap-2 mb-4">
+          <div className="grid grid-cols-3 gap-2 mb-4" data-tour="des-resumen">
             <div className="tarjeta p-3">
               <Icono n="inventory_2" className="text-verde-texto" size={20} />
               <p className="text-2xl font-bold leading-tight">{activos}</p>
@@ -98,7 +98,7 @@ export default function Despensa() {
             </div>
           </div>
 
-          <Link to="/compras" className="tarjeta p-4 mb-4 flex items-center gap-3">
+          <Link to="/compras" className="tarjeta p-4 mb-4 flex items-center gap-3" data-tour="des-compras">
             <div className="w-10 h-10 rounded-full bg-verde-suave text-verde-texto flex items-center justify-center">
               <Icono n="shopping_cart" />
             </div>
@@ -152,7 +152,7 @@ export default function Despensa() {
         <div className="min-w-0">
           {filas.length === 0 ? (
             <Vacio icono="kitchen" titulo="Tu despensa está vacía" texto="Cargá lo que tenés en casa y la app te dice qué podés cocinar.">
-              <button onClick={() => setAgregando(true)} className="btn-primario">
+              <button onClick={() => setAgregando(true)} className="btn-primario" data-tour="des-agregar">
                 <Icono n="add" /> Agregar alimento
               </button>
             </Vacio>
@@ -169,7 +169,7 @@ export default function Despensa() {
                     onChange={(e) => setTexto(e.target.value)}
                   />
                 </div>
-                <button onClick={() => setAgregando(true)} className="btn-primario px-4 shrink-0">
+                <button onClick={() => setAgregando(true)} className="btn-primario px-4 shrink-0" data-tour="des-agregar">
                   <Icono n="add" size={20} /> Agregar
                 </button>
               </div>
