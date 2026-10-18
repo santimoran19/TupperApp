@@ -118,6 +118,8 @@ Las dos funciones solo contestan a pedidos que vienen de `https://tupperapp.verc
 
 **Escáner y catálogo compartido (versión 1.22).** El botón de escanear (al lado del buscador de "Agregar") abre la cámara y lee el código de barras: en Android con el lector del propio navegador y en iPhone con una librería (`@zxing/library`) que se baja recién cuando se abre el escáner. Con el código se busca primero entre los alimentos que ya cargaste, después en el catálogo compartido y por último en Open Food Facts (`/api/v2/product/<código>`); si no está en ningún lado se ofrece cargarlo a mano con el código ya puesto. También se puede escribir el código (sirve sin cámara o sin permiso). La cámara se habilita en `vercel.json` (`Permissions-Policy: camera=(self)`).
 
+**Lector y productos sin datos (versión 1.22.1).** `src/lib/lectura.js` prueba cada imagen entera, con el centro agrandado y con los colores invertidos (códigos chicos, de colores o claros sobre oscuro); el escáner suma zoom y linterna donde el teléfono los permite y un botón para sacarle una foto al código (se lee en el teléfono; sirve sobre todo para códigos muy chicos y en iPhone). De Open Food Facts se aprovechan valores por porción, en kJ o sueltos, y si faltan las calorías pero hay proteínas, carbohidratos y grasas se calculan. Si el producto no tiene datos en ningún lado se puede partir de un alimento parecido de la base (valores aproximados, que no se comparten con el catálogo mientras no se corrijan).
+
 El catálogo compartido guarda, para todos, lo que cada persona cargó de un producto (código, nombre, valores cada 100 g/ml y categoría; nada de la persona). Cada aporte es privado: recién cuando **dos personas distintas** cargan valores que coinciden (calorías con 10 % de margen, macros con 2 o 3 g) el producto pasa a `catalogo` y lo ven todos. Cuántas personas hacen falta se cambia en `catalogo_minimo()`. Las tablas no se leen ni escriben directo (sin permisos para la app): todo pasa por `catalogo_aportar`, `catalogo_por_codigo` y `catalogo_buscar`. Para revisar o sacar algo, desde el SQL Editor: `select * from public.catalogo order by publicado_at desc;` y `delete from public.catalogo where clave = '...';`. En la carga a mano la persona puede elegir no compartir el producto.
 
 `scripts/seed-data.mjs` es de donde sale el seed. Para sumar alimentos o recetas base, editá ese archivo, corré `npm run seed` y ejecutá el SQL en Supabase.
@@ -209,7 +211,7 @@ Dos tareas programadas (se ven y se pausan desde la lista de tareas programadas 
 
 ```
 src/
-  lib/          cuentas de calorías, fechas, validaciones, el armado del plan, las equivalencias, los sinónimos (alias.js), la búsqueda en Open Food Facts, el código de barras (codigo.js) y el catálogo compartido (catalogo.js), y el registro de errores (eventos.js)
+  lib/          cuentas de calorías, fechas, validaciones, el armado del plan, las equivalencias, los sinónimos (alias.js), la búsqueda en Open Food Facts, el código de barras (codigo.js) y su lectura en imágenes (lectura.js) y el catálogo compartido (catalogo.js), y el registro de errores (eventos.js)
   store/        el estado de la app. Datos.jsx junta las piezas: la carga (carga.js), lo que se calcula con eso
                 (derivados.js), la sincronización y el modo sin conexión (sincronizacion.js, cambios.js, envios.js,
                 local.js), los avisos (avisos.jsx) y las acciones por tema (acciones/)

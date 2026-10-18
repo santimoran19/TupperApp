@@ -4,7 +4,8 @@
 //   Beto → lector propio del teléfono (BarcodeDetector, como en Android)
 //   Caro → sin permiso para la cámara: escribe el código a mano
 import { expect, test } from '@playwright/test'
-import { API, APP, captura, contexto, escuchar, rest, saltarRecorrido, sinErrores } from './apoyo.js'
+import { API, APP, captura, escuchar, rest, sinErrores } from './apoyo.js'
+import { abrirEscaner, cuenta as nuevaCuenta, guardarProducto, panelDe } from './escaner-apoyo.js'
 
 const BARRITA = '4006381333931' // en Open Food Facts
 const SIN_DATOS = '5449000000996' // en Open Food Facts, sin calorías
@@ -20,84 +21,10 @@ const PRODUCTOS = {
   [SIN_DATOS]: { product_name: 'Producto sin datos', nutriments: {} },
 }
 
-// Se instala antes de que cargue la app. `modo`: 'libreria' | 'nativo' | 'negada'. El código que "ve" la cámara es window.__camara.codigo.
-function instalarCamara({ modo }) {
-  window.__camara = { codigo: null }
-  if (modo === 'libreria') delete window.BarcodeDetector
-  if (modo === 'nativo')
-    window.BarcodeDetector = class {
-      static async getSupportedFormats() {
-        return ['ean_13', 'ean_8', 'upc_a']
-      }
-      async detect() {
-        return window.__camara.codigo ? [{ rawValue: window.__camara.codigo, format: 'ean_13' }] : []
-      }
-    }
-  const L = ['0001101', '0011001', '0010011', '0111101', '0100011', '0110001', '0101111', '0111011', '0110111', '0001011']
-  const G = ['0100111', '0110011', '0011011', '0100001', '0011101', '0111001', '0000101', '0010001', '0001001', '0010111']
-  const R = ['1110010', '1100110', '1101100', '1000010', '1011100', '1001110', '1010000', '1000100', '1001000', '1110100']
-  const PARIDAD = ['LLLLLL', 'LLGLGG', 'LLGGLG', 'LLGGGL', 'LGLLGG', 'LGGLLG', 'LGGGLL', 'LGLGLG', 'LGLGGL', 'LGGLGL']
-  const barras = (c) => {
-    const p = PARIDAD[Number(c[0])]
-    let b = '101'
-    for (let i = 0; i < 6; i++) b += (p[i] === 'L' ? L : G)[Number(c[i + 1])]
-    b += '01010'
-    for (let i = 7; i < 13; i++) b += R[Number(c[i])]
-    return b + '101'
-  }
-  const pedir = async () => {
-    if (modo === 'negada') throw new DOMException('Permission denied', 'NotAllowedError')
-    const lienzo = document.createElement('canvas')
-    lienzo.width = 640
-    lienzo.height = 480
-    const g = lienzo.getContext('2d')
-    let tic = 0
-    const dibujar = () => {
-      g.fillStyle = '#fff'
-      g.fillRect(0, 0, 640, 480)
-      const c = window.__camara.codigo
-      if (c) {
-        g.fillStyle = '#000'
-        const bits = barras(c)
-        for (let i = 0; i < bits.length; i++) if (bits[i] === '1') g.fillRect(130 + i * 4, 130, 4, 220)
-      }
-      g.fillStyle = tic++ % 2 ? '#fefefe' : '#fff' // para que el video siga mandando cuadros
-      g.fillRect(0, 0, 2, 2)
-    }
-    dibujar()
-    setInterval(dibujar, 100)
-    return lienzo.captureStream(10)
-  }
-  if (!navigator.mediaDevices) Object.defineProperty(navigator, 'mediaDevices', { value: {}, configurable: true })
-  navigator.mediaDevices.getUserMedia = pedir
-}
-
 // Open Food Facts de mentira. `apagado`: responde como si no tuviera nada
 const estado = { apagado: false }
-async function openFoodFacts(ctx) {
-  await ctx.route('https://search.openfoodfacts.org/**', (r) => r.abort())
-  await ctx.route('https://world.openfoodfacts.org/cgi/**', (r) =>
-    r.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: '{"products":[]}' }),
-  )
-  await ctx.route('https://world.openfoodfacts.org/api/v2/product/**', (r) => {
-    const codigo = new URL(r.request().url()).pathname.split('/').pop().replace('.json', '')
-    const p = PRODUCTOS[codigo]
-    const cabeceras = { 'Access-Control-Allow-Origin': '*' }
-    if (!p || estado.apagado)
-      return r.fulfill({
-        status: 404,
-        contentType: 'application/json',
-        headers: cabeceras,
-        body: '{"status":0,"status_verbose":"product not found"}',
-      })
-    return r.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      headers: cabeceras,
-      body: JSON.stringify({ status: 1, code: codigo, product: { code: codigo, ...p } }),
-    })
-  })
-}
+
+const cuenta = (browser, modo, email, nombre) => nuevaCuenta(browser, { modo }, email, nombre, PRODUCTOS, estado)
 
 // Lo que hay en las tablas del catálogo, leído con la clave de servicio (la app no puede leerlas)
 // (solo de los productos de esta prueba: las otras pruebas, que van antes, también dejan aportes)
@@ -108,45 +35,6 @@ const leer = async (tabla) =>
       await fetch(`${API}/rest/v1/${tabla}?select=*`, { headers: { Authorization: 'Bearer service-role-de-prueba', apikey: 'test' } })
     ).json()
   ).filter((f) => MIOS.has(f.clave))
-
-async function cuenta(browser, modo, email, nombre) {
-  const ctx = await contexto(browser)
-  await ctx.addInitScript(instalarCamara, { modo })
-  await openFoodFacts(ctx)
-  const pg = await ctx.newPage()
-  await pg.goto(APP + '/')
-  await pg.click('button:has-text("Crear cuenta") >> nth=0')
-  await pg.fill('#email', email)
-  await pg.fill('#clave', 'Secreto3z')
-  await pg.fill('#clave2', 'Secreto3z')
-  await pg.click('form button[type=submit]')
-  await pg.waitForSelector('text=Armemos tu perfil')
-  await pg.fill('#pf-nombre', nombre)
-  await pg.fill('#pf-usuario', nombre.toLowerCase() + '.esc')
-  await pg.fill('#pf-nac', '1995-05-05')
-  await pg.fill('#pf-altura', '170')
-  await pg.fill('#pf-peso', '65')
-  await pg.click('button:has-text("Empezar")')
-  await pg.waitForSelector(`text=¡Hola, ${nombre}!`)
-  await saltarRecorrido(pg)
-  return { ctx, pg }
-}
-
-const abrirEscaner = async (pg) => {
-  await pg.goto(APP + '/despensa')
-  await pg.waitForSelector('text=Lista de compras')
-  await pg.click('button:has-text("Agregar") >> nth=0')
-  await pg.click('button[aria-label="Escanear código de barras"]')
-}
-const panelDe = (pg, codigo) => pg.locator('[role=status]', { hasText: 'CÓDIGO ' + codigo })
-// Elige el producto que apareció, pone cuánto hay y guarda
-async function guardarProducto(pg, panel, nombre, cantidad = '2') {
-  await panel.getByRole('button', { name: nombre }).click()
-  await pg.waitForSelector('text=¿Cuánto tenés?')
-  await pg.locator('div.fixed input[inputmode]').first().fill(cantidad)
-  await pg.click('div.fixed button:has-text("Guardar")')
-  await pg.waitForSelector(`p.font-semibold:text-is("${nombre}")`)
-}
 
 test('escáner de código de barras y catálogo compartido entre cuentas', async ({ browser }) => {
   const errores = []

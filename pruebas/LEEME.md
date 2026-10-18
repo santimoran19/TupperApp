@@ -11,7 +11,7 @@ Tarda unos segundos y no abre ningún navegador. Corre todo lo que hay en `prueb
 | `equivalencias.test.js` | Un producto propio que vale por un alimento de las recetas: stock sumado, de dónde se gasta, calorías, plan y sugerencias. |
 | `base-de-alimentos.test.js` | Los alimentos y recetas base: categorías, familias (cualquier leche cuenta como leche), sugerencias con productos reales y lectura de los productos de Open Food Facts. |
 | `base-ampliada.test.js` | La base ampliada (F-12): datos de cada alimento y receta (calorías contra macros, rangos por comida), sinónimos, familias y medidas, búsquedas de ejemplo, que las sugerencias de "cuenta como" de los productos de siempre no cambien y que `seed-5.sql` se pueda correr dos veces sobre la base anterior. |
-| `openfoodfacts.test.js` | La búsqueda: los dos buscadores, la memoria por búsqueda y los reintentos (con la red y el reloj simulados), y la búsqueda de un producto por su código de barras. |
+| `openfoodfacts.test.js` | La búsqueda: los dos buscadores, la memoria por búsqueda y los reintentos (con la red y el reloj simulados), la búsqueda de un producto por su código de barras y cómo se leen sus calorías (por porción, en kJ, calculadas). |
 | `codigo.test.js` | Los códigos de barras: limpieza, dígito verificador (EAN-13, EAN-8, UPC-A, ITF-14), mensajes de error y cómo se ve un producto del catálogo. |
 | `catalogo.test.js` | El catálogo compartido en la base de verdad (`actualizacion-14.sql`): nadie toca las tablas, un aporte solo no se publica, dos personas con valores parecidos sí, topes por día, búsqueda sin comodines y borrar la cuenta. |
 | `analisis.test.js` | El análisis con IA: los datos que se le mandan al modelo, la lectura de la respuesta y la elección del proveedor. |
@@ -46,6 +46,7 @@ npx playwright install chromium
 Cosas a saber:
 
 - **La `22-escaner-catalogo` no depende de las otras:** crea sus propias cuentas y usa una cámara de mentira (un lienzo que dibuja un código EAN-13 de verdad), así se prueba el lector de la librería y el propio del teléfono sin cámara real. Se puede correr sola con `npx playwright test 22-escaner`.
+- **La `23-escaner-dificil` tampoco depende de las otras:** misma idea con un video de 1280x720 y el código dibujado más chico, de colores, borroso o blanco sobre negro, más la foto del código (`camara-falsa.js` también arma la "foto"), el zoom y la linterna, y los productos de Open Food Facts sin calorías (por porción, calculadas o a partir de un alimento parecido). Se puede correr sola con `npx playwright test 23-escaner`. `camara-falsa.js` y `escaner-apoyo.js` son los atajos que comparten la 22 y la 23.
 - **Los demás archivos corren en orden y cada uno sigue donde dejó el anterior** (misma cuenta, misma despensa). Por eso no se puede correr uno suelto de entrada. Para repetir uno solo mientras lo arreglás, dejá los servidores andando en otras dos terminales y usá `REUSAR=1`:
 
   ```bash

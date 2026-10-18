@@ -160,6 +160,7 @@ eq(
     fat: 3,
     alcohol: false,
     argentino: true,
+    calculado: false,
   },
   'formato del buscador viejo',
 )
@@ -186,6 +187,7 @@ eq(
     fat: 3,
     alcohol: false,
     argentino: true,
+    calculado: false,
   },
   'formato del buscador nuevo (nombre por idioma, marca como etiqueta, energía en kJ)',
 )

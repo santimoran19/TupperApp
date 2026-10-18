@@ -18,7 +18,7 @@ const cada100 = (a) => `${redondear(a.kcal)} kcal y ${redondear(a.protein, 1)} g
 export default function SelectorAlimento({ onElegir, soloConStock = false, categoria = null }) {
   const { alimentos, stockMap, crearAlimento, ingredientes, deLaBase, confirmar, noPreguntar } = useDatos()
   const [texto, setTexto] = useState('')
-  const [creando, setCreando] = useState(null) // null | { nombre?, codigo? }: el formulario de alimento nuevo
+  const [creando, setCreando] = useState(null) // null | { nombre?, codigo?, plantilla? }: el formulario de alimento nuevo
   const [escaneando, setEscaneando] = useState(false)
   const [porCodigo, setPorCodigo] = useState(null) // lo que salió de un código de barras: { estado, codigo, producto?, origen?, nombre? }
   const [delCatalogo, setDelCatalogo] = useState([]) // productos que ya cargaron y confirmaron otras personas
@@ -148,7 +148,8 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
         // El código de barras queda en el alimento para encontrarlo la próxima vez que se escanee
         ...(esCodigoDeBarras(p.codigo) ? { codigo: p.codigo } : {}),
       },
-      { compartir: true, detalle: p.detalle },
+      // Si las calorías no venían y se calcularon, no se comparten: el catálogo es de valores que la gente confirmó
+      { compartir: !p.calculado, detalle: p.detalle },
     )
     setAgregando(false)
     // Si dijo que no, no se vuelve a preguntar desde la despensa
@@ -162,6 +163,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
         nombreInicial={creando.nombre ?? texto}
         categoriaInicial={categoria}
         codigoInicial={creando.codigo || null}
+        plantilla={creando.plantilla || null}
         onListo={(a) => onElegir(a)}
         onCancelar={() => setCreando(null)}
       />
@@ -204,6 +206,11 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
           ocupado={agregando}
           onElegir={elegirProducto}
           onManual={() => setCreando({ nombre: porCodigo.nombre || '', codigo: porCodigo.codigo })}
+          alimentos={alimentos}
+          onParecido={(plantilla) => {
+            anotarEvento('codigo_aproximado', { resultado: porCodigo.estado })
+            setCreando({ nombre: porCodigo.nombre || '', codigo: porCodigo.codigo, plantilla })
+          }}
           onOtro={() => setEscaneando(true)}
           onReintentar={() => buscarCodigo(porCodigo.codigo)}
         />
@@ -339,7 +346,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
 }
 
 // Lo que salió de buscar un código de barras
-function PorCodigo({ estado: e, ocupado, onElegir, onManual, onOtro, onReintentar }) {
+function PorCodigo({ estado: e, ocupado, alimentos, onElegir, onManual, onParecido, onOtro, onReintentar }) {
   const p = e.producto
   return (
     <div className="mb-3 rounded-2xl bg-teal-suave p-3" role="status">
@@ -359,6 +366,11 @@ function PorCodigo({ estado: e, ocupado, onElegir, onManual, onOtro, onReintenta
             </div>
             <Icono n="add_circle" className="text-teal-oscuro" />
           </button>
+          {p.calculado && (
+            <p className="text-xs text-gris mb-1">
+              {e.origen} no tenía las calorías de este producto: las calculamos con sus proteínas, carbohidratos y grasas.
+            </p>
+          )}
           <p className="text-xs text-gris">
             Viene de {e.origen}: datos cargados por la comunidad. Si algo no coincide con la etiqueta,{' '}
             <button onClick={onManual} className="font-semibold text-teal-oscuro underline">
@@ -371,11 +383,16 @@ function PorCodigo({ estado: e, ocupado, onElegir, onManual, onOtro, onReintenta
       {e.estado === 'incompleto' && (
         <p className="text-sm py-2">
           Open Food Facts conoce este producto{e.nombre ? ` (${e.nombre})` : ''}, pero no tiene sus calorías. Cargalo con los datos de la
-          etiqueta.
+          etiqueta o partí de un alimento parecido.
         </p>
       )}
       {e.estado === 'no' && (
-        <p className="text-sm py-2">No encontramos este código en Open Food Facts. Podés cargarlo con los datos de la etiqueta.</p>
+        <p className="text-sm py-2">
+          No encontramos este código en Open Food Facts. Podés cargarlo con los datos de la etiqueta o partir de un alimento parecido.
+        </p>
+      )}
+      {(e.estado === 'incompleto' || e.estado === 'no') && (
+        <Parecidos nombre={e.nombre || ''} alimentos={alimentos} onElegir={onParecido} />
       )}
       {e.estado === 'error' && (
         <p className="text-sm py-2">
@@ -395,6 +412,57 @@ function PorCodigo({ estado: e, ocupado, onElegir, onManual, onOtro, onReintenta
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+// Cuando el producto no tiene datos en ningún lado: buscar un alimento parecido de la base (atún, miel, puré de tomate...)
+// para partir de sus valores. Después se corrigen con la etiqueta.
+function Parecidos({ nombre, alimentos, onElegir }) {
+  const mejor = useMemo(() => (nombre ? parecidoEnBase({ name: nombre }, alimentos) : null), [nombre, alimentos])
+  // Si no hay un parecido claro, se arranca buscando por la primera palabra del nombre ("Atún La Campagnola" -> atún)
+  const [q, setQ] = useState(() =>
+    mejor || !nombre
+      ? ''
+      : normal(nombre)
+          .replace(/\(.*?\)/g, ' ')
+          .split(/\s+/)
+          .find((w) => w.length >= 3) || '',
+  )
+  const lista = useMemo(() => {
+    const t = q.trim()
+    // El que más se parece al nombre del producto va primero (mientras no se escriba otra cosa que lo deje afuera)
+    const primero = mejor && (!t || normal(mejor.name).includes(normal(t))) ? [mejor] : []
+    const resto = t ? buscarAlimentos(alimentos, t) : []
+    return [...new Map([...primero, ...resto].map((a) => [a.id, a])).values()].slice(0, 5)
+  }, [q, mejor, alimentos])
+  return (
+    <div className="mt-1 mb-2 rounded-xl bg-superficie p-3" data-tour="parecidos">
+      <label className="etiqueta" htmlFor="par-buscar">
+        Partir de un alimento parecido
+      </label>
+      <input
+        id="par-buscar"
+        className="campo"
+        placeholder="Ej.: atún, miel, puré de tomate"
+        value={q}
+        onChange={(e) => setQ(e.target.value.slice(0, LIM.nombre))}
+      />
+      {lista.length > 0 && (
+        <div className="divide-y divide-linea">
+          {lista.map((a) => (
+            <button key={a.id} onClick={() => onElegir(a)} className="w-full flex items-center gap-3 py-2.5 text-left">
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate">{a.name}</p>
+                <p className="text-xs text-gris">{cada100(a)}</p>
+              </div>
+              <Icono n="add_circle" className="text-teal-oscuro" />
+            </button>
+          ))}
+        </div>
+      )}
+      {q.trim() && lista.length === 0 && <p className="text-xs text-gris mt-1">No hay nada parecido con ese nombre.</p>}
+      <p className="text-xs text-gris mt-1">Usamos sus valores de partida y vos los corregís con la etiqueta.</p>
     </div>
   )
 }
@@ -430,7 +498,15 @@ export function ValePor({ id, medida, propio = null, valor, onChange }) {
 }
 
 // Crear un alimento propio o, si viene `inicial`, editarlo.
-export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, codigoInicial = null, inicial = null, onListo, onCancelar }) {
+export function NuevoAlimento({
+  nombreInicial = '',
+  categoriaInicial = null,
+  codigoInicial = null,
+  plantilla = null,
+  inicial = null,
+  onListo,
+  onCancelar,
+}) {
   const { crearAlimento, actualizarAlimento, ingredientes, equivalentes } = useDatos()
   const [f, setF] = useState(
     inicial
@@ -447,24 +523,42 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, cod
           alcohol: !!inicial.alcohol,
           same_as: inicial.same_as || '',
         }
-      : {
-          name: nombreInicial,
-          unit: categoriaInicial === 'Bebidas' ? 'ml' : 'g',
-          unit_grams: '',
-          unit_label: 'unidad',
-          kcal: '',
-          protein: '',
-          carbs: '',
-          fat: '',
-          category: categoriaInicial || 'Otros',
-          alcohol: false,
-          same_as: '',
-        },
+      : plantilla
+        ? {
+            // Valores de partida de un alimento parecido; el nombre es el del producto (que a veces no se conoce)
+            name: nombreInicial,
+            // Un producto envasado se carga cada 100 g (los valores de la base son siempre cada 100), aunque la base lo cuente en unidades
+            unit: plantilla.unit === 'u' ? 'g' : plantilla.unit,
+            unit_grams: '',
+            unit_label: 'unidad',
+            kcal: String(Number(plantilla.kcal)),
+            protein: String(Number(plantilla.protein)),
+            carbs: String(Number(plantilla.carbs)),
+            fat: String(Number(plantilla.fat)),
+            category: plantilla.category,
+            alcohol: !!plantilla.alcohol,
+            same_as: ingredientes.some((c) => c.id === plantilla.id) ? plantilla.id : '',
+          }
+        : {
+            name: nombreInicial,
+            unit: categoriaInicial === 'Bebidas' ? 'ml' : 'g',
+            unit_grams: '',
+            unit_label: 'unidad',
+            kcal: '',
+            protein: '',
+            carbs: '',
+            fat: '',
+            category: categoriaInicial || 'Otros',
+            alcohol: false,
+            same_as: '',
+          },
   )
   const [guardando, setGuardando] = useState(false)
   const [intento, setIntento] = useState(false)
   const [compartir, setCompartir] = useState(true) // aportar el producto al catálogo compartido (solo en gramos o mililitros)
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }))
+  // Mientras los valores sean los del alimento parecido son aproximados: no se comparten con el catálogo
+  const aproximado = !!plantilla && ['kcal', 'protein', 'carbs', 'fat'].every((k) => Number(f[k]) === Number(plantilla[k]))
 
   const errores = {
     name: errTexto(f.name, { max: LIM.nombre }),
@@ -508,7 +602,9 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, cod
       same_as: valePor || null,
       ...(!inicial && codigoInicial ? { codigo: codigoInicial } : {}),
     }
-    const a = inicial ? await actualizarAlimento(inicial.id, datos) : await crearAlimento(datos, { compartir: compartir && f.unit !== 'u' })
+    const a = inicial
+      ? await actualizarAlimento(inicial.id, datos)
+      : await crearAlimento(datos, { compartir: compartir && f.unit !== 'u' && !aproximado })
     setGuardando(false)
     if (a) onListo(a)
   }
@@ -521,6 +617,11 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, cod
           : 'Copiá los valores de la etiqueta del producto, cada 100 g o 100 ml. Queda guardado para siempre.'}
       </p>
       {!inicial && codigoInicial && <p className="text-xs text-gris">Código de barras: {codigoInicial}</p>}
+      {!inicial && plantilla && (
+        <p className="text-sm rounded-xl bg-teal-suave p-3" role="note">
+          Estos valores son aproximados, de «{nombreCorto(plantilla)}». Corregilos con la etiqueta del producto.
+        </p>
+      )}
       <div data-tour="na-datos" className="space-y-3">
         <div>
           <label className="etiqueta" htmlFor="na-nombre">
@@ -637,7 +738,7 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, cod
           Tiene alcohol (no cuenta para el líquido del día)
         </label>
       )}
-      {!inicial && f.unit !== 'u' && (
+      {!inicial && f.unit !== 'u' && !aproximado && (
         <div>
           <label className="flex items-center gap-3 text-sm">
             <input type="checkbox" checked={compartir} onChange={(e) => setCompartir(e.target.checked)} className="w-5 h-5 accent-verde" />

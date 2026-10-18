@@ -152,36 +152,97 @@ export function adivinarCategoria(nombre, etiquetas = [], liquido = false) {
   return liquido ? 'Bebidas' : 'Otros'
 }
 
-// Pasa un producto de Open Food Facts al formato de la app. Devuelve null si no sirve.
-export function aAlimento(prod) {
-  const nombre = (texto(prod.product_name_es) || texto(prod.product_name)).trim().replace(/\s+/g, ' ')
+// Valor de un nutriente cada 100 g o ml. Open Food Facts lo trae de varias maneras según cómo lo cargó cada persona:
+// ya por 100 (`_100g`), por porción (`_serving`, se pasa a 100 con el tamaño de la porción) o suelto (`clave`, que vale
+// para lo que diga `nutrition_data_per`, si se sabe). null si no está de ninguna forma.
+function por100(n, clave, porcion, base) {
+  const directo = numero(n[`${clave}_100g`])
+  if (directo !== null) return directo
+  const enPorcion = numero(n[`${clave}_serving`])
+  if (enPorcion !== null && porcion > 0) return (enPorcion * 100) / porcion
+  const suelto = numero(n[clave])
+  if (suelto !== null) {
+    if (base === '100g') return suelto
+    if (base === 'serving' && porcion > 0) return (suelto * 100) / porcion
+  }
+  return null
+}
+
+// Calorías cada 100: las que trae el producto, las de los kilojoules o, si no hay ninguna, las que salen de
+// proteínas, carbohidratos y grasas (4, 4 y 9 kcal por gramo). Devuelve { kcal, calculado } o null.
+function calorias(n, porcion, base) {
+  let kcal = por100(n, 'energy-kcal', porcion, base)
+  if (kcal === null) {
+    const kj = por100(n, 'energy-kj', porcion, base) ?? por100(n, 'energy', porcion, base)
+    if (kj !== null) kcal = kj / 4.184
+  }
+  if (kcal !== null) return { kcal, calculado: false }
+  const p = por100(n, 'proteins', porcion, base)
+  const c = por100(n, 'carbohydrates', porcion, base)
+  const g = por100(n, 'fat', porcion, base)
+  if (p === null || c === null || g === null || [p, c, g].some((x) => x < 0) || p + c + g > 100.5) return null
+  return { kcal: p * 4 + c * 4 + g * 9, calculado: true }
+}
+
+// Lo que se sabe de un producto sin mirar sus nutrientes: nombre (con la marca), medida, categoría. null si no tiene nombre.
+function ficha(prod) {
+  const nombre = (
+    texto(prod.product_name_es) ||
+    texto(prod.product_name) ||
+    texto(prod.generic_name_es) ||
+    texto(prod.generic_name) ||
+    texto(prod.product_name_en)
+  )
+    .trim()
+    .replace(/\s+/g, ' ')
+  if (!nombre) return null
   const n = prod.nutriments || {}
-  let kcal = numero(n['energy-kcal_100g'])
-  const kj = numero(n['energy-kj_100g']) ?? numero(n.energy_100g)
-  if (kcal === null && kj !== null) kcal = kj / 4.184
-  if (!nombre || kcal === null) return null
-  const protein = numero(n.proteins_100g) ?? 0
-  const carbs = numero(n.carbohydrates_100g) ?? 0
-  const fat = numero(n.fat_100g) ?? 0
-  // Valores imposibles: producto mal cargado
-  if (kcal < 0 || kcal > LIM.kcal100[1] || [protein, carbs, fat].some((x) => x < 0 || x > 100)) return null
   const marca = marcaLinda((Array.isArray(prod.brands) ? texto(prod.brands) : String(prod.brands || '').split(',')[0]).trim())
   const cantidad = texto(prod.quantity).trim()
   const etiquetas = Array.isArray(prod.categories_tags) ? prod.categories_tags : []
   const liquido = /\d\s?(ml|cl|cc|l|lt|litros?)\b/i.test(cantidad) || etiquetas.includes('en:beverages')
   const completo = marca && !normal(nombre).includes(normal(marca)) ? `${nombre} (${marca})` : nombre
   return {
-    codigo: String(prod.code || completo),
-    name: completo.slice(0, LIM.nombre),
+    nombre,
+    nutrientes: n,
+    completo: completo.slice(0, LIM.nombre),
     detalle: cantidad,
     unit: liquido ? 'ml' : 'g',
     category: adivinarCategoria(nombre, etiquetas, liquido),
-    kcal: Math.round(kcal),
+    liquido,
+    argentino: (Array.isArray(prod.countries_tags) ? prod.countries_tags : []).includes('en:argentina'),
+  }
+}
+
+// Pasa un producto de Open Food Facts al formato de la app. Devuelve null si no sirve.
+export function aAlimento(prod) {
+  const f = ficha(prod)
+  if (!f) return null
+  const n = f.nutrientes
+  const porcion = numero(prod.serving_quantity) ?? 0
+  // Sin saber a qué se refieren los valores sueltos (las búsquedas no lo dicen), no se usan
+  const base = prod.nutrition_data_per === 'serving' || prod.nutrition_data_per === '100g' ? prod.nutrition_data_per : null
+  const energia = calorias(n, porcion, base)
+  if (!energia) return null
+  const protein = por100(n, 'proteins', porcion, base) ?? 0
+  const carbs = por100(n, 'carbohydrates', porcion, base) ?? 0
+  const fat = por100(n, 'fat', porcion, base) ?? 0
+  // Valores imposibles: producto mal cargado
+  if (energia.kcal < 0 || energia.kcal > LIM.kcal100[1] || [protein, carbs, fat].some((x) => x < 0 || x > 100)) return null
+  return {
+    codigo: String(prod.code || f.completo),
+    name: f.completo,
+    detalle: f.detalle,
+    unit: f.unit,
+    category: f.category,
+    kcal: Math.round(energia.kcal),
     protein: uno(protein),
     carbs: uno(carbs),
     fat: uno(fat),
-    alcohol: liquido && (numero(n.alcohol_100g) ?? 0) > 0.5,
-    argentino: (Array.isArray(prod.countries_tags) ? prod.countries_tags : []).includes('en:argentina'),
+    alcohol: f.liquido && (por100(n, 'alcohol', porcion, base) ?? 0) > 0.5,
+    argentino: f.argentino,
+    // las calorías no venían: salieron de las proteínas, carbohidratos y grasas
+    calculado: energia.calculado,
   }
 }
 
@@ -221,11 +282,13 @@ async function unaVuelta(texto, hasta) {
 
 // ---------- Un producto por su código de barras ----------
 const PRODUCTO = 'https://world.openfoodfacts.org/api/v2/product'
+// Para un solo producto se piden más campos que en la búsqueda: nombre genérico, porción y a qué se refieren los valores
+const CAMPOS_CODIGO = `${CAMPOS},product_name_es,product_name_en,generic_name,generic_name_es,serving_quantity,nutrition_data_per`
 
 // Busca el producto exacto de un código de barras. Devuelve:
 //   { estado: 'ok', producto }   el producto, en el formato de la app
-//   { estado: 'incompleto', nombre }   está en Open Food Facts pero sin calorías: hay que cargar los valores a mano
-//   { estado: 'no' }   no lo tienen
+//   { estado: 'incompleto', nombre, detalle, unit, category }   está en Open Food Facts pero sin calorías: hay que cargar los valores
+//   { estado: 'no' }   no lo tienen (o lo tienen vacío, sin nombre)
 // Si Open Food Facts no responde (después de 3 intentos) tira el error, para no confundirlo con "no existe".
 export async function buscarPorCodigo(codigo) {
   let ultimo = null
@@ -233,7 +296,7 @@ export async function buscarPorCodigo(codigo) {
     const control = new AbortController()
     const corte = setTimeout(() => control.abort(), TIEMPO_PEDIDO)
     try {
-      const r = await fetch(`${PRODUCTO}/${encodeURIComponent(codigo)}.json?fields=${CAMPOS},product_name_es`, {
+      const r = await fetch(`${PRODUCTO}/${encodeURIComponent(codigo)}.json?fields=${CAMPOS_CODIGO}`, {
         signal: control.signal,
         headers: { Accept: 'application/json' },
       })
@@ -243,8 +306,8 @@ export async function buscarPorCodigo(codigo) {
       if (datos?.status !== 1 || !datos.product) return { estado: 'no' }
       const producto = aAlimento({ ...datos.product, code: codigo })
       if (producto) return { estado: 'ok', producto }
-      const nombre = (texto(datos.product.product_name_es) || texto(datos.product.product_name)).trim().replace(/\s+/g, ' ')
-      return { estado: 'incompleto', nombre: nombre.slice(0, LIM.nombre) }
+      const f = ficha(datos.product)
+      return f ? { estado: 'incompleto', nombre: f.completo, detalle: f.detalle, unit: f.unit, category: f.category } : { estado: 'no' }
     } catch (e) {
       ultimo = e
       if (intento < 2) await dormir(ESPERAS[intento])
