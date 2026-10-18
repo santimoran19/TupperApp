@@ -11,7 +11,9 @@ Tarda unos segundos y no abre ningún navegador. Corre todo lo que hay en `prueb
 | `equivalencias.test.js` | Un producto propio que vale por un alimento de las recetas: stock sumado, de dónde se gasta, calorías, plan y sugerencias. |
 | `base-de-alimentos.test.js` | Los alimentos y recetas base: categorías, familias (cualquier leche cuenta como leche), sugerencias con productos reales y lectura de los productos de Open Food Facts. |
 | `base-ampliada.test.js` | La base ampliada (F-12): datos de cada alimento y receta (calorías contra macros, rangos por comida), sinónimos, familias y medidas, búsquedas de ejemplo, que las sugerencias de "cuenta como" de los productos de siempre no cambien y que `seed-5.sql` se pueda correr dos veces sobre la base anterior. |
-| `openfoodfacts.test.js` | La búsqueda: los dos buscadores, la memoria por búsqueda y los reintentos (con la red y el reloj simulados). |
+| `openfoodfacts.test.js` | La búsqueda: los dos buscadores, la memoria por búsqueda y los reintentos (con la red y el reloj simulados), y la búsqueda de un producto por su código de barras. |
+| `codigo.test.js` | Los códigos de barras: limpieza, dígito verificador (EAN-13, EAN-8, UPC-A, ITF-14), mensajes de error y cómo se ve un producto del catálogo. |
+| `catalogo.test.js` | El catálogo compartido en la base de verdad (`actualizacion-14.sql`): nadie toca las tablas, un aporte solo no se publica, dos personas con valores parecidos sí, topes por día, búsqueda sin comodines y borrar la cuenta. |
 | `analisis.test.js` | El análisis con IA: los datos que se le mandan al modelo, la lectura de la respuesta y la elección del proveedor. |
 | `base-de-datos.test.js` | La base de verdad: arma un Postgres en memoria, le aplica los `.sql` de `supabase/` en orden y prueba las funciones (cocinar, registrar, comprar, guardar receta), que nada quede a medias cuando algo falla, los permisos por usuario y el registro de errores. |
 | `topes.test.js` | Los topes de la base: textos con largo máximo, filas que no pesan de más y el máximo de filas por usuario. |
@@ -43,7 +45,8 @@ npx playwright install chromium
 
 Cosas a saber:
 
-- **Los archivos corren en orden y cada uno sigue donde dejó el anterior** (misma cuenta, misma despensa). Por eso no se puede correr uno suelto de entrada. Para repetir uno solo mientras lo arreglás, dejá los servidores andando en otras dos terminales y usá `REUSAR=1`:
+- **La `22-escaner-catalogo` no depende de las otras:** crea sus propias cuentas y usa una cámara de mentira (un lienzo que dibuja un código EAN-13 de verdad), así se prueba el lector de la librería y el propio del teléfono sin cámara real. Se puede correr sola con `npx playwright test 22-escaner`.
+- **Los demás archivos corren en orden y cada uno sigue donde dejó el anterior** (misma cuenta, misma despensa). Por eso no se puede correr uno suelto de entrada. Para repetir uno solo mientras lo arreglás, dejá los servidores andando en otras dos terminales y usá `REUSAR=1`:
 
   ```bash
   node pruebas/e2e/servidor/supabase-simulado.mjs

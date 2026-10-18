@@ -219,6 +219,42 @@ async function unaVuelta(texto, hasta) {
   throw ultimo
 }
 
+// ---------- Un producto por su código de barras ----------
+const PRODUCTO = 'https://world.openfoodfacts.org/api/v2/product'
+
+// Busca el producto exacto de un código de barras. Devuelve:
+//   { estado: 'ok', producto }   el producto, en el formato de la app
+//   { estado: 'incompleto', nombre }   está en Open Food Facts pero sin calorías: hay que cargar los valores a mano
+//   { estado: 'no' }   no lo tienen
+// Si Open Food Facts no responde (después de 3 intentos) tira el error, para no confundirlo con "no existe".
+export async function buscarPorCodigo(codigo) {
+  let ultimo = null
+  for (let intento = 0; intento < 3; intento++) {
+    const control = new AbortController()
+    const corte = setTimeout(() => control.abort(), TIEMPO_PEDIDO)
+    try {
+      const r = await fetch(`${PRODUCTO}/${encodeURIComponent(codigo)}.json?fields=${CAMPOS},product_name_es`, {
+        signal: control.signal,
+        headers: { Accept: 'application/json' },
+      })
+      if (r.status === 404) return { estado: 'no' }
+      if (!r.ok) throw new Error(`Open Food Facts respondió ${r.status}`)
+      const datos = await r.json()
+      if (datos?.status !== 1 || !datos.product) return { estado: 'no' }
+      const producto = aAlimento({ ...datos.product, code: codigo })
+      if (producto) return { estado: 'ok', producto }
+      const nombre = (texto(datos.product.product_name_es) || texto(datos.product.product_name)).trim().replace(/\s+/g, ' ')
+      return { estado: 'incompleto', nombre: nombre.slice(0, LIM.nombre) }
+    } catch (e) {
+      ultimo = e
+      if (intento < 2) await dormir(ESPERAS[intento])
+    } finally {
+      clearTimeout(corte)
+    }
+  }
+  throw ultimo
+}
+
 const guardadas = new Map() // búsquedas ya hechas en esta sesión: no se vuelve a consultar
 
 // Busca productos. Reintenta sola hasta TIEMPO_TOTAL o VUELTAS (lo que pase primero); si igual no hay respuesta, tira el error.

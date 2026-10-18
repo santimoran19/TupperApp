@@ -1,6 +1,6 @@
 // Búsqueda en Open Food Facts: dos buscadores, memoria por búsqueda y reintentos solos. La red y el reloj están simulados.
 import { afterEach, beforeEach, expect, test, vi } from 'vitest'
-import { buscarProductos, _olvidar } from '../../src/lib/openfoodfacts.js'
+import { buscarPorCodigo, buscarProductos, _olvidar } from '../../src/lib/openfoodfacts.js'
 
 const prod = (n) => ({
   code: n,
@@ -131,4 +131,51 @@ test('avisa cómo salió cada búsqueda (sin lo que se buscó), y un aviso que f
   expect(error).toBeUndefined()
   expect(resultado.length).toBe(3)
   expect(pedidos).toEqual(['nuevo'])
+})
+
+// ---------- Por código de barras (F-01) ----------
+const CODIGO = '7790070411570'
+const unProducto = {
+  code: CODIGO,
+  product_name: 'Fideos Tirabuzón',
+  brands: 'Marca',
+  quantity: '500 g',
+  nutriments: { 'energy-kcal_100g': 360 },
+}
+
+test('por código: devuelve el producto en el formato de la app, con su código', async () => {
+  red(() => ({ status: 1, product: unProducto }))
+  const { resultado } = await esperar(buscarPorCodigo(CODIGO))
+  expect(resultado.estado).toBe('ok')
+  expect(resultado.producto).toMatchObject({
+    codigo: CODIGO,
+    name: 'Fideos Tirabuzón (Marca)',
+    kcal: 360,
+    unit: 'g',
+    category: 'Pastas y arroz',
+  })
+  expect(pedidos).toEqual(['viejo']) // el pedido va a world.openfoodfacts.org (api/v2/product/<código>)
+})
+
+test('por código: si no existe (404 o status 0) dice que no, sin reintentar', async () => {
+  red(() => 404)
+  expect((await esperar(buscarPorCodigo(CODIGO))).resultado).toEqual({ estado: 'no' })
+  expect(pedidos).toHaveLength(1)
+  red(() => ({ status: 0, status_verbose: 'product not found' }))
+  expect((await esperar(buscarPorCodigo(CODIGO))).resultado).toEqual({ estado: 'no' })
+})
+
+test('por código: un producto sin calorías pide cargar los valores a mano, con su nombre', async () => {
+  red(() => ({ status: 1, product: { code: CODIGO, product_name: 'Producto sin datos', nutriments: {} } }))
+  expect((await esperar(buscarPorCodigo(CODIGO))).resultado).toEqual({ estado: 'incompleto', nombre: 'Producto sin datos' })
+})
+
+test('por código: si Open Food Facts no responde reintenta y recién ahí tira el error (no lo confunde con "no existe")', async () => {
+  red((u, n) => (n < 3 ? 'caido' : { status: 1, product: unProducto }))
+  expect((await esperar(buscarPorCodigo(CODIGO))).resultado.estado).toBe('ok')
+  expect(pedidos).toHaveLength(3)
+  red(() => 503)
+  const { error } = await esperar(buscarPorCodigo(CODIGO))
+  expect(error.message).toMatch(/503/)
+  expect(pedidos).toHaveLength(3)
 })

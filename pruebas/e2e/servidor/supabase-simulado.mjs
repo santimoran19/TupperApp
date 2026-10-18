@@ -33,6 +33,9 @@ const db = {
   // Los hogares (supabase/actualizacion-13.sql): no se leen ni se escriben directo, solo con las funciones
   hogares: [],
   hogar_miembros: [],
+  // El catálogo compartido (supabase/actualizacion-14.sql): tampoco se lee ni se escribe directo
+  catalogo: [],
+  catalogo_aportes: [],
 }
 let numeroDeEvento = 0
 // IA simulada: lo que recibió el "modelo" y cómo tiene que responder (ok | texto | error | saturado)
@@ -255,7 +258,86 @@ function cuidarUsuario(fila, anterior, uid) {
     throw errorPg('23505', 'duplicate key value violates unique constraint "profiles_username_key"')
 }
 
+// El catálogo compartido: lo mismo que hacen las funciones de actualizacion-14.sql
+const CATALOGO_MINIMO = 2
+const sinTildes = (t) =>
+  String(t ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+const coinciden = (a, b) =>
+  a.unit === b.unit &&
+  Math.abs(a.kcal - b.kcal) <= Math.max(15, 0.1 * Math.max(a.kcal, b.kcal)) &&
+  Math.abs(a.protein - b.protein) <= 2 &&
+  Math.abs(a.carbs - b.carbs) <= 3 &&
+  Math.abs(a.fat - b.fat) <= 2
+const sinCamposInternos = (c) => ({
+  clave: c.clave,
+  codigo: c.codigo,
+  name: c.name,
+  detalle: c.detalle,
+  unit: c.unit,
+  kcal: c.kcal,
+  protein: c.protein,
+  carbs: c.carbs,
+  fat: c.fat,
+  category: c.category,
+  alcohol: c.alcohol,
+  confirmaciones: c.confirmaciones,
+})
+
 const FUNCIONES = {
+  catalogo_aportar: (uid, a) => {
+    const codigo = String(a.p_codigo ?? '').trim() || null
+    const name = String(a.p_name ?? '').trim()
+    if (codigo && !/^\d{8,14}$/.test(codigo)) throw errorPg('P0001', 'El código de barras no es válido.')
+    if (name.length < 1 || name.length > 60) throw errorPg('P0001', 'El nombre no es válido.')
+    if (a.p_unit !== 'g' && a.p_unit !== 'ml') throw errorPg('P0001', 'Solo se comparten productos medidos en gramos o mililitros.')
+    const n = { kcal: Number(a.p_kcal), protein: Number(a.p_protein) || 0, carbs: Number(a.p_carbs) || 0, fat: Number(a.p_fat) || 0 }
+    if (!(n.kcal >= 0 && n.kcal <= 900) || [n.protein, n.carbs, n.fat].some((x) => x < 0 || x > 100) || n.protein + n.carbs + n.fat > 100.5)
+      throw errorPg('P0001', 'Los valores del producto no son válidos.')
+    const clave = codigo || 'n:' + sinTildes(name)
+    const mio = db.catalogo_aportes.find((x) => x.clave === clave && x.user_id === uid)
+    const nuevo = {
+      clave,
+      user_id: uid,
+      codigo,
+      name,
+      detalle: String(a.p_detalle ?? '').slice(0, 40) || null,
+      unit: a.p_unit,
+      ...n,
+      category: String(a.p_category),
+      alcohol: !!a.p_alcohol,
+    }
+    const publicado = db.catalogo.find((x) => x.clave === clave)
+    if (publicado) {
+      if (!mio && coinciden(publicado, nuevo)) {
+        db.catalogo_aportes.push({ ...nuevo, name: publicado.name })
+        publicado.confirmaciones++
+      }
+      return true
+    }
+    if (mio) Object.assign(mio, nuevo)
+    else db.catalogo_aportes.push(nuevo)
+    const propio = db.catalogo_aportes.find((x) => x.clave === clave && x.user_id === uid)
+    const iguales = 1 + db.catalogo_aportes.filter((x) => x.clave === clave && x.user_id !== uid && coinciden(x, propio)).length
+    if (iguales < CATALOGO_MINIMO) return false
+    db.catalogo.push({ ...sinCamposInternos(propio), confirmaciones: iguales })
+    return true
+  },
+  catalogo_por_codigo: (uid, a) =>
+    db.catalogo.filter((c) => c.codigo && c.clave === String(a.p_codigo ?? '').trim()).map(sinCamposInternos),
+  catalogo_buscar: (uid, a) => {
+    const q = sinTildes(a.p_texto)
+    if (q.length < 3) return []
+    return db.catalogo
+      .filter((c) => sinTildes(c.name).includes(q))
+      .sort((x, y) => y.confirmaciones - x.confirmaciones || x.name.localeCompare(y.name, 'es'))
+      .slice(0, 20)
+      .map(sinCamposInternos)
+  },
   usuario_disponible: (uid, a) => {
     const u = String(a.p_usuario ?? '')
       .trim()
@@ -838,7 +920,7 @@ const server = http.createServer(async (req, res) => {
     const servicio = esServicio(req)
     const uid = uidDe(req)
     if (!uid && !servicio) return send(401, { message: 'sin sesión' })
-    if (!servicio && (tabla === 'hogares' || tabla === 'hogar_miembros'))
+    if (!servicio && ['hogares', 'hogar_miembros', 'catalogo', 'catalogo_aportes'].includes(tabla))
       return send(403, { message: 'permission denied for table ' + tabla })
     const dueno = uid ? ambito(uid) : null
     const visible = (row) => {

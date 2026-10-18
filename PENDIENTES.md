@@ -33,43 +33,41 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 **Después (P2)**
 3. F-19 · Gasto calórico y ejercicio (por fases; empezar por la 1, la 2 y la 4)
 4. F-18 · Registrarse e iniciar sesión con Google
-5. F-01 · Escanear el código de barras (va junto con F-02)
-6. F-02 · Catálogo compartido de productos
-7. IA-01 · Chat con IA (va junto con IA-02)
-8. IA-02 · Proveedor de respaldo
-9. F-04 · Vencimientos en la despensa
-10. D-07 · Revisión completa de accesibilidad
-11. L-04 · Consentimiento al registrarse
-12. C-05 · Opiniones desde la app
-13. T-03 · Pruebas en Safari
-14. T-04 · Base de pruebas aparte
-15. T-01 · Actualizar las herramientas
-16. F-06 · Recordatorios
+5. IA-01 · Chat con IA (va junto con IA-02)
+6. IA-02 · Proveedor de respaldo
+7. F-04 · Vencimientos en la despensa
+8. D-07 · Revisión completa de accesibilidad
+9. L-04 · Consentimiento al registrarse
+10. C-05 · Opiniones desde la app
+11. T-03 · Pruebas en Safari
+12. T-04 · Base de pruebas aparte
+13. T-01 · Actualizar las herramientas
+14. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-17. F-08 · Copiar un día entero
-18. D-06 · Deshacer en más lugares
-19. D-04 · Esqueletos de carga
-20. F-10 · Peso: gráfico y fecha estimada
-21. F-11 · Exportar el registro a planilla
-22. F-09 · Combos frecuentes
-23. F-12b · Seguir sumando a la base común
-24. F-13 · Categorías editables por el usuario
-25. D-08 · Revisión de los textos
-26. IA-04 · Cargar una receta desde un texto
-27. IA-03 · Foto de un plato
-28. C-06 · Métricas de uso
-29. T-05 · Partir `sincronizacion.js`
-30. T-07 · Mandar lo cargado sin conexión con la app cerrada
-31. S-06 · Verificación en dos pasos
-32. S-03 · Contraseñas filtradas también del lado de Supabase
+15. F-08 · Copiar un día entero
+16. D-06 · Deshacer en más lugares
+17. D-04 · Esqueletos de carga
+18. F-10 · Peso: gráfico y fecha estimada
+19. F-11 · Exportar el registro a planilla
+20. F-09 · Combos frecuentes
+21. F-12b · Seguir sumando a la base común
+22. F-13 · Categorías editables por el usuario
+23. D-08 · Revisión de los textos
+24. IA-04 · Cargar una receta desde un texto
+25. IA-03 · Foto de un plato
+26. C-06 · Métricas de uso
+27. T-05 · Partir `sincronizacion.js`
+28. T-07 · Mandar lo cargado sin conexión con la app cerrada
+29. S-06 · Verificación en dos pasos
+30. S-03 · Contraseñas filtradas también del lado de Supabase
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-33. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-34. C-02 · Dominio propio y página de presentación (va junto con C-03)
-35. C-01 · Planes y cobro (para empezar a cobrar)
-36. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-37. C-04 · Play Store (cuesta la cuenta de desarrollador)
+31. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+32. C-02 · Dominio propio y página de presentación (va junto con C-03)
+33. C-01 · Planes y cobro (para empezar a cobrar)
+34. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+35. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -80,12 +78,6 @@ Nada por ahora.
 
 ## 1. Funciones
 
-- [ ] **F-01 · Escanear el código de barras** · P2 · M.
-  - Con el código, Open Food Facts devuelve el producto exacto, sin las confusiones de la búsqueda por nombre.
-  - Android tiene lector propio; en iPhone hace falta una librería, que se baja solo al abrir el escáner.
-  - Hay que habilitar la cámara en `vercel.json`: hoy dice `camera=()`.
-  - Si el producto no está en Open Food, se ofrece cargarlo a mano. Conviene hacerlo junto con F-02.
-- [ ] **F-02 · Catálogo compartido de productos** · P2 · M. Cada producto que alguien encuentra en Open Food o carga a mano queda guardado para todos, así el segundo ya no depende de Open Food. Necesita una tabla nueva y algún control para que nadie cargue datos falsos (por ejemplo, que un producto recién cargado lo vea solo quien lo cargó hasta que lo usen varios).
 - [ ] **F-04 · Vencimientos en la despensa** · P2 · M. Fecha de vencimiento opcional al comprar o cargar, aviso de "usá esto primero" y que las recetas sugeridas prioricen lo que vence antes.
 - [ ] **F-06 · Recordatorios** · P2 · L. Tomar agua, comidas sin registrar y el resumen del domingo.
   - Necesita notificaciones del navegador y algo del lado del servidor que las mande a la hora.
@@ -160,6 +152,15 @@ Nada por ahora.
 ---
 
 ## Hecho
+
+- **F-01 y F-02 · Escanear el código de barras y catálogo compartido** (versión 1.22.0; hay que correr `supabase/actualizacion-14.sql` en Supabase **antes** de publicar la app, ver abajo).
+  - *Escáner (F-01):* en "Agregar" (despensa, compras, registrar, recetas) hay un botón de código de barras al lado del buscador. Abre la cámara y lee EAN-13, EAN-8 y UPC-A; descarta lecturas con el dígito verificador mal y pide dos lecturas iguales seguidas. En Android usa el lector del navegador; donde no existe (iPhone, Firefox) baja `@zxing/library` solo al abrir el escáner (no pesa en el resto de la app). Sin cámara o sin permiso, avisa y deja escribir el código a mano (también acepta espacios y guiones, y rechaza uno mal escrito con un mensaje claro). La cámara se habilitó en `vercel.json` (`camera=(self)`).
+  - *Qué pasa con el código:* primero se busca entre los alimentos que ya cargaste (si está, abre ese sin preguntar), después en el catálogo compartido y por último en Open Food Facts por código (`/api/v2/product/<código>`, con reintentos; si no responde dice que no pudo consultar, no "no existe"). Si no está en ningún lado, o está sin calorías, ofrece cargarlo a mano con el código y el nombre ya puestos. Los alimentos guardan su código (`foods.codigo`) para encontrarlos la próxima vez, también los que vienen de la búsqueda por nombre.
+  - *Catálogo compartido (F-02):* cada producto que se guarda (de Open Food Facts, escaneado o a mano, en g o ml) aporta a la base solo sus datos: código, nombre, valores cada 100 g/ml y categoría. Un aporte es privado; recién cuando **dos personas distintas** cargaron valores que coinciden (calorías con 10 % de margen, macros con 2 o 3 g) el producto pasa a `catalogo` y lo ven todos (por código y, mientras se escribe, por nombre, en "Cargados por otras personas"). Un dato inventado por una sola cuenta no le llega a nadie; lo publicado no cambia por lo que se cargue después, y cada persona que coincide suma una confirmación (una sola vez). Las tablas no se leen ni escriben directo; todo va por tres funciones. Topes: 100 productos nuevos por día y 3.000 por persona. En la carga a mano hay una casilla para no compartir. Si alguien borra la cuenta se van sus aportes; lo ya publicado queda.
+  - *Texto legal:* la Política de privacidad ahora explica la cámara (no se graba ni se manda nada, solo el número del código a Open Food Facts) y el catálogo compartido.
+  - *Pruebas:* 14 de la base de verdad (`catalogo.test.js`), 5 del código de barras, 4 de la búsqueda por código y una de navegador (`22-escaner-catalogo`, independiente): con una cámara de mentira que dibuja un código real prueba el lector de la librería (Ana) y el nativo (Beto), cómo se publica el producto al coincidir dos cuentas, que una tercera (Caro, sin permiso de cámara) lo encuentra por nombre y por código con Open Food Facts apagado, y que nadie puede leer las tablas del catálogo.
+  - *Cómo se aplica:* en el SQL Editor de Supabase, pegar y correr `supabase/actualizacion-14.sql` (una sola vez; no toca nada de lo ya cargado) y después publicar la app. Para revisar o sacar algo del catálogo, las consultas están al principio del archivo.
+  - *Límites a tener en cuenta:* el lector de iPhone se probó con una imagen de un código real en Chromium, no con un iPhone de verdad (queda dentro de T-03, pruebas en Safari). Con muchas cuentas falsas que se pongan de acuerdo se podría publicar un dato falso; el captcha y la confirmación de mail de la cuenta son la barrera, y el catálogo se puede revisar y limpiar a mano. Los productos medidos en unidades no se comparten todavía.
 
 - **F-12 · Base propia de alimentos más grande** (versión 1.21.0; hay que correr `supabase/seed-5.sql` en Supabase, ver abajo). Quinta tanda de la base común: **116 alimentos y 44 recetas** más (ahora 390 alimentos y 132 recetas).
   - *Alimentos:* cortes de vaca y cerdo, pescados y mariscos, quesos, kéfir, verduras y frutas, legumbres y cereales ya cocidos (arroz, fideos, quinoa, porotos hervidos), semillas, panadería, snacks y frutas secas, despensa, salsas, enlatados, congelados, comidas hechas y 5 bebidas. Los valores son por 100 g/ml; cada uno pasa una prueba de que las calorías cierran con los macros.

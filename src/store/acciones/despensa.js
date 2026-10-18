@@ -2,6 +2,7 @@
 // `k` es lo que comparten todas las acciones (ver Datos.jsx): `ver()` da los datos como están ahora.
 import { gastar } from '../../lib/equivalencias'
 import { redondear } from '../../lib/nutricion'
+import { aportarAlCatalogo } from '../../lib/catalogo'
 import { ok, supabase } from '../base'
 import { comoCambios, entre, nuevaClave } from '../listas'
 
@@ -17,7 +18,8 @@ export function gastoDeReceta(v, cambios, receta, porciones) {
 export const accionesDeDespensa = (k) => ({
   crearAlimento: k.accion(
     'crearAlimento',
-    async (datos) => {
+    // `compartir`: además de guardarlo para esta persona, aporta los datos del producto al catálogo compartido (F-02)
+    async (datos, { compartir = false, detalle = '' } = {}) => {
       const [a] = ok(
         await supabase
           .from('foods')
@@ -25,6 +27,7 @@ export const accionesDeDespensa = (k) => ({
           .select(),
       )
       k.setE((s) => ({ ...s, alimentos: [...s.alimentos, a] }))
+      if (compartir) aportarAlCatalogo({ ...a, detalle })
       return a
     },
     { unica: true },

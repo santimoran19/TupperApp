@@ -1,9 +1,12 @@
 // Buscador de alimentos (base + propios) con opción de crear uno nuevo o traerlo de Open Food Facts.
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Chip, Err, Icono, Numero } from './ui'
 import { useDatos } from '../store/Datos'
 import { CATEGORIAS, cantidadTexto, redondear, tieneAlcohol } from '../lib/nutricion'
-import { buscarProductos } from '../lib/openfoodfacts'
+import { buscarPorCodigo, buscarProductos } from '../lib/openfoodfacts'
+import { buscarCodigoEnCatalogo, buscarEnCatalogo } from '../lib/catalogo'
+import { esCodigoDeBarras } from '../lib/codigo'
+import Escaner from './Escaner'
 import { anotarEvento } from '../lib/eventos'
 import { LIM, errNumero, errTexto, hayErrores } from '../lib/validar'
 import { nombreCorto, parecidoEnBase, sonCompatibles, sugerirBase } from '../lib/equivalencias'
@@ -15,7 +18,10 @@ const cada100 = (a) => `${redondear(a.kcal)} kcal y ${redondear(a.protein, 1)} g
 export default function SelectorAlimento({ onElegir, soloConStock = false, categoria = null }) {
   const { alimentos, stockMap, crearAlimento, ingredientes, deLaBase, confirmar, noPreguntar } = useDatos()
   const [texto, setTexto] = useState('')
-  const [creando, setCreando] = useState(false)
+  const [creando, setCreando] = useState(null) // null | { nombre?, codigo? }: el formulario de alimento nuevo
+  const [escaneando, setEscaneando] = useState(false)
+  const [porCodigo, setPorCodigo] = useState(null) // lo que salió de un código de barras: { estado, codigo, producto?, origen?, nombre? }
+  const [delCatalogo, setDelCatalogo] = useState([]) // productos que ya cargaron y confirmaron otras personas
   const [alcohol, setAlcohol] = useState('todas') // filtro dentro de bebidas: todas | sin | con
   const [off, setOff] = useState(null) // búsqueda en Open Food Facts: { estado, productos }
   const [agregando, setAgregando] = useState(false)
@@ -34,6 +40,60 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
     setTexto(v.slice(0, LIM.nombre))
     pedido.current++
     setOff(null)
+    setPorCodigo(null)
+  }
+
+  // Mientras se escribe, también se mira el catálogo compartido (productos que cargaron otras personas)
+  useEffect(() => {
+    const q = texto.trim()
+    if (soloConStock || q.length < 3) {
+      setDelCatalogo([])
+      return
+    }
+    let vigente = true
+    const espera = setTimeout(async () => {
+      const r = await buscarEnCatalogo(q)
+      if (vigente) setDelCatalogo(r)
+    }, 350)
+    return () => {
+      vigente = false
+      clearTimeout(espera)
+    }
+  }, [texto, soloConStock])
+  const productosDelCatalogo = useMemo(() => {
+    const propios = new Set(alimentos.map((a) => normal(a.name)))
+    return delCatalogo.filter((p) => !propios.has(normal(p.name)) && (!categoria || p.category === categoria))
+  }, [delCatalogo, alimentos, categoria])
+
+  // Un código de barras (escaneado o escrito): primero lo que ya cargaste, después el catálogo compartido y por último
+  // Open Food Facts. Si no está en ningún lado, se ofrece cargarlo a mano con el código ya puesto.
+  async function buscarCodigo(codigo) {
+    setEscaneando(false)
+    setOff(null)
+    const propio = alimentos.find((a) => a.owner && a.codigo === codigo)
+    if (propio) {
+      anotarEvento('codigo_busqueda', { resultado: 'propio' })
+      return onElegir(propio)
+    }
+    const n = ++pedido.current
+    const inicio = Date.now()
+    setPorCodigo({ estado: 'buscando', codigo })
+    const hallado = await buscarCodigoEnCatalogo(codigo)
+    if (pedido.current !== n) return
+    if (hallado) {
+      anotarEvento('codigo_busqueda', { resultado: 'catalogo', ms: Date.now() - inicio })
+      return setPorCodigo({ estado: 'ok', codigo, producto: hallado, origen: 'Catálogo de Tupper' })
+    }
+    try {
+      const r = await buscarPorCodigo(codigo)
+      if (pedido.current !== n) return
+      anotarEvento('codigo_busqueda', { resultado: r.estado === 'ok' ? 'off' : r.estado, ms: Date.now() - inicio })
+      setPorCodigo({ ...r, codigo, origen: 'Open Food Facts' })
+    } catch {
+      if (pedido.current !== n) return
+      anotarEvento('codigo_busqueda', { resultado: 'error', ms: Date.now() - inicio })
+      setPorCodigo({ estado: 'error', codigo })
+    }
   }
 
   // La búsqueda reintenta sola un rato (ver lib/openfoodfacts): mientras tanto se muestra que sigue buscando
@@ -71,20 +131,25 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
         peligro: false,
       }))
     setAgregando(true)
-    const a = await crearAlimento({
-      // La categoría sale del alimento por el que vale o del que más se le parece en la base; si no, de lo que diga Open Food Facts
-      name: p.name,
-      unit,
-      category: bebidas ? 'Bebidas' : vale ? parecido.category : parecidoEnBase(p, deLaBase)?.category || p.category,
-      unit_grams: null,
-      unit_label: null,
-      kcal: p.kcal,
-      protein: p.protein,
-      carbs: p.carbs,
-      fat: p.fat,
-      alcohol: !!p.alcohol && (bebidas || p.unit === 'ml'),
-      same_as: vale ? parecido.id : null,
-    })
+    const a = await crearAlimento(
+      {
+        // La categoría sale del alimento por el que vale o del que más se le parece en la base; si no, de lo que diga Open Food Facts
+        name: p.name,
+        unit,
+        category: bebidas ? 'Bebidas' : vale ? parecido.category : parecidoEnBase(p, deLaBase)?.category || p.category,
+        unit_grams: null,
+        unit_label: null,
+        kcal: p.kcal,
+        protein: p.protein,
+        carbs: p.carbs,
+        fat: p.fat,
+        alcohol: !!p.alcohol && (bebidas || p.unit === 'ml'),
+        same_as: vale ? parecido.id : null,
+        // El código de barras queda en el alimento para encontrarlo la próxima vez que se escanee
+        ...(esCodigoDeBarras(p.codigo) ? { codigo: p.codigo } : {}),
+      },
+      { compartir: true, detalle: p.detalle },
+    )
     setAgregando(false)
     // Si dijo que no, no se vuelve a preguntar desde la despensa
     if (a && parecido && !vale) noPreguntar(a.id)
@@ -93,22 +158,56 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
 
   if (creando) {
     return (
-      <NuevoAlimento nombreInicial={texto} categoriaInicial={categoria} onListo={(a) => onElegir(a)} onCancelar={() => setCreando(false)} />
+      <NuevoAlimento
+        nombreInicial={creando.nombre ?? texto}
+        categoriaInicial={categoria}
+        codigoInicial={creando.codigo || null}
+        onListo={(a) => onElegir(a)}
+        onCancelar={() => setCreando(null)}
+      />
     )
   }
 
+  if (escaneando) return <Escaner onCodigo={buscarCodigo} onVolver={() => setEscaneando(false)} />
+
   return (
     <div>
-      <div className="relative mb-3" data-tour="selector-buscar">
-        <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
-        <input
-          className="campo pl-11"
-          placeholder={bebidas ? 'Buscar bebida...' : 'Buscar alimento...'}
-          value={texto}
-          onChange={(e) => cambiarTexto(e.target.value)}
-          autoFocus
-        />
+      <div className="flex gap-2 mb-3">
+        <div className="relative flex-1" data-tour="selector-buscar">
+          <Icono n="search" className="absolute left-3.5 top-3.5 text-gris" size={20} />
+          <input
+            className="campo pl-11"
+            placeholder={bebidas ? 'Buscar bebida...' : 'Buscar alimento...'}
+            value={texto}
+            onChange={(e) => cambiarTexto(e.target.value)}
+            autoFocus
+          />
+        </div>
+        {!soloConStock && (
+          <button
+            onClick={() => {
+              setOff(null)
+              setPorCodigo(null)
+              setEscaneando(true)
+            }}
+            className="btn-suave shrink-0 px-3.5"
+            aria-label="Escanear código de barras"
+            title="Escanear código de barras"
+          >
+            <Icono n="barcode_scanner" size={22} />
+          </button>
+        )}
       </div>
+      {porCodigo && (
+        <PorCodigo
+          estado={porCodigo}
+          ocupado={agregando}
+          onElegir={elegirProducto}
+          onManual={() => setCreando({ nombre: porCodigo.nombre || '', codigo: porCodigo.codigo })}
+          onOtro={() => setEscaneando(true)}
+          onReintentar={() => buscarCodigo(porCodigo.codigo)}
+        />
+      )}
       {bebidas && (
         <div className="flex gap-2 mb-2">
           {[
@@ -141,6 +240,36 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
       </div>
       {resultados.length === 0 && (
         <p className="text-sm text-gris py-4 text-center">No hay {bebidas ? 'bebidas' : 'alimentos'} con ese nombre.</p>
+      )}
+
+      {productosDelCatalogo.length > 0 && (
+        <div className="mt-3 rounded-2xl bg-teal-suave p-3">
+          <p className="text-[11px] font-bold tracking-wider text-teal-oscuro flex items-center gap-1.5">
+            <Icono n="group" size={16} /> CARGADOS POR OTRAS PERSONAS
+          </p>
+          <div className="divide-y divide-superficie">
+            {productosDelCatalogo.map((p) => (
+              <button
+                key={p.codigo}
+                onClick={() => elegirProducto(p)}
+                disabled={agregando}
+                className="w-full flex items-center gap-3 py-2.5 text-left"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{p.name}</p>
+                  <p className="text-xs text-gris">
+                    {cada100(p)}
+                    {p.detalle ? ` · ${p.detalle}` : ''}
+                  </p>
+                </div>
+                <Icono n="add_circle" className="text-teal-oscuro" />
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-gris mt-1">
+            Los confirmaron al menos dos personas. Si algo no coincide con la etiqueta, crealo a mano.
+          </p>
+        </div>
       )}
 
       {!soloConStock && texto.trim().length >= 3 && !off && (
@@ -202,9 +331,70 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
         </div>
       )}
 
-      <button onClick={() => setCreando(true)} className="btn-suave w-full mt-4" data-tour="selector-crear">
+      <button onClick={() => setCreando({})} className="btn-suave w-full mt-4" data-tour="selector-crear">
         <Icono n="add" size={20} /> Crear {bebidas ? 'bebida nueva' : 'alimento nuevo'}
       </button>
+    </div>
+  )
+}
+
+// Lo que salió de buscar un código de barras
+function PorCodigo({ estado: e, ocupado, onElegir, onManual, onOtro, onReintentar }) {
+  const p = e.producto
+  return (
+    <div className="mb-3 rounded-2xl bg-teal-suave p-3" role="status">
+      <p className="text-[11px] font-bold tracking-wider text-teal-oscuro flex items-center gap-1.5">
+        <Icono n="barcode_scanner" size={16} /> CÓDIGO {e.codigo}
+      </p>
+      {e.estado === 'buscando' && <p className="text-sm text-gris py-2">Buscando el producto...</p>}
+      {e.estado === 'ok' && p && (
+        <>
+          <button onClick={() => onElegir(p)} disabled={ocupado} className="w-full flex items-center gap-3 py-2.5 text-left">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium truncate">{p.name}</p>
+              <p className="text-xs text-gris">
+                {cada100(p)}
+                {p.detalle ? ` · ${p.detalle}` : ''}
+              </p>
+            </div>
+            <Icono n="add_circle" className="text-teal-oscuro" />
+          </button>
+          <p className="text-xs text-gris">
+            Viene de {e.origen}: datos cargados por la comunidad. Si algo no coincide con la etiqueta,{' '}
+            <button onClick={onManual} className="font-semibold text-teal-oscuro underline">
+              cargalo a mano
+            </button>
+            .
+          </p>
+        </>
+      )}
+      {e.estado === 'incompleto' && (
+        <p className="text-sm py-2">
+          Open Food Facts conoce este producto{e.nombre ? ` (${e.nombre})` : ''}, pero no tiene sus calorías. Cargalo con los datos de la
+          etiqueta.
+        </p>
+      )}
+      {e.estado === 'no' && (
+        <p className="text-sm py-2">No encontramos este código en Open Food Facts. Podés cargarlo con los datos de la etiqueta.</p>
+      )}
+      {e.estado === 'error' && (
+        <p className="text-sm py-2">
+          No pudimos consultar Open Food Facts ahora.{' '}
+          <button onClick={onReintentar} className="font-semibold text-teal-oscuro underline">
+            Reintentar
+          </button>
+        </p>
+      )}
+      {e.estado !== 'buscando' && e.estado !== 'ok' && (
+        <div className="flex gap-2 mt-1">
+          <button onClick={onManual} className="btn-primario flex-1">
+            Cargarlo a mano
+          </button>
+          <button onClick={onOtro} className="btn-suave flex-1">
+            Escanear otro
+          </button>
+        </div>
+      )}
     </div>
   )
 }
@@ -240,7 +430,7 @@ export function ValePor({ id, medida, propio = null, valor, onChange }) {
 }
 
 // Crear un alimento propio o, si viene `inicial`, editarlo.
-export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, inicial = null, onListo, onCancelar }) {
+export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, codigoInicial = null, inicial = null, onListo, onCancelar }) {
   const { crearAlimento, actualizarAlimento, ingredientes, equivalentes } = useDatos()
   const [f, setF] = useState(
     inicial
@@ -273,6 +463,7 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
   )
   const [guardando, setGuardando] = useState(false)
   const [intento, setIntento] = useState(false)
+  const [compartir, setCompartir] = useState(true) // aportar el producto al catálogo compartido (solo en gramos o mililitros)
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }))
 
   const errores = {
@@ -315,8 +506,9 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
       fat: Number(f.fat) || 0,
       alcohol: f.category === 'Bebidas' && f.alcohol,
       same_as: valePor || null,
+      ...(!inicial && codigoInicial ? { codigo: codigoInicial } : {}),
     }
-    const a = inicial ? await actualizarAlimento(inicial.id, datos) : await crearAlimento(datos)
+    const a = inicial ? await actualizarAlimento(inicial.id, datos) : await crearAlimento(datos, { compartir: compartir && f.unit !== 'u' })
     setGuardando(false)
     if (a) onListo(a)
   }
@@ -328,6 +520,7 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
           ? 'Los cambios valen de acá en adelante: lo que ya registraste queda como estaba.'
           : 'Copiá los valores de la etiqueta del producto, cada 100 g o 100 ml. Queda guardado para siempre.'}
       </p>
+      {!inicial && codigoInicial && <p className="text-xs text-gris">Código de barras: {codigoInicial}</p>}
       <div data-tour="na-datos" className="space-y-3">
         <div>
           <label className="etiqueta" htmlFor="na-nombre">
@@ -443,6 +636,18 @@ export function NuevoAlimento({ nombreInicial = '', categoriaInicial = null, ini
           <input type="checkbox" checked={f.alcohol} onChange={(e) => set('alcohol')(e.target.checked)} className="w-5 h-5 accent-verde" />
           Tiene alcohol (no cuenta para el líquido del día)
         </label>
+      )}
+      {!inicial && f.unit !== 'u' && (
+        <div>
+          <label className="flex items-center gap-3 text-sm">
+            <input type="checkbox" checked={compartir} onChange={(e) => setCompartir(e.target.checked)} className="w-5 h-5 accent-verde" />
+            Compartirlo con otras personas de Tupper
+          </label>
+          <p className="text-xs text-gris mt-1.5">
+            Se comparten solo el nombre y los valores del producto, nunca nada tuyo. Les aparece recién cuando otra persona carga el mismo
+            producto con valores parecidos.
+          </p>
+        </div>
       )}
       <div className="flex gap-2 pt-2" data-tour="na-botones">
         <button onClick={onCancelar} className="btn-suave flex-1">
