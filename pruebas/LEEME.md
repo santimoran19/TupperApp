@@ -10,6 +10,7 @@ Tarda unos segundos y no abre ningún navegador. Corre todo lo que hay en `prueb
 | --- | --- |
 | `equivalencias.test.js` | Un producto propio que vale por un alimento de las recetas: stock sumado, de dónde se gasta, calorías, plan y sugerencias. |
 | `base-de-alimentos.test.js` | Los alimentos y recetas base: categorías, familias (cualquier leche cuenta como leche), sugerencias con productos reales y lectura de los productos de Open Food Facts. |
+| `base-ampliada.test.js` | La base ampliada (F-12): datos de cada alimento y receta (calorías contra macros, rangos por comida), sinónimos, familias y medidas, búsquedas de ejemplo, que las sugerencias de "cuenta como" de los productos de siempre no cambien y que `seed-5.sql` se pueda correr dos veces sobre la base anterior. |
 | `openfoodfacts.test.js` | La búsqueda: los dos buscadores, la memoria por búsqueda y los reintentos (con la red y el reloj simulados). |
 | `analisis.test.js` | El análisis con IA: los datos que se le mandan al modelo, la lectura de la respuesta y la elección del proveedor. |
 | `base-de-datos.test.js` | La base de verdad: arma un Postgres en memoria, le aplica los `.sql` de `supabase/` en orden y prueba las funciones (cocinar, registrar, comprar, guardar receta), que nada quede a medias cuando algo falla, los permisos por usuario y el registro de errores. |

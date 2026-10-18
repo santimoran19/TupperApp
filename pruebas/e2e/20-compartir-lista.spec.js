@@ -24,7 +24,7 @@ test('compartir la lista de compras: menú del teléfono, WhatsApp directo y cop
     await pg.waitForSelector('text=Para comprar')
     await pg.click('button:has-text("Anotar")')
     await expect(ventana(pg)).toBeVisible()
-    await pg.fill('input[placeholder="Buscar alimento..."]', 'arroz')
+    await pg.fill('input[placeholder="Buscar alimento..."]', 'arroz integral')
     await ventana(pg)
       .getByRole('button', { name: /^Arroz/ })
       .first()

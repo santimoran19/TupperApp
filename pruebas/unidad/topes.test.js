@@ -21,7 +21,7 @@ const insertar = (tabla, fila) => {
 
 test('los datos base del repo entran con los topes puestos', async () => {
   const n = await una('select (select count(*) from public.foods)::int as alimentos, (select count(*) from public.recipes)::int as recetas')
-  expect(n).toEqual({ alimentos: 274, recetas: 88 })
+  expect(n).toEqual({ alimentos: 390, recetas: 132 })
 })
 
 test('textos: el nombre de un registro o de una compra tiene tope en la base', async () => {

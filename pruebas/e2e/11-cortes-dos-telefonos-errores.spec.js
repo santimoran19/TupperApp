@@ -67,12 +67,14 @@ test('cortes de conexión, dos teléfonos, pantalla de error y registro de error
     await lento('**/rest/v1/rpc/cocinar')
     await pg.click('button:has-text("Cocinar")')
     await pg.waitForSelector('text=¿Cuántas porciones')
+    // La hoja propone las porciones que rinde la receta (depende de cuál sea la primera con todo)
+    const rinde = Number(await pg.locator('label:has-text("¿Cuántas porciones") + input').inputValue())
     pedidos.length = 0
     await pg.locator('button:has-text("Listo, cociné")').dblclick()
     await pg.waitForSelector('text=/porci(ón|ones) lista/')
     await pg.waitForTimeout(900)
     expect(pedidos.length).toBe(1)
-    expect(porciones(await rest(pg, 'prepared'))).toBe(listas + 1)
+    expect(porciones(await rest(pg, 'prepared'))).toBe(listas + rinde)
     await pg.unroute('**/rest/v1/rpc/cocinar')
 
     // El peor corte: la base llegó a guardar, pero la respuesta nunca volvió. La app no sabe si entró: lo deja en la
@@ -88,13 +90,13 @@ test('cortes de conexión, dos teléfonos, pantalla de error y registro de error
     await pg.click('button:has-text("Listo, cociné")')
     await pg.waitForSelector('text=/porci(ón|ones) lista/')
     await expect(franja(pg)).toContainText('1 cambio por enviar')
-    expect(porciones(await rest(pg, 'prepared')), 'se guardó aunque la app no se enteró').toBe(listas + 2)
+    expect(porciones(await rest(pg, 'prepared')), 'se guardó aunque la app no se enteró').toBe(listas + 2 * rinde)
     const guardado = await rest(pg, 'stock')
     await pg.unroute('**/rest/v1/rpc/cocinar')
     await volvioLaConexion(pg)
     expect(pedidos.length).toBeGreaterThanOrEqual(2)
     expect(new Set(pedidos.map((p) => p.p_clave)).size).toBe(1)
-    expect(porciones(await rest(pg, 'prepared'))).toBe(listas + 2)
+    expect(porciones(await rest(pg, 'prepared'))).toBe(listas + 2 * rinde)
     expect(await rest(pg, 'stock')).toEqual(guardado)
   })
 

@@ -669,5 +669,309 @@ export const recetasCuarta = [
     [['ravioles', 250], ['salsa-tomate', 150], ['queso-rallado', 15]]),
 ]
 
-export const foods = [...alimentosBase, ...alimentosNuevos, ...infusiones, ...alimentosCuarta]
-export const recipes = [...recetasBase, ...recetasNuevas, ...recetasCuarta]
+// ---------------------------------------------------------------------------
+// Quinta tanda (F-12): más cortes de carne y pescados, quesos, frutas y verduras, alimentos ya cocidos
+// (lo que se pesa en el plato), semillas, dulces, comidas hechas y recetas.
+// Los valores son promedios de tablas de composición (USDA FoodData Central y ARGENFOODS, la tabla argentina);
+// cada marca varía un poco: ante la duda manda la etiqueta, y para eso está "Crear alimento".
+// ---------------------------------------------------------------------------
+export const alimentosQuinta = [
+  // Carnes y huevos
+  ['bondiola-cerdo', 'Bondiola de cerdo (cruda)', 'g', null, null, 230, 17, 0, 18, 'Carnes y huevos'],
+  ['costeleta-cerdo', 'Costeleta de cerdo (cruda)', 'g', null, null, 170, 20, 0, 10, 'Carnes y huevos'],
+  ['lomo-cerdo', 'Lomo de cerdo (crudo)', 'g', null, null, 120, 21, 0, 4, 'Carnes y huevos'],
+  ['panceta', 'Panceta ahumada o bacon (cruda)', 'g', null, null, 420, 13, 0.5, 40, 'Carnes y huevos'],
+  ['panceta-frita', 'Bacon crocante (frito)', 'g', null, null, 540, 37, 1.5, 42, 'Carnes y huevos'],
+  ['vacio', 'Vacío (crudo)', 'g', null, null, 220, 19, 0, 16, 'Carnes y huevos'],
+  ['peceto', 'Peceto (crudo)', 'g', null, null, 135, 22, 0, 4.8, 'Carnes y huevos'],
+  ['lomo', 'Lomo vacuno (crudo)', 'g', null, null, 143, 21, 0, 6, 'Carnes y huevos'],
+  ['bife-chorizo', 'Bife de chorizo (crudo)', 'g', null, null, 195, 20, 0, 12.5, 'Carnes y huevos'],
+  ['carne-picada-magra', 'Carne picada magra (cruda)', 'g', null, null, 135, 21, 0, 5.5, 'Carnes y huevos'],
+  ['higado', 'Hígado vacuno (crudo)', 'g', null, null, 135, 20, 4, 3.6, 'Carnes y huevos'],
+  ['alitas-pollo', 'Alitas de pollo (crudas, con piel)', 'g', null, null, 200, 17.5, 0, 14, 'Carnes y huevos'],
+  ['pavita-fiambre', 'Pechuga de pavo (fiambre)', 'g', null, null, 105, 17, 3, 2.5, 'Carnes y huevos'],
+  ['jamon-crudo', 'Jamón crudo', 'g', null, null, 240, 26, 0.5, 15, 'Carnes y huevos'],
+  ['morcilla', 'Morcilla', 'g', null, null, 350, 13, 6, 31, 'Carnes y huevos'],
+  ['clara-huevo', 'Clara de huevo', 'u', 33, 'clara', 52, 11, 0.7, 0.2, 'Carnes y huevos'],
+
+  // Pescados
+  ['salmon', 'Salmón (crudo)', 'g', null, null, 205, 20, 0, 13.5, 'Pescados'],
+  ['trucha', 'Trucha (cruda)', 'g', null, null, 140, 20, 0, 6.3, 'Pescados'],
+  ['calamar', 'Calamar o rabas (crudo)', 'g', null, null, 92, 16, 3, 1.4, 'Pescados'],
+  ['langostinos', 'Langostinos o camarones (cocidos)', 'g', null, null, 99, 24, 0.2, 0.3, 'Pescados'],
+  ['palitos-mar', 'Palitos de mar (surimi)', 'g', null, null, 95, 15, 7, 1, 'Pescados'],
+
+  // Lácteos
+  ['queso-sardo', 'Queso sardo o reggianito', 'g', null, null, 390, 35, 3, 26, 'Lácteos'],
+  ['provolone', 'Queso provolone', 'g', null, null, 350, 26, 2, 27, 'Lácteos'],
+  ['queso-azul', 'Queso azul', 'g', null, null, 353, 21, 2, 29, 'Lácteos'],
+  ['queso-cabra', 'Queso de cabra', 'g', null, null, 265, 18.5, 1.3, 21, 'Lácteos'],
+  ['cheddar', 'Queso cheddar', 'g', null, null, 400, 25, 1.3, 33, 'Lácteos'],
+  ['ricota-light', 'Ricota light', 'g', null, null, 110, 11, 3.5, 5.5, 'Lácteos'],
+  ['kefir', 'Kéfir', 'ml', null, null, 62, 3.3, 4.7, 3.3, 'Lácteos'],
+
+  // Verduras
+  ['choclo-fresco', 'Choclo fresco (granos)', 'g', null, null, 86, 3.3, 19, 1.4, 'Verduras'],
+  ['puerro', 'Puerro', 'g', null, null, 61, 1.5, 14, 0.3, 'Verduras'],
+  ['apio', 'Apio', 'g', null, null, 16, 0.7, 3, 0.2, 'Verduras'],
+  ['hinojo', 'Hinojo', 'g', null, null, 31, 1.2, 7.3, 0.2, 'Verduras'],
+  ['rabanito', 'Rabanitos', 'g', null, null, 16, 0.7, 3.4, 0.1, 'Verduras'],
+  ['esparragos', 'Espárragos', 'g', null, null, 20, 2.2, 3.9, 0.1, 'Verduras'],
+  ['hojas-verdes', 'Mix de hojas verdes', 'g', null, null, 20, 2, 3, 0.3, 'Verduras'],
+  ['papa-hervida', 'Papa hervida', 'g', null, null, 87, 1.9, 20, 0.1, 'Verduras'],
+
+  // Frutas
+  ['cereza', 'Cerezas', 'g', null, null, 63, 1.1, 16, 0.2, 'Frutas'],
+  ['higo', 'Higo', 'u', 50, 'unidad', 74, 0.8, 19, 0.3, 'Frutas'],
+  ['mango', 'Mango', 'g', null, null, 60, 0.8, 15, 0.4, 'Frutas'],
+  ['maracuya', 'Maracuyá', 'g', null, null, 97, 2.2, 23, 0.7, 'Frutas'],
+  ['granada', 'Granada (granos)', 'g', null, null, 83, 1.7, 19, 1.2, 'Frutas'],
+  ['frambuesa', 'Frambuesas', 'g', null, null, 52, 1.2, 12, 0.7, 'Frutas'],
+  ['damasco', 'Damasco', 'u', 35, 'unidad', 48, 1.4, 11, 0.4, 'Frutas'],
+  ['ensalada-frutas', 'Ensalada de frutas (fresca)', 'g', null, null, 52, 0.6, 13, 0.2, 'Frutas'],
+
+  // Legumbres
+  ['tofu', 'Tofu firme', 'g', null, null, 120, 12, 2, 7, 'Legumbres'],
+  ['lentejas-hervidas', 'Lentejas hervidas', 'g', null, null, 116, 9, 20, 0.4, 'Legumbres'],
+  ['garbanzos-hervidos', 'Garbanzos hervidos', 'g', null, null, 164, 8.9, 27, 2.6, 'Legumbres'],
+  ['porotos-hervidos', 'Porotos hervidos', 'g', null, null, 127, 8.7, 23, 0.5, 'Legumbres'],
+
+  // Ya cocidos: para cargar lo que se pesa en el plato
+  ['arroz-hervido', 'Arroz blanco hervido', 'g', null, null, 130, 2.7, 28, 0.3, 'Pastas y arroz'],
+  ['arroz-integral-hervido', 'Arroz integral hervido', 'g', null, null, 123, 2.7, 25.6, 1, 'Pastas y arroz'],
+  ['fideos-hervidos', 'Fideos hervidos', 'g', null, null, 158, 5.8, 31, 0.9, 'Pastas y arroz'],
+  ['fideos-integrales-hervidos', 'Fideos integrales hervidos', 'g', null, null, 124, 5.3, 25, 0.5, 'Pastas y arroz'],
+  ['polenta-hervida', 'Polenta hervida', 'g', null, null, 70, 1.6, 15, 0.4, 'Pastas y arroz'],
+  ['cuscus', 'Cuscús (crudo)', 'g', null, null, 376, 12.8, 77, 0.6, 'Pastas y arroz'],
+  ['cuscus-hervido', 'Cuscús hervido', 'g', null, null, 112, 3.8, 23, 0.2, 'Pastas y arroz'],
+  ['quinoa-hervida', 'Quinoa hervida', 'g', null, null, 120, 4.4, 21, 1.9, 'Cereales'],
+  ['avena-hervida', 'Avena cocida con agua', 'g', null, null, 71, 2.5, 12, 1.5, 'Cereales'],
+
+  // Semillas
+  ['semillas-lino', 'Semillas de lino', 'g', null, null, 534, 18, 29, 42, 'Cereales'],
+  ['semillas-girasol', 'Semillas de girasol', 'g', null, null, 584, 21, 20, 51, 'Cereales'],
+  ['semillas-zapallo', 'Semillas de zapallo (pepitas)', 'g', null, null, 559, 30, 11, 49, 'Cereales'],
+  ['sesamo', 'Semillas de sésamo', 'g', null, null, 573, 18, 23, 50, 'Cereales'],
+
+  // Panadería
+  ['chipa', 'Chipá', 'u', 30, 'unidad', 330, 10, 38, 15, 'Panadería'],
+  ['bizcochuelo', 'Bizcochuelo', 'g', null, null, 300, 5.5, 58, 4.5, 'Panadería'],
+  ['pan-miga', 'Pan de miga', 'u', 20, 'rodaja', 270, 8, 52, 3, 'Panadería'],
+  ['factura', 'Factura de panadería (vigilante, cañoncito)', 'u', 55, 'unidad', 390, 7, 48, 19, 'Panadería'],
+  ['tortilla-maiz', 'Tortilla de maíz', 'u', 25, 'unidad', 220, 5.7, 45, 2.9, 'Panadería'],
+
+  // Snacks y dulces
+  ['chocolate-amargo', 'Chocolate amargo (70 %)', 'g', null, null, 598, 7.8, 46, 42.6, 'Snacks y dulces'],
+  ['chocolate-blanco', 'Chocolate blanco', 'g', null, null, 540, 6, 59, 32, 'Snacks y dulces'],
+  ['caramelos-duros', 'Caramelos duros', 'g', null, null, 390, 0, 97.5, 0, 'Snacks y dulces'],
+  ['mani-garrapinado', 'Maní garrapiñado', 'g', null, null, 480, 11, 60, 21, 'Snacks y dulces'],
+  ['brownie', 'Brownie', 'u', 60, 'porción', 466, 5.8, 55, 25, 'Snacks y dulces'],
+  ['galletita-avena', 'Galletita de avena y pasas', 'u', 15, 'unidad', 440, 6, 68, 17, 'Snacks y dulces'],
+  ['nachos', 'Nachos o tortilla chips', 'g', null, null, 490, 7.5, 62, 24, 'Snacks y dulces'],
+  ['datiles', 'Dátiles', 'g', null, null, 282, 2.5, 75, 0.4, 'Snacks y dulces'],
+  ['orejones', 'Orejones de damasco', 'g', null, null, 241, 3.4, 63, 0.5, 'Snacks y dulces'],
+  ['ciruela-pasa', 'Ciruelas pasas', 'g', null, null, 240, 2.2, 64, 0.4, 'Snacks y dulces'],
+
+  // Despensa
+  ['edulcorante', 'Edulcorante líquido', 'ml', null, null, 0, 0, 0, 0, 'Despensa'],
+  ['azucar-mascabo', 'Azúcar mascabo o rubia', 'g', null, null, 380, 0.1, 98, 0, 'Despensa'],
+  ['harina-integral', 'Harina integral', 'g', null, null, 340, 13, 72, 2.5, 'Despensa'],
+  ['cacao-amargo', 'Cacao amargo en polvo (sin azúcar)', 'g', null, null, 228, 19.6, 58, 13.7, 'Despensa'],
+  ['tahini', 'Pasta de sésamo (tahini)', 'g', null, null, 595, 17, 21, 54, 'Despensa'],
+  ['miel-maple', 'Miel de maple (jarabe)', 'g', null, null, 260, 0, 67, 0.1, 'Despensa'],
+  ['leche-coco', 'Leche de coco', 'ml', null, null, 230, 2.3, 6, 24, 'Despensa'],
+  ['dulce-leche-light', 'Dulce de leche light', 'g', null, null, 250, 5.5, 52, 2.5, 'Despensa'],
+  ['coco-rallado', 'Coco rallado (sin azúcar)', 'g', null, null, 660, 6.9, 24, 65, 'Despensa'],
+
+  // Salsas y aderezos
+  ['hummus', 'Hummus', 'g', null, null, 170, 8, 14, 10, 'Salsas y aderezos'],
+  ['guacamole', 'Guacamole', 'g', null, null, 160, 2, 8.5, 14.7, 'Salsas y aderezos'],
+  ['salsa-criolla', 'Salsa criolla', 'g', null, null, 50, 1, 5, 3, 'Salsas y aderezos'],
+  ['aderezo-cesar', 'Aderezo César', 'g', null, null, 450, 2, 4, 47, 'Salsas y aderezos'],
+  ['salsa-teriyaki', 'Salsa teriyaki', 'ml', null, null, 89, 5.9, 15.6, 0, 'Salsas y aderezos'],
+
+  // Enlatados
+  ['morron-lata', 'Morrones en conserva', 'g', null, null, 27, 0.9, 5.5, 0.3, 'Enlatados'],
+  ['champinones-lata', 'Champiñones en conserva', 'g', null, null, 25, 2, 4, 0.3, 'Enlatados'],
+  ['anana-almibar', 'Ananá en almíbar', 'g', null, null, 83, 0.4, 21.5, 0.1, 'Enlatados'],
+
+  // Congelados
+  ['bastones-muzza', 'Bastones de muzzarella rebozados', 'u', 30, 'unidad', 310, 14, 24, 17, 'Congelados'],
+  ['helado-agua', 'Helado de agua (palito)', 'g', null, null, 85, 0, 21, 0, 'Congelados'],
+
+  // Comidas hechas
+  ['pure-papa', 'Puré de papa (con leche y manteca)', 'g', null, null, 113, 2, 16.8, 4.2, 'Comidas hechas'],
+  ['empanada-humita', 'Empanada de humita (al horno)', 'u', 80, 'unidad', 240, 6, 30, 10, 'Comidas hechas'],
+  ['empanada-verdura', 'Empanada de verdura y queso (al horno)', 'u', 80, 'unidad', 240, 8, 26, 11, 'Comidas hechas'],
+  ['locro', 'Locro', 'g', null, null, 147, 8, 13, 7, 'Comidas hechas'],
+  ['guiso-lentejas-hecho', 'Guiso de lentejas (casero)', 'g', null, null, 119, 7, 15, 3.5, 'Comidas hechas'],
+  ['fugazzeta', 'Pizza fugazzeta (porción)', 'u', 150, 'porción', 270, 11, 29, 12, 'Comidas hechas'],
+  ['fugazza', 'Fugazza (porción)', 'u', 110, 'porción', 250, 7, 38, 8, 'Comidas hechas'],
+  ['faina', 'Fainá (porción)', 'u', 70, 'porción', 200, 8, 24, 8, 'Comidas hechas'],
+  ['lasana', 'Lasaña de carne (porción)', 'u', 300, 'porción', 150, 8, 14, 7, 'Comidas hechas'],
+  ['sopa-verduras', 'Sopa de verduras (casera)', 'g', null, null, 36, 1.2, 6.5, 0.6, 'Comidas hechas'],
+  ['tortilla-papa-porcion', 'Tortilla de papa (porción)', 'u', 160, 'porción', 153, 6, 12, 9, 'Comidas hechas'],
+  ['ensalada-mixta', 'Ensalada mixta (sin aderezo)', 'g', null, null, 18, 1, 3.5, 0.2, 'Comidas hechas'],
+  ['ensalada-cesar-pollo', 'Ensalada César con pollo (lista)', 'g', null, null, 155, 11, 9, 8, 'Comidas hechas'],
+  ['arroz-con-leche', 'Arroz con leche (postre)', 'g', null, null, 132, 3, 22, 3.5, 'Comidas hechas'],
+  ['panqueque-dl', 'Panqueque con dulce de leche', 'u', 90, 'unidad', 244, 5, 38, 8, 'Comidas hechas'],
+  ['provoleta', 'Provoleta a la parrilla', 'u', 120, 'porción', 350, 25, 2, 27, 'Comidas hechas'],
+
+  // Bebidas
+  ['te-helado', 'Té helado azucarado', 'ml', null, null, 22, 0, 5.5, 0, 'Bebidas'],
+  ['agua-coco', 'Agua de coco', 'ml', null, null, 19, 0.7, 3.7, 0.2, 'Bebidas'],
+  ['jugo-manzana', 'Jugo de manzana', 'ml', null, null, 46, 0.1, 11.4, 0.1, 'Bebidas'],
+  ['kombucha', 'Kombucha', 'ml', null, null, 15, 0, 3.5, 0, 'Bebidas'],
+  ['bebida-avena', 'Bebida de avena', 'ml', null, null, 42, 1, 7.5, 1.3, 'Bebidas'],
+]
+
+export const recetasQuinta = [
+  // Pescados y mariscos
+  r('salmon-plancha-arroz', 'Salmón a la plancha con arroz y brócoli', 20, 1, P, true,
+    'Hervís el arroz y el brócoli (5 min, que quede firme).\nSalmón con sal y limón, a la plancha: 4 min por lado.\nServís con el aceite crudo y el resto del limón.',
+    [['salmon', 150], ['arroz', 60], ['brocoli', 150], ['aceite', 5], ['limon', 0.5]]),
+  r('salmon-horno-papas', 'Salmón al horno con papas', 35, 2, P, true,
+    'Horno a 200 °C. Papas en rodajas y cebolla en aros en una placa con la mitad del aceite: 20 min.\nSumás el salmón con sal, limón y el resto del aceite: 12–15 min más.\nPorción: la mitad.',
+    [['salmon', 300], ['papa', 500], ['cebolla', 1], ['aceite', 10], ['limon', 1]]),
+  r('trucha-verduras', 'Trucha al horno con verduras', 30, 1, P, true,
+    'Horno a 200 °C. Zapallitos y zanahoria en rodajas y cebolla en aros, en una placa con la mitad del aceite.\nTrucha con sal y limón arriba de las verduras, con el resto del aceite: 20–25 min.',
+    [['trucha', 200], ['zapallito', 2], ['zanahoria', 1], ['cebolla', 0.5], ['aceite', 10]]),
+  r('arroz-langostinos', 'Arroz con langostinos y morrón', 20, 1, P, true,
+    'Hervís el arroz.\nCebolla y morrón en tiras con el aceite y el ajo picado, 5 min.\nSumás los langostinos y el arroz, 2–3 min revolviendo. Limón al final.',
+    [['langostinos', 150], ['arroz', 70], ['morron', 0.5], ['cebolla', 0.5], ['ajo', 1], ['aceite', 8]]),
+  r('bowl-arroz-salmon', 'Bowl de arroz, salmón y palta', 15, 1, P, true,
+    'Hervís el arroz y lo dejás entibiar.\nSalmón a la plancha, 4 min por lado, y lo desmenuzás.\nArmás el bowl con el pepino en rodajas, la palta y la salsa de soja.',
+    [['arroz', 70], ['salmon', 120], ['palta', 0.5], ['pepino', 0.5], ['salsa-soja', 10]]),
+
+  // Cerdo y carne
+  r('bondiola-batatas', 'Bondiola al horno con batatas', 90, 4, P, true,
+    'Horno a 180 °C. Bondiola con sal, ajo y orégano, en una fuente tapada con papel de aluminio: 80 min.\nBatatas en cubos y cebolla en gajos con el aceite en otra placa: 40 min, moviéndolas una vez.\nPorción: un cuarto de todo.',
+    [['bondiola-cerdo', 800], ['batata', 800], ['cebolla', 2], ['aceite', 15]]),
+  r('costeleta-ensalada', 'Costeleta de cerdo con ensalada', 15, 1, P, true,
+    'Costeleta con sal y pimienta a la plancha bien caliente: 4–5 min por lado.\nEnsalada de lechuga y tomate con el aceite.\nVa con las 2 rodajas de pan.',
+    [['costeleta-cerdo', 180], ['lechuga', 100], ['tomate', 1], ['aceite', 8], ['pan-integral', 2]]),
+  r('lomo-cerdo-pure-calabaza', 'Lomo de cerdo con puré de calabaza', 30, 1, P, true,
+    'Calabaza en cubos, hervida o al microondas 12–15 min. La pisás con sal y el queso rallado.\nLomo en medallones, a la plancha con el aceite: 4 min por lado.',
+    [['lomo-cerdo', 180], ['calabaza', 300], ['queso-rallado', 10], ['aceite', 5]]),
+  r('bife-papas-horno', 'Bife a la plancha con papas al horno', 35, 1, P, true,
+    'Horno a 200 °C. Papas en gajos con el aceite y sal: 30 min.\nBife a la plancha bien caliente, 3–4 min por lado, sal al final.\nTomate en rodajas al lado.',
+    [['bife-nalga', 200], ['papa', 300], ['aceite', 8], ['tomate', 1]]),
+  r('wok-carne-verduras', 'Wok de carne y verduras con arroz', 20, 1, P, true,
+    'Hervís el arroz.\nCarne en tiras finas al wok o sartén bien caliente con la mitad del aceite, 2 min. La sacás.\nVerduras en tiras con el resto del aceite, 4 min. Volvés la carne, sumás la salsa de soja y el arroz.',
+    [['bife-nalga', 150], ['brocoli', 100], ['zanahoria', 1], ['morron', 0.5], ['cebolla', 0.5], ['salsa-soja', 15], ['aceite', 8], ['arroz', 60]]),
+  r('berenjenas-rellenas', 'Berenjenas rellenas de carne y queso', 50, 2, P, true,
+    'Horno a 200 °C. Berenjenas cortadas al medio, 15 min para que se ablanden. Les sacás la pulpa con una cuchara.\nCebolla con el aceite, la carne (mejor si es bien magra) y la pulpa picada: 8 min. Sumás el tomate picado y sal.\nRellenás, muzzarella arriba y 15 min de horno. Porción: una berenjena.',
+    [['berenjena', 2], ['carne-picada-cruda', 200], ['cebolla', 1], ['tomate', 1], ['muzzarella', 80], ['aceite', 8]]),
+  r('zapallitos-rellenos', 'Zapallitos rellenos de carne y arroz', 45, 2, P, true,
+    'Horno a 200 °C. Zapallitos cortados al medio y hervidos 5 min. Les sacás la pulpa.\nHervís el arroz. Cebolla con la carne (mejor si es bien magra) y la pulpa picada, 8 min. Mezclás con el arroz y el puré de tomate.\nRellenás, queso rallado arriba y 15 min de horno. Porción: 2 zapallitos.',
+    [['zapallito', 4], ['carne-picada-cruda', 160], ['arroz', 60], ['cebolla', 1], ['pure-tomate', 100], ['queso-rallado', 30]]),
+  r('empanadas-carne-horno', 'Empanadas de carne al horno', 60, 4, P, true,
+    'Cebolla picada con el aceite 5 min; sumás la carne, sal, comino y pimentón: 8 min. Enfriás y agregás las aceitunas y los huevos duros picados.\nRellenás las 12 tapas y cerrás con repulgue.\nHorno a 220 °C, 18–20 min. Porción: 3 empanadas.',
+    [['tapa-empanada', 12], ['carne-picada-cruda', 350], ['cebolla', 3], ['huevo', 2], ['aceitunas', 40], ['aceite', 15]]),
+  r('pechuga-rellena', 'Pechuga rellena de jamón y queso', 30, 2, P, true,
+    'Pechugas abiertas como libro, con sal. Adentro el jamón y el queso; cerrás con palillos.\nSartén con el aceite, 6 min por lado, tapada.\nEnsalada de lechuga y tomate al lado. Porción: una pechuga.',
+    [['pechuga-cruda', 400], ['jamon-cocido', 80], ['queso-tybo', 80], ['aceite', 10], ['lechuga', 150], ['tomate', 2]]),
+
+  // Pollo
+  r('alitas-horno', 'Alitas de pollo al horno con ensalada', 45, 2, P, true,
+    'Horno a 220 °C. Alitas con sal, pimentón y ajo en polvo en una placa: 40 min, dándolas vuelta a la mitad.\nEnsalada de lechuga y tomate con el aceite. Porción: la mitad.',
+    [['alitas-pollo', 600], ['lechuga', 150], ['tomate', 2], ['aceite', 10]]),
+  r('pollo-crema-arroz', 'Pollo a la crema con arroz', 25, 2, P, true,
+    'Hervís el arroz.\nCebolla y morrón en tiras con el aceite, 5 min. Sumás el pollo en cubos: 6 min.\nCrema, pimentón y una cucharadita de mostaza: 5 min a fuego bajo. Servís sobre el arroz.',
+    [['pechuga-cruda', 350], ['crema', 80], ['arroz', 140], ['cebolla', 1], ['morron', 1], ['aceite', 10]]),
+  r('pollo-mostaza-miel', 'Pollo a la mostaza y miel con arroz', 45, 4, P, true,
+    'Horno a 200 °C. Mezclás la mostaza con la miel y pintás las patas muslo, con sal.\nEn una placa con el aceite: 40–45 min.\nHervís el arroz y servís juntos. Porción: 1 pata muslo con un plato de arroz.',
+    [['pata-muslo', 4], ['mostaza', 30], ['miel', 20], ['arroz', 240], ['aceite', 10]]),
+  r('milanesas-pure-calabaza', 'Milanesas de pollo con puré de calabaza', 30, 1, P, true,
+    'Milanesas al horno a 200 °C, 20 min, dándolas vuelta a la mitad.\nCalabaza en cubos, hervida o al microondas 12–15 min. La pisás con sal y el queso rallado.',
+    [['milanesa-pollo', 2], ['calabaza', 300], ['queso-rallado', 10]]),
+  r('fideos-pesto-pollo', 'Fideos con pesto y pollo', 20, 1, P, true,
+    'Hervís los fideos 9–10 min.\nPechuga en cubos a la sartén sin aceite con sal, 6 min.\nMezclás todo con el pesto y los tomates cherry cortados al medio.',
+    [['fideos', 80], ['pechuga-cruda', 130], ['pesto', 30], ['tomate-cherry', 80]]),
+  r('ensalada-pollo-palta', 'Ensalada de pollo y palta', 12, 1, P, true,
+    'Pechuga a la plancha con sal y limón: 4–5 min por lado. La desmenuzás.\nMezclás con la lechuga, el tomate y la palta en cubos. Aceite, limón y sal.\nVa con las 2 rodajas de pan.',
+    [['pechuga-cruda', 180], ['palta', 0.5], ['lechuga', 80], ['tomate', 1], ['aceite', 5], ['pan-integral', 2]]),
+
+  // Pastas, arroces y cereales
+  r('noquis-caseros', 'Ñoquis de papa caseros con salsa', 60, 3, P, true,
+    'Papas hervidas con cáscara, peladas y pisadas en caliente. Sumás el huevo, sal y la harina de a poco: masa blanda que no se pega.\nRollos finos, cortados en trocitos. Al agua hirviendo: están cuando suben, 2–3 min.\nSalsa caliente y queso rallado. Porción: un tercio.',
+    [['papa', 900], ['harina', 250], ['huevo', 1], ['salsa-tomate', 300], ['queso-rallado', 30]]),
+  r('fideos-crema-jamon', 'Fideos con crema y jamón', 15, 1, P, false,
+    'Hervís los fideos 9–10 min.\nJamón en tiritas con la crema en la sartén, 3 min a fuego bajo.\nMezclás con los fideos y queso rallado arriba.',
+    [['fideos', 80], ['crema', 40], ['jamon-cocido', 50], ['queso-rallado', 10]]),
+  r('bowl-quinoa-palta-huevo', 'Bowl de quinoa, palta y huevo', 20, 1, P, true,
+    'Quinoa lavada, 15 min en el doble de agua; escurrís y dejás entibiar.\nHuevos duros (10 min de hervor).\nArmás con la palta, los cherry, la lechuga y el aceite con sal.',
+    [['quinoa', 60], ['palta', 0.5], ['huevo', 2], ['tomate-cherry', 80], ['lechuga', 40], ['aceite', 5]]),
+  r('ensalada-quinoa-garbanzos', 'Ensalada de quinoa y garbanzos', 20, 2, P, true,
+    'Quinoa lavada, 15 min en el doble de agua; escurrís y enfriás.\nMezclás con los garbanzos escurridos, los cherry cortados, el pepino en cubos y la cebolla de verdeo.\nAceite, el jugo del limón y sal. Va bien fría. Porción: la mitad.',
+    [['quinoa', 120], ['garbanzos', 250], ['tomate-cherry', 200], ['pepino', 1], ['cebolla-verdeo', 30], ['aceite', 20], ['limon', 1]]),
+  r('tofu-salteado', 'Tofu salteado con verduras y arroz', 20, 1, P, true,
+    'Hervís el arroz.\nTofu en cubos dorado en la sartén con la mitad del aceite, 5 min. Lo sacás.\nZanahoria, morrón y cebolla en tiras con el resto del aceite, 5 min. Volvés el tofu con la salsa de soja.',
+    [['tofu', 150], ['arroz', 70], ['zanahoria', 1], ['morron', 0.5], ['cebolla', 0.5], ['salsa-soja', 15], ['aceite', 8]]),
+  r('medallones-lentejas', 'Medallones de lentejas con ensalada', 30, 2, P, true,
+    'Hervís las lentejas 25–30 min, las escurrís bien y las pisás; sumás el huevo, la cebolla rallada, el pan rallado, sal y comino.\nArmás 6 medallones. Horno a 200 °C, 15 min, dándolos vuelta a la mitad.\nEnsalada de lechuga y tomate. Porción: 3 medallones.',
+    [['lentejas', 130], ['huevo', 1], ['pan-rallado', 60], ['cebolla', 1], ['lechuga', 150], ['tomate', 2], ['aceite', 10]]),
+  r('sopa-crema-calabaza', 'Sopa crema de calabaza', 30, 2, P, true,
+    'Calabaza en cubos y cebolla picada con el aceite, 5 min. Agua para cubrir y el caldo: 20 min.\nProcesás con la leche y el queso rallado. Sal y nuez moscada.\nVa con las 4 rodajas de pan, 2 por porción.',
+    [['calabaza', 600], ['cebolla', 1], ['caldo', 1], ['leche', 200], ['aceite', 5], ['queso-rallado', 20], ['pan-integral', 4]]),
+
+  // Huevos y verduras
+  r('revuelto-acelga', 'Revuelto de acelga y huevo', 10, 1, P, false,
+    'Cebolla y acelga picadas con el aceite, 4 min.\nHuevos batidos con sal: los sumás y revolvés 2 min. Queso rallado arriba.\nVa con las 2 rodajas de pan.',
+    [['acelga', 150], ['huevo', 3], ['cebolla', 0.5], ['aceite', 5], ['queso-rallado', 10], ['pan-integral', 2]]),
+  r('tortilla-acelga-queso', 'Tortilla de acelga y queso', 15, 1, P, true,
+    'Acelga hervida 3 min, escurrida y picada.\nBatís los huevos con sal, sumás la acelga y el queso en cubos.\nSartén antiadherente con el aceite, fuego bajo, 4–5 min por lado.',
+    [['huevo', 3], ['acelga', 150], ['queso-cremoso', 40], ['aceite', 5]]),
+  r('omelette-claras', 'Omelette de claras con acelga y queso', 8, 1, P, false,
+    'Batís las claras y el huevo entero con sal.\nSartén antiadherente, la acelga picada 1 min, las claras y el queso en el medio; doblás: 3–4 min.\nVa con las 2 rodajas de pan.',
+    [['clara-huevo', 5], ['huevo', 1], ['acelga', 100], ['queso-port-salut', 30], ['pan-integral', 2]]),
+  r('frittata-horno', 'Frittata de verduras al horno', 40, 3, P, true,
+    'Horno a 200 °C. Zapallitos, zanahoria, morrón y cebolla en cubos chicos con el aceite en la sartén, 8 min.\nBatís los huevos con sal y el queso rallado, sumás las verduras y volcás en una fuente aceitada.\n20–25 min de horno. Porción: un tercio, con 2 rodajas de pan.',
+    [['huevo', 8], ['zapallito', 3], ['zanahoria', 2], ['cebolla', 1], ['morron', 1], ['queso-rallado', 40], ['aceite', 10], ['pan-integral', 6]]),
+  r('atun-papa-ensalada', 'Ensalada de atún y papa', 20, 1, P, true,
+    'Papas hervidas en cubos y huevos duros.\nMezclás con el atún escurrido, el tomate y la cebolla de verdeo.\nAceite, limón y sal.',
+    [['atun-natural', 1], ['papa', 250], ['huevo', 2], ['tomate', 1], ['cebolla-verdeo', 20], ['aceite', 8]]),
+
+  // Desayunos
+  r('desayuno-panqueques-avena', 'Panqueques de avena y banana', 10, 1, ['desayuno'], false,
+    'Pisás la banana y mezclás con la avena y los huevos.\nSartén antiadherente a fuego bajo: 2 min por lado, en 3 o 4 panqueques.',
+    [['avena', 50], ['banana', 1], ['huevo', 2]]),
+  r('desayuno-tostadas-ricota', 'Tostadas con ricota y miel', 5, 1, DM, false,
+    'Tostás el pan. Untás la ricota y la miel por arriba.\nVa con café con leche o mate, sin azúcar.',
+    [['pan-integral', 2], ['ricota-light', 60], ['miel', 10]]),
+  r('desayuno-yogur-frutillas', 'Yogur con frutillas y granola', 3, 1, DM, true,
+    'Yogur en un bowl con las frutillas cortadas.\nGranola arriba, justo antes de comer para que quede crocante.',
+    [['yogur-natural', 200], ['frutilla', 100], ['granola', 40]]),
+  r('desayuno-avena-manzana', 'Avena con manzana y canela', 8, 1, ['desayuno'], false,
+    'Avena con la leche, 2 min al microondas.\nManzana en cubos, canela y la miel arriba.',
+    [['avena', 50], ['leche', 250], ['manzana', 1], ['miel', 10]]),
+  r('desayuno-pan-queso-tomate', 'Pan con queso y tomate', 4, 1, ['desayuno'], true,
+    'Pan francés abierto, con el queso cremoso y el tomate en rodajas. Sal y orégano.\nCafé con leche o mate, sin azúcar.',
+    [['pan-frances', 80], ['queso-cremoso', 40], ['tomate', 1]]),
+  r('desayuno-licuado-frutilla', 'Licuado de frutilla y avena', 3, 1, DM, false,
+    'Todo a la licuadora, 30 segundos. Sin azúcar.',
+    [['frutilla', 150], ['leche', 250], ['avena', 30]]),
+  r('desayuno-tostadas-palta', 'Tostadas con palta y tomate', 5, 1, DM, false,
+    'Tostás el pan. Pisás la media palta arriba, con sal y limón.\nTomate en rodajas.',
+    [['pan-integral', 2], ['palta', 0.5], ['tomate', 1]]),
+
+  // Meriendas
+  r('merienda-hummus-verduras', 'Hummus con zanahoria y pepino', 5, 1, ['merienda'], true,
+    'Zanahoria y pepino en bastones.\nLos mojás en el hummus. Con 3 galletas de arroz si querés algo más.',
+    [['hummus', 80], ['zanahoria', 2], ['pepino', 1], ['galleta-arroz', 3]]),
+  r('merienda-queso-batata', 'Queso con dulce de batata', 2, 1, ['merienda'], true,
+    'Una feta gruesa de queso cremoso con el dulce de batata arriba (el famoso vigilante).\nCon mate o café, sin azúcar.',
+    [['queso-cremoso', 50], ['dulce-membrillo', 50]]),
+  r('merienda-yogur-nueces', 'Yogur con nueces y miel', 2, 1, DM, true,
+    'Yogur natural (o griego, que rinde más proteína) en un bowl, con las nueces picadas y la miel.',
+    [['yogur-natural', 170], ['nueces', 25], ['miel', 10]]),
+  r('merienda-galletas-ricota', 'Galletas de arroz con ricota y mermelada', 3, 1, ['merienda'], true,
+    'Galletas de arroz con la ricota y la mermelada light arriba.\nCon mate o café, sin azúcar.',
+    [['galleta-arroz', 4], ['ricota-light', 60], ['mermelada-light', 20]]),
+  r('merienda-banana-chocolate', 'Banana con chocolate amargo', 1, 1, ['merienda'], true,
+    '1 banana y 20 g de chocolate amargo (dos cuadraditos).',
+    [['banana', 1], ['chocolate-amargo', 20]]),
+]
+
+export const foods = [...alimentosBase, ...alimentosNuevos, ...infusiones, ...alimentosCuarta, ...alimentosQuinta]
+export const recipes = [...recetasBase, ...recetasNuevas, ...recetasCuarta, ...recetasQuinta]

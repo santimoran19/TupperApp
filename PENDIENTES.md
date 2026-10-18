@@ -35,25 +35,25 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 4. F-18 · Registrarse e iniciar sesión con Google
 5. F-01 · Escanear el código de barras (va junto con F-02)
 6. F-02 · Catálogo compartido de productos
-7. F-12 · Base propia de alimentos más grande
-8. IA-01 · Chat con IA (va junto con IA-02)
-9. IA-02 · Proveedor de respaldo
-10. F-04 · Vencimientos en la despensa
-11. D-07 · Revisión completa de accesibilidad
-12. L-04 · Consentimiento al registrarse
-13. C-05 · Opiniones desde la app
-14. T-03 · Pruebas en Safari
-15. T-04 · Base de pruebas aparte
-16. T-01 · Actualizar las herramientas
-17. F-06 · Recordatorios
+7. IA-01 · Chat con IA (va junto con IA-02)
+8. IA-02 · Proveedor de respaldo
+9. F-04 · Vencimientos en la despensa
+10. D-07 · Revisión completa de accesibilidad
+11. L-04 · Consentimiento al registrarse
+12. C-05 · Opiniones desde la app
+13. T-03 · Pruebas en Safari
+14. T-04 · Base de pruebas aparte
+15. T-01 · Actualizar las herramientas
+16. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-18. F-08 · Copiar un día entero
-19. D-06 · Deshacer en más lugares
-20. D-04 · Esqueletos de carga
-21. F-10 · Peso: gráfico y fecha estimada
-22. F-11 · Exportar el registro a planilla
-23. F-09 · Combos frecuentes
+17. F-08 · Copiar un día entero
+18. D-06 · Deshacer en más lugares
+19. D-04 · Esqueletos de carga
+20. F-10 · Peso: gráfico y fecha estimada
+21. F-11 · Exportar el registro a planilla
+22. F-09 · Combos frecuentes
+23. F-12b · Seguir sumando a la base común
 24. F-13 · Categorías editables por el usuario
 25. D-08 · Revisión de los textos
 26. IA-04 · Cargar una receta desde un texto
@@ -107,7 +107,7 @@ Nada por ahora.
   - **Después, si se quiere:** importar entrenamientos desde archivos (.gpx, .tcx, .fit o la exportación de Apple Salud). Conectar Strava o Garmin directo necesita algo del lado del servidor. Leer Apple Salud o Health Connect directo no se puede desde una PWA.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
 - [ ] **F-11 · Exportar el registro a planilla** · P3 · S. Hoy "Descargar mis datos" baja un JSON; sumar un CSV que abra en Excel, útil para llevarle al nutricionista.
-- [ ] **F-12 · Base propia de alimentos más grande** · P2 · M (y continuo). Sumar alimentos, categorías y recetas a medida que aparecen productos nuevos en las despensas, para depender menos de Open Food.
+- [ ] **F-12b · Seguir sumando a la base común** · P3 · S (continuo). Después de la quinta tanda (1.21), sumar alimentos y recetas cuando aparezcan faltantes: mirar los alimentos propios que repiten varios usuarios y lo que la gente busca y no encuentra. Se agrega en `scripts/seed-data.mjs` y se corre `npm run seed`.
 - [ ] **F-13 · Categorías editables por el usuario** · P3 · M. Crear, renombrar y elegir categorías para sus alimentos propios.
 ## 2. Inteligencia artificial
 
@@ -160,6 +160,16 @@ Nada por ahora.
 ---
 
 ## Hecho
+
+- **F-12 · Base propia de alimentos más grande** (versión 1.21.0; hay que correr `supabase/seed-5.sql` en Supabase, ver abajo). Quinta tanda de la base común: **116 alimentos y 44 recetas** más (ahora 390 alimentos y 132 recetas).
+  - *Alimentos:* cortes de vaca y cerdo, pescados y mariscos, quesos, kéfir, verduras y frutas, legumbres y cereales ya cocidos (arroz, fideos, quinoa, porotos hervidos), semillas, panadería, snacks y frutas secas, despensa, salsas, enlatados, congelados, comidas hechas y 5 bebidas. Los valores son por 100 g/ml; cada uno pasa una prueba de que las calorías cierran con los macros.
+  - *Recetas:* pescados, cerdo y carne, pollo, pastas y cereales, huevos y verduras, desayunos y meriendas, todas con ingredientes que ya existen en la base y con calorías dentro de un rango razonable por comida.
+  - *Búsqueda:* nuevos sinónimos ("bacon", "rabas", "porotos cocidos", "fideos cocidos"…), 8 familias nuevas (ej. el peceto y el lomo valen por bife de nalga en las recetas) y medidas rápidas (cucharada, puñado) para los productos que corresponden. Al buscar, lo que empieza con lo escrito va primero ("huevo" muestra "Huevo" antes que "Clara de huevo"); la lógica salió del componente a `src/lib/buscar.js`.
+  - *Categorías:* no se sumó ninguna a propósito; todo entra en las que ya existen, para no mover lo que ya eligió cada usuario.
+  - *Cuidado con lo existente:* es solo aditivo. No toca alimentos propios, stock, registros ni nada de cada usuario. Una prueba confirma que las sugerencias de "cuenta como" de ~39 productos de siempre no cambian.
+  - *Cómo se aplica:* en el SQL editor de Supabase, pegar y correr `supabase/seed-5.sql` (se puede correr más de una vez). Puede correrse antes o después de publicar la app.
+  - *Cómo seguir:* es un trabajo continuo. Se decide qué sumar mirando qué alimentos propios repiten varios usuarios (consulta de la revisión mensual) y qué productos no encuentra la gente; se agrega en `scripts/seed-data.mjs`, se corre `npm run seed` y se corre el SQL nuevo. Queda como nota de P3 abajo.
+  - Se actualizaron los conteos de las pruebas (390 alimentos, 132 recetas, 579 ingredientes) y se arreglaron pruebas de navegador que suponían qué alimento o receta aparece primero.
 
 - **T-06 y S-05 · Avisos automáticos** (no cambia la app ni la base, no hay versión nueva). Dos tareas programadas que corren solas en la nube, de solo lectura, y mandan notificación al teléfono:
   - *Aviso diario de errores* (todos los días 8:47, hora de Argentina): mira `eventos` de las últimas 24 horas con `tipo = 'error'`, agrupa por nombre, versión y pantalla. Si no hay errores no avisa nada; si hay, manda un resumen (total, cuántos usuarios y los más frecuentes).

@@ -16,7 +16,7 @@ test('la base se arma desde cero con los archivos del repo', async () => {
   const n = await una(
     'select (select count(*) from public.foods)::int as alimentos, (select count(*) from public.recipes)::int as recetas, (select count(*) from public.recipe_items)::int as items',
   )
-  expect(n).toEqual({ alimentos: 274, recetas: 88, items: 368 })
+  expect(n).toEqual({ alimentos: 390, recetas: 132, items: 579 })
 })
 
 test('stock por diferencias: suma, resta, nunca baja de cero y junta los repetidos', async () => {
@@ -441,5 +441,5 @@ test('al borrar la cuenta se va todo lo del usuario, y nada de los demás', asyn
     ),
   ).toEqual({ stock: 0, eventos: 0, operaciones: 0 })
   expect((await una('select count(*)::int as n from public.stock where user_id = $1', [ANA])).n).toBeGreaterThan(0)
-  expect((await una('select count(*)::int as n from public.foods where owner is null')).n).toBe(274)
+  expect((await una('select count(*)::int as n from public.foods where owner is null')).n).toBe(390)
 })

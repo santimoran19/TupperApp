@@ -7,22 +7,7 @@ import { buscarProductos } from '../lib/openfoodfacts'
 import { anotarEvento } from '../lib/eventos'
 import { LIM, errNumero, errTexto, hayErrores } from '../lib/validar'
 import { nombreCorto, parecidoEnBase, sonCompatibles, sugerirBase } from '../lib/equivalencias'
-import { ALIAS } from '../lib/alias'
-
-const normal = (t) => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-
-// Busca por nombre y también por los otros nombres de cada alimento (marcas, sinónimos): "spaghetti" encuentra "Fideos secos".
-// Primero van los que coinciden por nombre.
-export function buscarAlimentos(alimentos, texto) {
-  const q = normal(texto.trim())
-  const alfabetico = (a, b) => a.name.localeCompare(b.name, 'es')
-  if (!q) return [...alimentos].sort(alfabetico)
-  const porNombre = alimentos.filter((a) => normal(a.name).includes(q))
-  const vistos = new Set(porNombre.map((a) => a.id))
-  const porAlias =
-    q.length < 3 ? [] : alimentos.filter((a) => !vistos.has(a.id) && (ALIAS[a.slug] || []).some((s) => s.includes(q) || q.includes(s)))
-  return [...porNombre.sort(alfabetico), ...porAlias.sort(alfabetico)]
-}
+import { buscarAlimentos, normal } from '../lib/buscar'
 
 const cada100 = (a) => `${redondear(a.kcal)} kcal y ${redondear(a.protein, 1)} g prot. cada 100 ${a.unit === 'ml' ? 'ml' : 'g'}`
 

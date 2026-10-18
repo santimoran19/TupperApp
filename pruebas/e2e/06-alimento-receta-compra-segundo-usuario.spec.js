@@ -32,7 +32,7 @@ test('alimento nuevo, receta propia, compra con precio y segundo usuario', async
     await pg.waitForSelector('text=Ingredientes')
     await pg.fill('input[placeholder="Ej.: Pollo con arroz"]', 'Arroz con atún')
     for (const [nombre] of [
-      ['arroz', '80'],
+      ['arroz integral', '80'],
       ['atún', '1'],
     ]) {
       await pg.click('button:has-text("Agregar")')

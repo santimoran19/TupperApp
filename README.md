@@ -106,7 +106,8 @@ Para crear la base desde cero, se ejecutan en este orden:
 11. `supabase/actualizacion-11.sql`: los alimentos sueltos en el plan (cada comida del plan puede ser una receta o un alimento con su cantidad). No toca ninguna fila que ya exista. Tiene que estar aplicada antes de publicar la versión 1.13 de la app.
 12. `supabase/actualizacion-12.sql`: el nombre de usuario (columna `username` en los perfiles, con sus reglas y la consulta de si está libre). No toca ninguna cuenta que ya exista. Tiene que estar aplicada **antes** de publicar la versión 1.15 de la app. Va junto con la función `entrar` (ver abajo).
 13. `supabase/actualizacion-13.sql`: los hogares (despensa, lista de compras, comidas preparadas y compras compartidas). No modifica, mueve ni borra nada de lo que ya cargó cada usuario. Tiene que estar aplicada **antes** de publicar la versión 1.17 de la app. Se corre una sola vez.
-14. `supabase/seed.sql`: los 274 alimentos y las 88 recetas base, comunes a todos. Se puede ejecutar de nuevo: agrega solo lo que falta.
+14. `supabase/seed.sql`: los 390 alimentos y las 132 recetas base, comunes a todos. Se puede ejecutar de nuevo: agrega solo lo que falta.
+15. `supabase/seed-5.sql`: solo la quinta tanda (116 alimentos y 44 recetas, versión 1.21). Es lo mismo que ya trae `seed.sql`, pero más corto: sirve para sumar solo lo nuevo a una base que ya tiene las tandas anteriores. Se puede ejecutar de nuevo sin problema y no toca nada de lo que cargó cada usuario.
 
 La función que consulta a la IA está en `supabase/functions/analizar-semana/`; cómo activarla, en `supabase/functions/LEEME.md`.
 

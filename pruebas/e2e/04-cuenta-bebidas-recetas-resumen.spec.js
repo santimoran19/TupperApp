@@ -429,7 +429,8 @@ test('cuenta con código, bebidas, recetas y resumen', async ({ browser }) => {
     await pg.goto(APP + '/plan')
     await pg.waitForSelector('text=Esta semana')
     for (let i = 0; i < 2; i++) {
-      if (await pg.locator('button:has-text("Armar con lo que tengo")').isEnabled()) {
+      const armar = pg.locator('button:has-text("Armar con lo que tengo")')
+      if ((await armar.count()) > 0 && (await armar.isEnabled())) {
         await pg.click('button:has-text("Armar con lo que tengo")')
         await pg.waitForSelector('text=Semana completa')
       }
@@ -452,7 +453,7 @@ test('cuenta con código, bebidas, recetas y resumen', async ({ browser }) => {
     await pg.waitForSelector('text=Ingredientes')
     await pg.fill('#rn-nombre', 'Prueba para editar')
     await pg.click('button:has-text("Agregar")')
-    await pg.fill('input[placeholder="Buscar alimento..."]', 'arroz')
+    await pg.fill('input[placeholder="Buscar alimento..."]', 'arroz integral')
     await pg.locator('div.divide-y > button').first().click()
     await pg.click('button:has-text("Guardar receta")')
     await pg.waitForSelector('button:has-text("Editar")')
