@@ -51,24 +51,23 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 18. F-10 · Peso: gráfico y fecha estimada
 19. F-11 · Exportar el registro a planilla
 20. F-09 · Combos frecuentes
-21. F-01c · Otra fuente de productos al escanear
-22. F-12b · Seguir sumando a la base común
-23. F-13 · Categorías editables por el usuario
-24. D-08 · Revisión de los textos
-25. IA-04 · Cargar una receta desde un texto
-26. IA-03 · Foto de un plato
-27. C-06 · Métricas de uso
-28. T-05 · Partir `sincronizacion.js`
-29. T-07 · Mandar lo cargado sin conexión con la app cerrada
-30. S-06 · Verificación en dos pasos
-31. S-03 · Contraseñas filtradas también del lado de Supabase
+21. F-12b · Seguir sumando a la base común
+22. F-13 · Categorías editables por el usuario
+23. D-08 · Revisión de los textos
+24. IA-04 · Cargar una receta desde un texto
+25. IA-03 · Foto de un plato
+26. C-06 · Métricas de uso
+27. T-05 · Partir `sincronizacion.js`
+28. T-07 · Mandar lo cargado sin conexión con la app cerrada
+29. S-06 · Verificación en dos pasos
+30. S-03 · Contraseñas filtradas también del lado de Supabase
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-32. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-33. C-02 · Dominio propio y página de presentación (va junto con C-03)
-34. C-01 · Planes y cobro (para empezar a cobrar)
-35. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-36. C-04 · Play Store (cuesta la cuenta de desarrollador)
+31. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+32. C-02 · Dominio propio y página de presentación (va junto con C-03)
+33. C-01 · Planes y cobro (para empezar a cobrar)
+34. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+35. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -100,7 +99,6 @@ Nada por ahora.
   - **Después, si se quiere:** importar entrenamientos desde archivos (.gpx, .tcx, .fit o la exportación de Apple Salud). Conectar Strava o Garmin directo necesita algo del lado del servidor. Leer Apple Salud o Health Connect directo no se puede desde una PWA.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
 - [ ] **F-11 · Exportar el registro a planilla** · P3 · S. Hoy "Descargar mis datos" baja un JSON; sumar un CSV que abra en Excel, útil para llevarle al nutricionista.
-- [ ] **F-01c · Otra fuente de productos al escanear** · P3 · M. Open Food Facts tiene poco de lo argentino y, cuando lo tiene, a veces sin calorías. En 1.22.1 se aprovecha mejor lo que trae y se puede partir de un alimento parecido, pero no se sumó otra base porque desde el entorno de trabajo no se pudo consultar ninguna para probarla. A evaluar con una cuenta de prueba y desde un entorno con red: **UPCitemdb** (gratis con tope diario, da nombre y marca, sin calorías), **Precios Claros** (datos del Estado con el código de las góndolas argentinas, nombre y marca, sin calorías; no es una API oficial para terceros) y las de pago con calorías (Edamam, FatSecret, Nutritionix; casi todo producto de EE. UU.). Si alguna sirve, se consulta desde una Edge Function (la clave queda oculta, se guarda en caché y no hace falta tocar el CSP de `vercel.json`) y su resultado se usa solo para el nombre, y las calorías salen del alimento parecido. Mientras tanto la cobertura crece sola con el catálogo compartido (F-02).
 - [ ] **F-12b · Seguir sumando a la base común** · P3 · S (continuo). Después de la quinta tanda (1.21), sumar alimentos y recetas cuando aparezcan faltantes: mirar los alimentos propios que repiten varios usuarios y lo que la gente busca y no encuentra. Se agrega en `scripts/seed-data.mjs` y se corre `npm run seed`.
 - [ ] **F-13 · Categorías editables por el usuario** · P3 · M. Crear, renombrar y elegir categorías para sus alimentos propios.
 ## 2. Inteligencia artificial
@@ -155,6 +153,14 @@ Nada por ahora.
 
 ## Hecho
 
+- **F-01c · Nombre del producto desde Precios Claros** (versión 1.22.2; no hay SQL nuevo). Salió de medir con datos reales: de 32 productos de góndola de Córdoba (atún, miel, puré de tomate, yerba, fideos, galletitas, aceite...) Open Food Facts tiene **7 (22 %)** y con calorías **3 (9 %)**; los eventos de la app daban lo mismo (1 de 11 búsquedas con datos completos).
+  - *Qué se probó:* con un script en la PC (el entorno de trabajo no llega a esos servicios): UPCitemdb no conoce los códigos argentinos (0 resultados), MercadoLibre pide autenticación (403), USDA es de EE. UU. **Precios Claros** (sistema de precios del Estado) responde con CORS abierto, busca por código exacto y trae nombre, marca y presentación de casi todo lo que se vende; **no trae calorías**.
+  - *Cómo funciona:* si Open Food Facts no tiene el código, se consulta Precios Claros (`src/lib/preciosclaros.js`: `/sucursales` por zona y `/producto?id_producto=<código>&array_sucursales=...`; Córdoba, Buenos Aires y Rosario, de a una zona si no aparece). Con el nombre ("Atun al Natural La Campagnola 170 Gr") el panel dice cómo se llama y propone el alimento parecido de la base ("Atún al natural") con sus valores como punto de partida, marcados como aproximados y sin compartirse con el catálogo. Nombres más largos que el máximo se cortan en una palabra entera.
+  - *Medición:* en `codigo_busqueda` aparece un resultado nuevo, `nombre` (Open Food Facts no lo tenía pero Precios Claros sí).
+  - *Servicios externos:* se sumó `https://d3e6htiiul5ek9.cloudfront.net` al `connect-src` de `vercel.json` y el texto de privacidad lo dice (se manda solo el número del código). **Hay que desplegar `vercel.json` junto con la app, si no el navegador bloquea el pedido** (sin nombre, todo sigue como antes).
+  - *Riesgo:* no es una API oficial para terceros: puede cambiar o cortarse sin aviso. Está hecho para fallar en silencio (sin respuesta es como si no supiera el nombre). Plan B si se corta: los datos abiertos de precios del Estado (SEPA) cargados a una tabla propia, desde una script en la PC.
+  - *Pruebas:* 7 unitarias nuevas (`preciosclaros.test.js`: zonas, caché, fallas, presentación, nombre largo) y dos pasos nuevos en `23-escaner-dificil` (Precios Claros de mentira: nombre + atún de la base + guardar; y un código que no conoce nadie).
+
 - **F-01b · Escáner y productos sin datos, más robustos** (versión 1.22.1; no cambia la base, no hay SQL nuevo). Salió de probar con productos cotidianos argentinos (puré de tomate, atún, miel...): Open Food Facts no los tenía o los tenía sin calorías, y el lector no tomaba códigos chicos ni de colores.
   - *Lector (`src/lib/lectura.js`):* cada imagen se prueba de varias maneras y en cada una normal e **invertida** (blanco sobre oscuro): el cuadro entero, el centro recortado y agrandado ×1,3 a ×2 y ×2 a ×4 (un código chico gana barras más anchas). En Android se prueba además con el lector del navegador, sobre las mismas imágenes. La lectura que funciona se repite; para aceptar un código tiene que salir dos veces en 3 segundos (antes, dos veces seguidas). Se pide video de 1920×1080 (antes 1280×720) y foco continuo donde el teléfono lo permite.
   - *Controles:* **zoom** (deslizador, solo donde el teléfono lo expone: Android sí, iPhone casi nunca), **linterna** (idem) y **"Sacarle una foto"**: abre la cámara del teléfono, que enfoca de cerca y tiene mucha más definición que el video, y la foto se lee en el teléfono con 5 pasadas (no se guarda ni se envía; el texto legal lo dice). Es la salida para códigos muy chicos y para el iPhone.
@@ -162,7 +168,7 @@ Nada por ahora.
   - *Producto sin datos en ningún lado:* en vez de cargar todo a mano, "Partir de un alimento parecido" busca en la base (atún, miel, puré de tomate...), copia sus valores cada 100 g y avisa que son aproximados. Mientras no se corrijan **no se ofrecen al catálogo** (si no, dos personas con el mismo aproximado lo publicarían como confirmado). Si el alimento parecido es un ingrediente de recetas, el producto queda como "cuenta como" ese.
   - *Medición:* nuevos eventos en `eventos`: `escaner_lectura` (`via`: camara/foto/foto_fallida/escrito, y `manera` 0-2 de la cámara) y `codigo_aproximado`. Con `codigo_busqueda` (ya existía) sirven para ver cuántos productos se encuentran: `select detalle->>'resultado' as resultado, count(*) from eventos where nombre = 'codigo_busqueda' group by 1 order by 2 desc;`
   - *Pruebas:* 5 unitarias nuevas (valores por porción, sueltos, kJ, calculadas, nombre genérico) y una de navegador nueva (`23-escaner-dificil`: código blanco sobre negro, de colores, muy chico y borroso, foto grande, foto sin código, zoom/linterna, calculadas, por porción y alimento parecido). Se comprobó que el lector anterior falla en el invertido y en el muy chico. La cámara de mentira ahora es un módulo compartido (`camara-falsa.js`) y la 22 y la 23 usan los mismos atajos (`escaner-apoyo.js`).
-  - *Límites:* no se pudo probar con una cámara real ni consultar otras fuentes de productos desde el entorno de trabajo. Un código de menos de ~1,3 píxeles por barra fina en el video (muy lejos o muy borroso) sigue sin leerse: ahí sirven el zoom, acercarse o la foto. **No se sumó otra base de productos** porque no hay una gratuita con calorías de productos argentinos que se pueda usar con seguridad desde la app (ver abajo "Otras fuentes de productos"); lo que crece es el catálogo compartido (F-02).
+  - *Límites:* no se pudo probar con una cámara real ni consultar otras fuentes de productos desde el entorno de trabajo. Un código de menos de ~1,3 píxeles por barra fina en el video (muy lejos o muy borroso) sigue sin leerse: ahí sirven el zoom, acercarse o la foto. **No se sumó otra base de calorías** porque no hay una gratuita con productos argentinos; el nombre sí se resuelve en F-01c y las calorías reales crecen con el catálogo compartido (F-02).
 
 - **F-01 y F-02 · Escanear el código de barras y catálogo compartido** (versión 1.22.0; hay que correr `supabase/actualizacion-14.sql` en Supabase **antes** de publicar la app, ver abajo).
   - *Escáner (F-01):* en "Agregar" (despensa, compras, registrar, recetas) hay un botón de código de barras al lado del buscador. Abre la cámara y lee EAN-13, EAN-8 y UPC-A; descarta lecturas con el dígito verificador mal y pide dos lecturas iguales seguidas. En Android usa el lector del navegador; donde no existe (iPhone, Firefox) baja `@zxing/library` solo al abrir el escáner (no pesa en el resto de la app). Sin cámara o sin permiso, avisa y deja escribir el código a mano (también acepta espacios y guiones, y rechaza uno mal escrito con un mensaje claro). La cámara se habilitó en `vercel.json` (`camera=(self)`).

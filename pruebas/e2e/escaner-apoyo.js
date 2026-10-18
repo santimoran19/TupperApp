@@ -28,11 +28,26 @@ export async function openFoodFacts(ctx, productos, estado) {
   })
 }
 
+// Precios Claros de mentira: `estado.precios` es {código: {nombre, marca, presentacion}}; lo que no esté, "Producto inexistente"
+async function preciosClaros(ctx, estado) {
+  await ctx.route('https://d3e6htiiul5ek9.cloudfront.net/**', (r) => {
+    const u = new URL(r.request().url())
+    const cabeceras = { 'Access-Control-Allow-Origin': '*' }
+    const responder = (cuerpo) =>
+      r.fulfill({ status: 200, contentType: 'application/json', headers: cabeceras, body: JSON.stringify(cuerpo) })
+    if (u.pathname.endsWith('/sucursales')) return responder({ status: 200, sucursales: [{ id: '15-1-2003' }, { id: '15-1-2004' }] })
+    const codigo = u.searchParams.get('id_producto')
+    const p = (estado.precios ?? {})[codigo]
+    return responder({ status: 200, producto: p ?? { msg: 'Producto inexistente.', id: codigo }, total: p ? 1 : 0 })
+  })
+}
+
 // `camara` son las opciones de instalarCamara (modo, controles, ancho, alto)
 export async function cuenta(browser, camara, email, nombre, productos, estado = { apagado: false }) {
   const ctx = await contexto(browser)
   await ctx.addInitScript(instalarCamara, camara)
   await openFoodFacts(ctx, productos, estado)
+  await preciosClaros(ctx, estado)
   const pg = await ctx.newPage()
   await pg.goto(APP + '/')
   await pg.click('button:has-text("Crear cuenta") >> nth=0')

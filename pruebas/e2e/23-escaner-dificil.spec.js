@@ -13,6 +13,20 @@ const DE_FOTO = '7793216549878'
 const ATUN = '7790070000019' // en Open Food Facts, con nombre y sin calorías: se parte del atún de la base
 const CALCULADO = '7790070000026' // en Open Food Facts, sin calorías pero con proteínas, carbohidratos y grasas
 const POR_PORCION = '7790070000033' // en Open Food Facts, con los valores de una porción
+const SOLO_NOMBRE = '7790580131364' // no está en Open Food Facts, pero Precios Claros sabe cómo se llama
+const NI_NOMBRE = '7790000000003' // no está en ningún lado
+
+// Precios Claros de mentira (ver escaner-apoyo.js)
+const estado = {
+  apagado: false,
+  precios: {
+    [SOLO_NOMBRE]: {
+      nombre: 'Atun al Natural La Campagnola 170 Gr',
+      marca: 'LA CAMPAGNOLA',
+      presentacion: '170.0 gr',
+    },
+  },
+}
 
 const rico = (nombre, nutriments, extra = {}) => ({ product_name: nombre, brands: 'Marca', quantity: '200 g', nutriments, ...extra })
 const PRODUCTOS = {
@@ -54,6 +68,7 @@ test('escáner: códigos chicos, de colores e invertidos, foto, zoom y productos
     'dani.dificil@test.com',
     'Dani',
     PRODUCTOS,
+    estado,
   )
   escuchar(pg, errores)
 
@@ -175,6 +190,33 @@ test('escáner: códigos chicos, de colores e invertidos, foto, zoom y productos
       })
     ).json()
     expect(aportes.some((a) => a.clave === ATUN)).toBe(false)
+  })
+
+  await test.step('Open Food Facts no lo tiene pero Precios Claros sabe cómo se llama: muestra el nombre y propone el atún de la base', async () => {
+    await abrirEscaner(pg)
+    await esperarCamara(pg)
+    await pg.getByLabel('O escribí los números del código').fill(SOLO_NOMBRE)
+    await pg.click('button:has-text("Buscar")')
+    const panel = panelDe(pg, SOLO_NOMBRE)
+    await expect(panel).toContainText('Precios Claros lo conoce como')
+    await expect(panel).toContainText('La Campagnola 170 Gr')
+    await expect(panel.getByRole('button', { name: /Atún al natural/ })).toBeVisible()
+    await panel.getByRole('button', { name: /Atún al natural/ }).click()
+    expect(await pg.inputValue('#na-nombre')).toBe('Atun al Natural La Campagnola 170 Gr')
+    expect(await pg.inputValue('#na-kcal')).toBe('110')
+    await pg.click('button:has-text("Guardar")')
+    await pg.waitForSelector('text=¿Cuánto tenés?')
+    await pg.keyboard.press('Escape')
+    const [alimento] = await rest(pg, 'foods', '&codigo=eq.' + SOLO_NOMBRE)
+    expect(alimento).toMatchObject({ kcal: 110, protein: 25, unit: 'g' })
+  })
+
+  await test.step('si no lo conoce nadie, sigue el mensaje de siempre', async () => {
+    await abrirEscaner(pg)
+    await esperarCamara(pg)
+    await pg.getByLabel('O escribí los números del código').fill(NI_NOMBRE)
+    await pg.click('button:has-text("Buscar")')
+    await expect(panelDe(pg, NI_NOMBRE)).toContainText('No encontramos este código en Open Food Facts')
   })
 
   await ctx.close()

@@ -5,6 +5,7 @@ import { useDatos } from '../store/Datos'
 import { CATEGORIAS, cantidadTexto, redondear, tieneAlcohol } from '../lib/nutricion'
 import { buscarPorCodigo, buscarProductos } from '../lib/openfoodfacts'
 import { buscarCodigoEnCatalogo, buscarEnCatalogo } from '../lib/catalogo'
+import { nombrePorCodigo } from '../lib/preciosclaros'
 import { esCodigoDeBarras } from '../lib/codigo'
 import Escaner from './Escaner'
 import { anotarEvento } from '../lib/eventos'
@@ -87,8 +88,21 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
     try {
       const r = await buscarPorCodigo(codigo)
       if (pedido.current !== n) return
-      anotarEvento('codigo_busqueda', { resultado: r.estado === 'ok' ? 'off' : r.estado, ms: Date.now() - inicio })
-      setPorCodigo({ ...r, codigo, origen: 'Open Food Facts' })
+      // Si Open Food Facts no lo tiene, Precios Claros (datos del Estado) puede saber al menos cómo se llama
+      let conocido = null
+      if (r.estado === 'no') {
+        conocido = await nombrePorCodigo(codigo)
+        if (pedido.current !== n) return
+      }
+      anotarEvento('codigo_busqueda', {
+        resultado: r.estado === 'ok' ? 'off' : conocido ? 'nombre' : r.estado,
+        ms: Date.now() - inicio,
+      })
+      setPorCodigo(
+        conocido
+          ? { estado: 'no', codigo, nombre: conocido.nombre, nombreDe: 'Precios Claros' }
+          : { ...r, codigo, origen: 'Open Food Facts' },
+      )
     } catch {
       if (pedido.current !== n) return
       anotarEvento('codigo_busqueda', { resultado: 'error', ms: Date.now() - inicio })
@@ -386,9 +400,15 @@ function PorCodigo({ estado: e, ocupado, alimentos, onElegir, onManual, onPareci
           etiqueta o partí de un alimento parecido.
         </p>
       )}
-      {e.estado === 'no' && (
+      {e.estado === 'no' && !e.nombreDe && (
         <p className="text-sm py-2">
           No encontramos este código en Open Food Facts. Podés cargarlo con los datos de la etiqueta o partir de un alimento parecido.
+        </p>
+      )}
+      {e.estado === 'no' && e.nombreDe && (
+        <p className="text-sm py-2">
+          Open Food Facts no tiene este producto, pero {e.nombreDe} lo conoce como «{e.nombre}». No hay sus calorías cargadas: partí de un
+          alimento parecido o cargalo con los datos de la etiqueta.
         </p>
       )}
       {(e.estado === 'incompleto' || e.estado === 'no') && (
