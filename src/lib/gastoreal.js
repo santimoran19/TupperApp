@@ -4,7 +4,8 @@
 // puede despejar cuánto gasta de verdad: si comió en promedio 2.000 kcal por día y su peso no se movió, gasta unas 2.000;
 // si bajó medio kilo por semana, gasta unas 550 más. La cuenta: gasto = ingesta − cambio de peso × 7.700 kcal por kilo.
 //
-// Hace falta tiempo y datos: 4 semanas de ventana, al menos 14 días con la comida cargada y 3 pesajes que abarquen 10 días.
+// Hace falta tiempo y datos: 4 semanas de ventana, al menos 21 días con la comida cargada (tres de cada cuatro: si faltan muchos,
+// el promedio de lo comido no representa el período) y 4 pesajes que abarquen 14 días.
 // El cambio de peso sale de una recta ajustada a todos los pesajes (la tendencia), no de la diferencia entre dos días, que
 // se mueve por el agua, la comida y la hora. Con eso se calcula también cuánto se puede confiar en el resultado.
 // Son funciones puras: la fecha de hoy se pasa de afuera.
@@ -13,13 +14,14 @@ import { gastoBase, objetivoDesdeGasto, TEF } from './gasto'
 
 export const KCAL_POR_KILO = 7700
 export const VENTANA_DIAS = 28
-export const MIN_DIAS_REGISTRADOS = 14
-export const MIN_PESAJES = 3
-export const MIN_DIAS_ENTRE_PESAJES = 10
+export const MIN_DIAS_REGISTRADOS = 21
+export const MIN_PESAJES = 4
+export const MIN_DIAS_ENTRE_PESAJES = 14
 // Un día cuenta como "registrado" desde esta cantidad de calorías: con menos, casi seguro faltó cargar comidas
 export const MIN_KCAL_DIA_REGISTRADO = 800
-// Error que se supone en lo comido (se anota de más o de menos), en proporción
-const ERROR_DE_REGISTRO = 0.05
+// Error que se supone en lo comido, en proporción. Anotar la comida casi siempre se queda corto (los estudios de ingesta
+// autodeclarada lo muestran seguido), así que se supone un 10 % y no menos.
+const ERROR_DE_REGISTRO = 0.1
 // El factor propio solo se aplica si queda entre estos valores; fuera de eso es más probable que falten datos que un metabolismo así
 export const FACTOR_MIN = 0.75
 export const FACTOR_MAX = 1.3

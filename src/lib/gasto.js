@@ -28,9 +28,13 @@ const KCAL_PASO_KG = 0.00038
 
 // Qué parte de lo que se gasta es el efecto térmico de la comida
 export const TEF = 0.1
-// Margen de error que se muestra: ±12 % con la fórmula general, ±8 % cuando ya está ajustada con los datos de la persona
+// Margen de error que se muestra: ±12 % con la fórmula general, ±10 % cuando ya está ajustada con los datos de la persona.
+// Son rangos orientativos, no intervalos validados contra mediciones: el ajuste con los datos propios también absorbe los errores
+// al anotar la comida o al pesarse, así que no se promete más precisión que esa.
 export const MARGEN_FORMULA = 0.12
-export const MARGEN_PERSONAL = 0.08
+export const MARGEN_PERSONAL = 0.1
+// Las edades con las que se estudió Mifflin-St Jeor: fuera de ese rango se sigue calculando, pero se avisa que es menos preciso
+export const EDAD_ESTUDIADA = [19, 78]
 // Piso de calorías por día (el mismo de siempre) y tope
 export const PISO_KCAL = { f: 1300, m: 1500 }
 export const TOPE_KCAL = 6000
@@ -98,7 +102,12 @@ export function gastoBase(perfil, peso, hoy) {
   const supuestos = []
   if (!perfil.work_type) supuestos.push('Como no cargaste tu trabajo, se supone que pasás casi todo el día sentado.')
   if (perfil.steps_per_day == null) supuestos.push('Sin los pasos por día, el movimiento se estima solo con tu trabajo.')
-  if (basal.metodo === 'mifflin') supuestos.push('Con tu % de grasa corporal el cálculo del basal sería más preciso.')
+  if (basal.metodo === 'mifflin')
+    supuestos.push('Si conocés tu % de grasa corporal con una medición confiable, el cálculo del basal puede ser más preciso.')
+  if (edad < EDAD_ESTUDIADA[0] || edad > EDAD_ESTUDIADA[1])
+    supuestos.push(
+      `Las fórmulas se estudiaron en adultos de ${EDAD_ESTUDIADA[0]} a ${EDAD_ESTUDIADA[1]} años: a tu edad el resultado es todavía menos preciso.`,
+    )
   return {
     sexo,
     edad,
@@ -120,38 +129,67 @@ export function gastoBase(perfil, peso, hoy) {
 }
 
 // Recorte o superávit sobre el mantenimiento, como fracción: -0,22 es un 22 % menos.
-// Si la persona eligió uno, ese; si no, el automático según su peso meta. A menores de 18 no se les calcula recorte.
+// Si la persona eligió uno, ese. Si no, el automático según su peso meta, que es GRADUAL: el recorte (o superávit) completo
+// aparece cuando faltan 8 % del peso o más para llegar a la meta, no hay ninguno cuando se está a menos de 1,5 %, y en el medio
+// crece de a poco. Así dos personas con metas casi iguales no reciben objetivos muy distintos, y a quien ya casi llegó no se
+// le sigue bajando fuerte. A menores de 18 no se les calcula recorte.
+export const GRADUAL = [0.015, 0.08]
 export function ajusteDe(perfil, base) {
   if (!base) return 0
   if (perfil?.gasto_ajuste_pct != null) return Number(perfil.gasto_ajuste_pct) / 100
   if (base.edad < 18) return 0
   const meta = Number(perfil?.goal_weight_kg)
-  if (!meta) return 0
-  if (meta < base.peso - 1) return RECORTE
-  if (meta > base.peso + 1) return SUPERAVIT
-  return 0
+  if (!meta || !(base.peso > 0)) return 0
+  const diferencia = (meta - base.peso) / base.peso
+  const grado = entre((Math.abs(diferencia) - GRADUAL[0]) / (GRADUAL[1] - GRADUAL[0]), 0, 1)
+  // En números redondos de a 1 %, para que se pueda leer y explicar
+  const ajuste = Math.round((diferencia < 0 ? RECORTE : SUPERAVIT) * grado * 100) / 100
+  return ajuste === 0 ? 0 : ajuste
+}
+
+// Las calorías del día sin entrenar que salen del mantenimiento y el recorte, cuidando el piso de seguridad.
+// Con un recorte, el objetivo nunca queda por encima de lo que la persona gasta: si el piso la dejaría pasada (su gasto
+// estimado ya es menor que el piso), no se le propone ningún déficit y el objetivo es su mantenimiento.
+//   porPiso:    el recorte se frenó en el piso, así que quedó menor al pedido
+//   sinDeficit: el gasto estimado está por debajo del piso: no se recorta nada
+function sinEntrenarCon(mantenimiento, ajuste, sexo) {
+  const piso = pisoKcal(sexo)
+  const pedido = mantenimiento * (1 + ajuste)
+  if (ajuste < 0 && piso >= mantenimiento) return { kcal: mantenimiento, porPiso: false, sinDeficit: true }
+  return { kcal: Math.max(piso, pedido), porPiso: ajuste < 0 && pedido < piso, sinDeficit: false }
 }
 
 // El objetivo de calorías que sale del gasto, para usarlo como objetivo fijo (sin sumar ejercicio).
 export function objetivoDesdeGasto(perfil, base) {
   if (!base) return null
   const ajuste = ajusteDe(perfil, base)
-  const kcal = Math.round(entre(base.mantenimiento * (1 + ajuste), pisoKcal(base.sexo), 4500) / 50) * 50
+  const { kcal: crudo, porPiso, sinDeficit } = sinEntrenarCon(base.mantenimiento, ajuste, base.sexo)
+  let kcal = Math.round(entre(crudo, Math.min(pisoKcal(base.sexo), crudo), 4500) / 50) * 50
+  // Al redondear de a 50, con un recorte no se puede pasar del mantenimiento
+  if (ajuste < 0 && kcal > base.mantenimiento) kcal = Math.floor(base.mantenimiento / 50) * 50
   const protein = Math.round((1.7 * (Number(perfil?.goal_weight_kg) || base.peso)) / 5) * 5
-  return { kcal, protein, ajuste, mantenimiento: Math.round(base.mantenimiento) }
+  return { kcal, protein, ajuste, mantenimiento: Math.round(base.mantenimiento), porPiso, sinDeficit }
 }
 
 // El objetivo de un día. Con el modo fijo (el de siempre) es el que la persona tiene guardado. Con el modo dinámico es el
 // del día sin entrenar más una parte (`gasto_devuelve`, en %) de lo que se gastó entrenando: las estimaciones de ejercicio
 // suelen pasarse, por eso no se devuelve todo. `ejercicio` son las calorías netas de ese día.
-// Devuelve { kcal, dinamico, base, extra }: `base` es lo que corresponde sin entrenar y `extra`, lo que suma el ejercicio.
+// Devuelve { kcal, dinamico, base, extra, porPiso, sinDeficit }: `base` es lo que corresponde sin entrenar y `extra`, lo que suma el ejercicio.
 export function objetivoDelDia(perfil, base, ejercicio = 0) {
-  const fijo = { kcal: Number(perfil?.kcal_target) || 0, dinamico: false, base: Number(perfil?.kcal_target) || 0, extra: 0 }
+  const fijo = {
+    kcal: Number(perfil?.kcal_target) || 0,
+    dinamico: false,
+    base: Number(perfil?.kcal_target) || 0,
+    extra: 0,
+    porPiso: false,
+    sinDeficit: false,
+  }
   if (!perfil?.gasto_activo || perfil.gasto_modo !== 'dinamico' || !base) return fijo
-  const sinEntrenar = Math.max(pisoKcal(base.sexo), base.mantenimiento * (1 + ajusteDe(perfil, base)))
+  const { kcal: sinEntrenar, porPiso, sinDeficit } = sinEntrenarCon(base.mantenimiento, ajusteDe(perfil, base), base.sexo)
   const extra = (entre(Number(perfil.gasto_devuelve), 0, 100) / 100) * Math.max(0, Number(ejercicio) || 0)
-  const kcal = Math.round(entre(sinEntrenar + extra, pisoKcal(base.sexo), TOPE_KCAL) / 10) * 10
-  return { kcal, dinamico: true, base: Math.round(sinEntrenar / 10) * 10, extra: kcal - Math.round(sinEntrenar / 10) * 10 }
+  const kcal = Math.round(entre(sinEntrenar + extra, Math.min(pisoKcal(base.sexo), sinEntrenar), TOPE_KCAL) / 10) * 10
+  const baseRedondeada = Math.round(sinEntrenar / 10) * 10
+  return { kcal, dinamico: true, base: baseRedondeada, extra: kcal - baseRedondeada, porPiso, sinDeficit }
 }
 
 // Lo que se gastó en un día: el mantenimiento más el ejercicio de ese día, repartido en sus partes
@@ -205,7 +243,8 @@ export function partesDelGasto(base) {
       titulo: 'Efecto térmico de la comida',
       kcal: r(base.tef),
       formula: 'Un 10 % de lo que gastás en total',
-      detalle: 'Digerir y absorber lo que comés gasta energía; la proteína gasta mucho más que la grasa.',
+      detalle:
+        'Digerir y absorber lo que comés gasta energía; la proteína gasta mucho más que la grasa. Acá se usa un 10 % fijo, así lo que comés un día no mueve tu objetivo.',
     },
   ]
 }

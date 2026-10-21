@@ -27,13 +27,13 @@ test('gasto real: faltan datos, se calcula, se ajusta y se usa como objetivo', a
 
   await test.step('sin datos suficientes dice cuánto falta', async () => {
     await expect(real().getByText('Días con la comida cargada', { exact: true })).toBeVisible()
-    await expect(real().getByText(/Faltan 14 días con la comida cargada \(llevás 0 de 14\)/)).toBeVisible()
-    await expect(real().getByText(/Faltan 2 pesajes \(llevás 1 de 3\)/)).toBeVisible()
+    await expect(real().getByText(/Faltan 21 días con la comida cargada \(llevás 0 de 21\)/)).toBeVisible()
+    await expect(real().getByText(/Faltan 3 pesajes \(llevás 1 de 4\)/)).toBeVisible()
     await expect(real().getByRole('button', { name: /Ajustar mi gasto/ })).toHaveCount(0)
   })
 
-  await test.step('cargar 20 días de comida y 4 pesajes que bajan 0,05 kg por día', async () => {
-    const dias = Array.from({ length: 20 }, (_, i) => `2026-09-${String(8 + i).padStart(2, '0')}`)
+  await test.step('cargar 24 días de comida y 4 pesajes que bajan 0,05 kg por día', async () => {
+    const dias = Array.from({ length: 24 }, (_, i) => `2026-09-${String(8 + i).padStart(2, '0')}`)
     const filas = dias.flatMap((date) =>
       [
         ['desayuno', 500],
@@ -60,7 +60,7 @@ test('gasto real: faltan datos, se calcula, se ajusta y se usa como objetivo', a
     await expect(real().getByText('~2.685')).toBeVisible()
     await expect(real().getByText('Comiste en promedio').locator('..')).toContainText('2.300 kcal')
     await expect(real().getByText('Tu peso cambió').locator('..')).toContainText('−0,35 kg por semana')
-    await expect(real().getByText('Entre 2.570 y 2.800')).toBeVisible()
+    await expect(real().getByText('Entre 2.455 y 2.915')).toBeVisible()
     await expect(real().getByText('Confianza alta')).toBeVisible()
     // Sin entrenar da lo mismo (no hubo ejercicio) y la fórmula decía unas 2.500
     await expect(real().getByText(/Sin entrenar, tu gasto real da 2\.685 kcal; la fórmula decía 2\.50\d/)).toBeVisible()

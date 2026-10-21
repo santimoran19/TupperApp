@@ -73,6 +73,18 @@ describe('guardarEntrenamiento', () => {
     expect(operaciones[0].datos.series).toEqual(nuevas)
   })
 
+  test('guarda si las calorías del reloj eran activas, y solo si hay calorías del reloj', () => {
+    const { acciones, operaciones } = armar()
+    acciones.guardarEntrenamiento(base({ reloj: '420', relojActivas: true }))
+    acciones.guardarEntrenamiento(base({ reloj: '420' }))
+    acciones.guardarEntrenamiento(base({ relojActivas: true }))
+    const [activas, totales, sinReloj] = operaciones.map((o) => o.datos.datos)
+    expect(activas).toMatchObject({ kcal_watch: 420, watch_activas: true, kcal: 420, metodo: 'reloj' })
+    expect(totales).toMatchObject({ kcal_watch: 420, watch_activas: false, metodo: 'reloj' })
+    expect(totales.kcal).toBeLessThan(420)
+    expect(sinReloj).toMatchObject({ kcal_watch: null, watch_activas: false })
+  })
+
   test('un entrenamiento que no es de gimnasio no manda series', () => {
     const { acciones, operaciones } = armar()
     acciones.guardarEntrenamiento(base({ id: '10000000-0000-0000-0000-000000000099' }))

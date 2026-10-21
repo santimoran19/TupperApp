@@ -1,7 +1,7 @@
 -- Tupper, actualización 17: gimnasio (F-19, fase 3).
 -- Corré este archivo entero en el SQL Editor de Supabase y después seed-7.sql (el catálogo de ejercicios).
 -- Va DESPUÉS de actualizacion-16.sql y ANTES de publicar la versión 1.23 de la app. Las versiones anteriores siguen andando igual.
--- Para recrear la base desde cero el orden es: schema.sql, actualizacion-2.sql a actualizacion-17.sql, seed.sql, seed-6.sql y seed-7.sql.
+-- Para recrear la base desde cero el orden es: schema.sql, actualizacion-2.sql a actualizacion-18.sql, seed.sql, seed-6.sql y seed-7.sql.
 --
 -- NO modifica, mueve ni borra ningún dato que ya esté cargado: agrega cuatro tablas, una columna vacía en `workouts` y
 -- reemplaza `guardar_entrenamiento` (de actualizacion-16.sql) por una versión que además guarda las series.

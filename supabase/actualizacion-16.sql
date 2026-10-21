@@ -1,7 +1,7 @@
 -- Tupper, actualización 16: registrar ejercicio (F-19, fase 2).
 -- Corré este archivo entero en el SQL Editor de Supabase y después seed-6.sql (el catálogo de actividades).
 -- Va DESPUÉS de actualizacion-15.sql y ANTES de publicar la versión 1.23 de la app. Las versiones anteriores siguen andando igual.
--- Para recrear la base desde cero el orden es: schema.sql, actualizacion-2.sql a actualizacion-17.sql, seed.sql, seed-6.sql y seed-7.sql.
+-- Para recrear la base desde cero el orden es: schema.sql, actualizacion-2.sql a actualizacion-18.sql, seed.sql, seed-6.sql y seed-7.sql.
 --
 -- NO modifica, mueve ni borra ningún dato que ya esté cargado: agrega dos tablas y dos funciones.
 --

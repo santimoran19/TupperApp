@@ -235,6 +235,20 @@ describe('fase 2: entrenamientos', () => {
     })
   })
 
+  test('guarda si las calorías del reloj eran activas o totales (por defecto, totales: así estaban antes)', async () => {
+    const ID = '30000000-0000-0000-0000-0000000000a1'
+    await como(ANA, async () => {
+      const a = await rpc('guardar_entrenamiento', [ID, j(entreno({ kcal_watch: 400, metodo: 'reloj', kcal: 400, watch_activas: true }))])
+      expect(a.entrenamiento).toMatchObject({ kcal_watch: 400, watch_activas: true })
+      const b = await rpc('guardar_entrenamiento', [ID, j(entreno({ kcal_watch: 400, metodo: 'reloj', kcal: 350, watch_activas: false }))])
+      expect(b.entrenamiento.watch_activas).toBe(false)
+      // Un pedido de la versión anterior de la app, que no manda el dato, queda como totales
+      const c = await rpc('guardar_entrenamiento', [ID, j(entreno({ kcal_watch: 400, metodo: 'reloj', kcal: 350 }))])
+      expect(c.entrenamiento.watch_activas).toBe(false)
+      await filas('delete from public.workouts where id = $1', [ID])
+    })
+  })
+
   test('volver a guardar lo pisa', async () => {
     await como(ANA, async () => {
       const r = await rpc('guardar_entrenamiento', [

@@ -1,7 +1,7 @@
 -- Tupper, actualización 15: gasto calórico (F-19, fases 1 y 4).
 -- Corré este archivo entero en el SQL Editor de Supabase. Se puede correr más de una vez.
 -- Va ANTES de publicar la versión 1.23 de la app. Las versiones anteriores siguen andando igual con esto aplicado.
--- Para recrear la base desde cero el orden es: schema.sql, actualizacion-2.sql a actualizacion-17.sql, seed.sql y seed-6.sql.
+-- Para recrear la base desde cero el orden es: schema.sql, actualizacion-2.sql a actualizacion-18.sql, seed.sql y seed-6.sql.
 --
 -- NO modifica, mueve ni borra ningún dato que ya esté cargado: agrega columnas opcionales (o con un valor por defecto que
 -- deja todo como estaba) a `profiles`. El objetivo de calorías de cada persona NO cambia: el cálculo nuevo se prende a mano

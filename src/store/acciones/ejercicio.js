@@ -109,6 +109,7 @@ export const accionesDeEjercicio = (k) => ({
           pulso: datos.pulso,
           esfuerzo: datos.esfuerzo,
           reloj: datos.reloj,
+          relojActivas: datos.relojActivas,
         },
         { peso, edad: base.edad, sexo: base.sexo, tmb: base.tmb },
       )
@@ -142,6 +143,8 @@ export const accionesDeEjercicio = (k) => ({
           avg_hr: numero(datos.pulso),
           rpe: numero(datos.esfuerzo) != null ? Math.round(Number(datos.esfuerzo)) : null,
           kcal_watch: numero(datos.reloj) != null ? Math.round(Number(datos.reloj)) : null,
+          // Si el reloj dio calorías activas (sin el reposo) o totales; sin calorías del reloj no hay nada que aclarar
+          watch_activas: numero(datos.reloj) != null && !!datos.relojActivas,
           kcal: r.kcal,
           metodo: r.metodo,
           peso_kg: peso,

@@ -341,6 +341,7 @@ const guardarEntrenamiento = (uid, a) => {
     avg_hr: aNumero(d.avg_hr),
     rpe: aNumero(d.rpe),
     kcal_watch: aNumero(d.kcal_watch),
+    watch_activas: d.watch_activas === true || d.watch_activas === 'true',
     kcal: Number(d.kcal),
     metodo: d.metodo || 'mets',
     peso_kg: aNumero(d.peso_kg),

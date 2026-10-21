@@ -150,6 +150,7 @@ export default function EntrenoForm({ inicial = null, fechaInicial = null, onCer
     pulso: enTexto(inicial?.avg_hr),
     esfuerzo: inicial?.rpe ?? ESFUERZO_POR_DEFECTO,
     reloj: enTexto(inicial?.kcal_watch),
+    relojActivas: !!inicial?.watch_activas,
     notas: inicial?.notes || '',
   })
   const [intento, setIntento] = useState(false)
@@ -184,6 +185,7 @@ export default function EntrenoForm({ inicial = null, fechaInicial = null, onCer
             pulso: f.pulso,
             esfuerzo: f.esfuerzo,
             reloj: f.reloj,
+            relojActivas: f.relojActivas,
           },
           { peso, edad: base.edad, sexo: base.sexo, tmb: base.tmb },
         )
@@ -204,6 +206,7 @@ export default function EntrenoForm({ inicial = null, fechaInicial = null, onCer
       pulso: f.pulso,
       esfuerzo: f.esfuerzo,
       reloj: f.reloj,
+      relojActivas: f.relojActivas,
       notas: f.notas,
       rutina: inicial?.routine_id ?? rutina ?? null,
     })
@@ -322,7 +325,7 @@ export default function EntrenoForm({ inicial = null, fechaInicial = null, onCer
             </p>
           </div>
 
-          <details className="rounded-2xl bg-campo px-3 py-2.5">
+          <details className="rounded-2xl bg-campo px-3 py-2.5" open={inicial?.avg_hr || inicial?.kcal_watch ? true : undefined}>
             <summary className="text-sm font-medium cursor-pointer">Tengo datos del reloj o de la banda (opcional)</summary>
             <div className="grid grid-cols-2 gap-3 mt-3">
               <label className="block">
@@ -332,20 +335,30 @@ export default function EntrenoForm({ inicial = null, fechaInicial = null, onCer
               </label>
               <label className="block">
                 <span className="text-sm font-medium">Calorías del reloj</span>
-                <Numero
-                  valor={f.reloj}
-                  onChange={set('reloj')}
-                  decimales={0}
-                  largo={5}
-                  error={!!errores.reloj}
-                  placeholder="kcal totales"
-                />
+                <Numero valor={f.reloj} onChange={set('reloj')} decimales={0} largo={5} error={!!errores.reloj} placeholder="kcal" />
                 <Err>{errores.reloj}</Err>
               </label>
             </div>
+            {String(f.reloj).trim() !== '' && (
+              <div className="mt-3">
+                <span className="text-sm font-medium">Esas calorías son…</span>
+                <div className="flex gap-2 mt-1.5">
+                  <Chip activo={!f.relojActivas} onClick={() => set('relojActivas')(false)}>
+                    Totales
+                  </Chip>
+                  <Chip activo={f.relojActivas} onClick={() => set('relojActivas')(true)}>
+                    Activas
+                  </Chip>
+                </div>
+                <p className="text-xs text-gris mt-1.5">
+                  Muchos relojes muestran las dos. Las <b>activas</b> son solo lo que gastaste moviéndote; las <b>totales</b> incluyen
+                  también lo que el cuerpo gasta en reposo. Si tu reloj dice solo «calorías», suelen ser las totales.
+                </p>
+              </div>
+            )}
             <p className="text-xs text-gris mt-2">
-              Con estos datos el cálculo es más preciso. Las calorías del reloj son el total del entrenamiento: nosotros descontamos lo que
-              igual habrías gastado en reposo.
+              Con estos datos el cálculo es más preciso, aunque los relojes también se equivocan (entre un 20 y un 40 %). Para no contar dos
+              veces, a las calorías totales les descontamos lo que igual habrías gastado en reposo.
             </p>
           </details>
 

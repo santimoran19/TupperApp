@@ -7,13 +7,15 @@ import { Chip, Err, Hoja, Icono, Numero } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { fechaCorta, hoy } from '../lib/fechas'
 import {
-  MARGEN_FORMULA,
+  RECORTE,
+  SUPERAVIT,
   TIPOS_DE_TRABAJO,
   TRABAJO_POR_DEFECTO,
   confianzaDelGasto,
   objetivoDesdeGasto,
   partesDelGasto,
   pesoDelDia,
+  pisoKcal,
 } from '../lib/gasto'
 import { calcularGastoReal } from '../lib/gastoreal'
 import { errNumero } from '../lib/validar'
@@ -141,7 +143,8 @@ function ComoSeCalcula({ base }) {
         </div>
       )}
       <p className="text-xs text-gris mt-3">
-        Margen de error de la fórmula: ±{Math.round(MARGEN_FORMULA * 100)} %. Con el tiempo, tus propios datos (más abajo) pueden afinarlo.
+        Es un rango orientativo (±{Math.round(base.margen * 100)} %), no una medición: cada cuerpo es distinto. Con el tiempo, tus propios
+        datos (más abajo) pueden afinarlo.
       </p>
     </Tarjeta>
   )
@@ -217,7 +220,8 @@ function TusDatos({ perfil, onGuardar }) {
         />
         <Err>{errores.body_fat_pct}</Err>
         <span className="block text-xs text-gris mt-1">
-          Si lo sabés, por ejemplo de una balanza de bioimpedancia. Con este dato el basal es más preciso.
+          Cargalo solo si lo midió un profesional o un equipo confiable (bioimpedancia médica, pliegues). Si no estás seguro o viene de una
+          balanza hogareña, dejalo vacío: la fórmula general anda mejor que un porcentaje que no es real.
         </span>
       </label>
       <button onClick={guardar} disabled={!cambio || hayError || guardando} className="btn w-full bg-verde text-white disabled:opacity-50">
@@ -310,6 +314,24 @@ function Objetivo({ perfil, base, onGuardarModo, onUsar }) {
             {sugerido.ajuste !== 0 && ` ${signo(sugerido.ajuste)} ${Math.abs(Math.round(sugerido.ajuste * 100))} %`} ={' '}
             <b className="text-tinta">{miles(sugerido.kcal)} kcal</b> y {sugerido.protein} g de proteína por día.
           </p>
+          {sugerido.sinDeficit && (
+            <p className="text-xs text-gris mt-2">
+              Tu gasto estimado ya está por debajo del piso de seguridad ({miles(pisoKcal(base.sexo))} kcal), así que no te proponemos bajar
+              calorías. Si querés bajar de peso, consultalo con un profesional de la salud.
+            </p>
+          )}
+          {sugerido.porPiso && (
+            <p className="text-xs text-gris mt-2">
+              Para cuidarte, el objetivo no baja de {miles(pisoKcal(base.sexo))} kcal, así que el recorte queda menor al elegido.
+            </p>
+          )}
+          {ajusteNum === null &&
+            sugerido.ajuste !== 0 &&
+            Math.abs(sugerido.ajuste) < Math.abs(sugerido.ajuste < 0 ? RECORTE : SUPERAVIT) && (
+              <p className="text-xs text-gris mt-2">
+                Como te falta poco para llegar a tu peso meta, el ajuste automático es más suave. A medida que te acercás, baja solo.
+              </p>
+            )}
           <button
             onClick={() => onUsar(sugerido)}
             disabled={sugerido.kcal === perfil.kcal_target && sugerido.protein === perfil.protein_target}
@@ -347,7 +369,8 @@ function GastoReal({ perfil, real, onAplicar, onQuitar }) {
     <Tarjeta titulo="Tu gasto real" icono="show_chart" data-tour="gasto-real">
       <p className="text-xs text-gris mb-3">
         Si cargás tus comidas y te pesás seguido, la app puede despejar cuánto gastás de verdad: lo que comiste menos lo que cambió tu peso.
-        Mira las últimas 4 semanas.
+        Mira las últimas 4 semanas. Para que sirva hace falta cargar la comida de casi todos los días (sin saltear ni olvidar nada) y
+        pesarte siempre en condiciones parecidas, por ejemplo en ayunas y a la misma hora.
       </p>
       {!real.listo ? (
         <>
@@ -393,6 +416,10 @@ function GastoReal({ perfil, real, onAplicar, onQuitar }) {
             </p>
           )}
           {real.motivo && <p className="text-xs text-gris mt-3">{real.motivo}</p>}
+          <p className="text-xs text-gris mt-3">
+            Es una estimación: si olvidaste anotar algo o el peso varió por agua o por la balanza, el número se corre. Por eso lo mostramos
+            como un rango y no te cambiamos nada sin que lo confirmes.
+          </p>
           {real.factorAplicable && (
             <div className="mt-3">
               <button onClick={() => onAplicar(real.factor)} className="btn w-full bg-verde text-white">

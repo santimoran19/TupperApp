@@ -152,6 +152,7 @@ export function Chip({ activo, onClick, children }) {
   return (
     <button
       onClick={onClick}
+      aria-pressed={activo === undefined ? undefined : !!activo}
       className={`shrink-0 rounded-full px-4 h-9 text-[13px] font-semibold transition ${activo ? 'bg-verde text-white' : 'bg-superficie text-tinta border border-linea'}`}
     >
       {children}

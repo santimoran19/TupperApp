@@ -165,6 +165,23 @@ describe('método 1: reloj', () => {
     expect(r.kcal).toBe(731)
     expect(r.margen).toBe(0.3)
   })
+  test('las calorías activas del reloj ya no incluyen el reposo: valen tal cual como netas', () => {
+    const totales = calcularEntrenamiento(correr, { minutos: 60, reloj: 800 }, persona)
+    const activas = calcularEntrenamiento(correr, { minutos: 60, reloj: 800, relojActivas: true }, persona)
+    expect(totales.kcal).toBe(731) // 800 − 69 de reposo
+    expect(activas.kcal).toBe(800)
+    expect(activas.metodo).toBe('reloj')
+    expect(activas.bruto).toBe(869) // lo activo más el reposo de esa hora
+    expect(activas.rango).toEqual([560, 1040])
+  })
+  test('las calorías activas se rechazan con el mismo tope por minuto que las totales', () => {
+    expect(calcularEntrenamiento(correr, { minutos: 10, reloj: 900, relojActivas: true }, persona).error).toMatch(/reloj/)
+  })
+  test('"activas" sin calorías del reloj no cambia nada', () => {
+    const sin = calcularEntrenamiento(yoga, { minutos: 60 }, persona)
+    const con = calcularEntrenamiento(yoga, { minutos: 60, relojActivas: true }, persona)
+    expect(con).toEqual(sin)
+  })
   test('calorías imposibles para esa duración se rechazan', () => {
     expect(calcularEntrenamiento(correr, { minutos: 10, reloj: 900 }, persona).error).toMatch(/reloj/)
     expect(calcularEntrenamiento(correr, { minutos: 600, reloj: 12000 }, persona).error).toMatch(/reloj/)

@@ -161,6 +161,34 @@ test('gasto y ejercicio: activar, calcular, anotar entrenamientos y apagar', asy
     expect(Number(filas[0].kcal)).toBeGreaterThan(kcalEntreno)
   })
 
+  await test.step('las calorías del reloj: activas valen tal cual; totales se descuenta el reposo', async () => {
+    await pg.getByRole('button', { name: 'Corregir Trote suave' }).click()
+    await pg.getByText('Tengo datos del reloj o de la banda').click()
+    // Sin calorías del reloj no se pregunta cuáles son
+    await expect(pg.getByText('Esas calorías son…')).toHaveCount(0)
+    await pg.getByLabel('Calorías del reloj').fill('400')
+    await expect(pg.getByText('Esas calorías son…')).toBeVisible()
+    await expect(pg.getByRole('button', { name: 'Totales' })).toHaveAttribute('aria-pressed', 'true')
+    await pg.getByRole('button', { name: 'Activas' }).click()
+    await expect(pg.getByRole('button', { name: 'Activas' })).toHaveAttribute('aria-pressed', 'true')
+    await pg.getByRole('button', { name: 'Guardar cambios' }).click()
+    await expect(pg.getByText('Entrenamiento corregido')).toBeVisible()
+    let w = (await rest(pg, 'workouts'))[0]
+    expect(w).toMatchObject({ kcal_watch: 400, watch_activas: true, metodo: 'reloj' })
+    expect(Number(w.kcal)).toBe(400)
+    // Al volver a abrirlo se acuerda de que eran activas, y pasarlas a totales descuenta el reposo de esos 60 minutos
+    await pg.getByRole('button', { name: 'Corregir Trote suave' }).click()
+    await expect(pg.getByLabel('Calorías del reloj')).toHaveValue('400')
+    await expect(pg.getByRole('button', { name: 'Activas' })).toHaveAttribute('aria-pressed', 'true')
+    await pg.getByRole('button', { name: 'Totales' }).click()
+    await pg.getByRole('button', { name: 'Guardar cambios' }).click()
+    await expect(pg.getByText('Entrenamiento corregido')).toBeVisible()
+    w = (await rest(pg, 'workouts'))[0]
+    expect(w).toMatchObject({ kcal_watch: 400, watch_activas: false })
+    expect(Number(w.kcal)).toBeGreaterThan(300)
+    expect(Number(w.kcal)).toBeLessThan(350)
+  })
+
   await test.step('actividad propia: se crea, se usa y al borrarla el historial se queda', async () => {
     await pg.getByRole('button', { name: 'Anotar', exact: true }).click()
     await pg.getByRole('button', { name: /Crear una actividad propia/ }).click()

@@ -81,22 +81,29 @@ describe('qué falta', () => {
   })
   test('días registrados y pesajes se piden por separado', () => {
     expect(loQueFalta({ diasRegistrados: 10, pesajes: 5, diasEntrePesajes: 20 })).toEqual([
-      'Faltan 4 días con la comida cargada (llevás 10 de 14).',
+      'Faltan 11 días con la comida cargada (llevás 10 de 21).',
     ])
-    expect(loQueFalta({ diasRegistrados: 20, pesajes: 2, diasEntrePesajes: 20 })[0]).toMatch(/Faltan 1 pesajes/)
-    expect(loQueFalta({ diasRegistrados: 20, pesajes: 4, diasEntrePesajes: 6 })[0]).toMatch(/abarcan 6 días/)
-    expect(loQueFalta({ diasRegistrados: 14, pesajes: 3, diasEntrePesajes: 10 })).toEqual([])
+    expect(loQueFalta({ diasRegistrados: 25, pesajes: 3, diasEntrePesajes: 20 })[0]).toMatch(/Faltan 1 pesajes \(llevás 3 de 4\)/)
+    expect(loQueFalta({ diasRegistrados: 25, pesajes: 4, diasEntrePesajes: 6 })[0]).toMatch(/abarcan 6 días; hacen falta 14/)
+    expect(loQueFalta({ diasRegistrados: 21, pesajes: 4, diasEntrePesajes: 14 })).toEqual([])
   })
-  test('tres pesajes en tres días seguidos no alcanzan', () => {
-    const medidas = [0, 1, 2].map((i) => ({ date: dia(20 + i), weight_kg: 70 }))
+  test('cuatro pesajes en cuatro días seguidos no alcanzan', () => {
+    const medidas = [0, 1, 2, 3].map((i) => ({ date: dia(20 + i), weight_kg: 70 }))
     const r = calcularGastoReal({ perfil, registros: comidas(2000), medidas, hoy: HOY })
     expect(r.listo).toBe(false)
-    expect(r.faltan[0]).toMatch(/abarcan 2 días/)
+    expect(r.faltan[0]).toMatch(/abarcan 3 días/)
   })
-  test('solo 13 días de comida: falta uno', () => {
-    const r = calcularGastoReal({ perfil, registros: comidas(2000, 13), medidas: pesos(() => 70), hoy: HOY })
+  test('tres pesajes bien separados tampoco: se piden cuatro', () => {
+    const medidas = [0, 12, 25].map((i) => ({ date: dia(i), weight_kg: 70 }))
+    const r = calcularGastoReal({ perfil, registros: comidas(2000), medidas, hoy: HOY })
     expect(r.listo).toBe(false)
-    expect(r.faltan[0]).toMatch(/Faltan 1 días/)
+    expect(r.faltan[0]).toMatch(/Faltan 1 pesajes \(llevás 3 de 4\)/)
+  })
+  test('con 20 días de comida falta uno; con 21 alcanza', () => {
+    const con20 = calcularGastoReal({ perfil, registros: comidas(2000, 20), medidas: pesos(() => 70), hoy: HOY })
+    expect(con20.listo).toBe(false)
+    expect(con20.faltan[0]).toMatch(/Faltan 1 días/)
+    expect(calcularGastoReal({ perfil, registros: comidas(2000, 21), medidas: pesos(() => 70), hoy: HOY }).listo).toBe(true)
   })
 })
 
@@ -123,9 +130,28 @@ describe('el cálculo', () => {
     expect(r.gastoReal).toBeLessThan(2390)
     expect(r.pesoTendencia).toBeCloseTo(73, 1)
   })
-  test('subiendo de peso el gasto es menor que lo comido', () => {
-    const r = calcularGastoReal({ perfil, registros: comidas(2500), medidas: pesos((d) => 70 + (1 / 27) * d), hoy: HOY })
-    expect(r.gastoReal).toBeLessThan(2500)
+  test('el signo: subiendo de peso el gasto es MENOR que lo comido, bajando es MAYOR', () => {
+    // Sube 1 kg en 27 días (0,037 kg por día = 285 kcal por día guardadas en el cuerpo)
+    const sube = calcularGastoReal({ perfil, registros: comidas(2500), medidas: pesos((d) => 70 + (1 / 27) * d), hoy: HOY })
+    expect(sube.cambioPesoPorSemana).toBeGreaterThan(0)
+    expect(sube.cambioPesoPorSemana).toBeCloseTo(7 / 27, 3)
+    expect(sube.gastoReal).toBe(Math.round(2500 - (1 / 27) * 7700))
+    expect(sube.gastoReal).toBeLessThan(sube.ingestaPromedio)
+    // El mismo ritmo bajando da la misma distancia del otro lado
+    const baja = calcularGastoReal({ perfil, registros: comidas(2500), medidas: pesos((d) => 70 - (1 / 27) * d), hoy: HOY })
+    expect(baja.cambioPesoPorSemana).toBeCloseTo(-7 / 27, 3)
+    expect(baja.gastoReal).toBe(Math.round(2500 + (1 / 27) * 7700))
+    expect(baja.gastoReal).toBeGreaterThan(baja.ingestaPromedio)
+    expect(baja.gastoReal - 2500).toBe(2500 - sube.gastoReal)
+  })
+  test('el error de lo comido es del 10 %: con pesos perfectos la confianza queda en el borde de alta', () => {
+    const r = calcularGastoReal({ perfil, registros: comidas(2000), medidas: pesos(() => 70), hoy: HOY })
+    expect(r.error).toBe(200)
+    expect(r.rango).toEqual([1800, 2200])
+    // Con 2.600 por día el solo error de anotar ya pasa los 250: nunca sería "alta"
+    const mucho = calcularGastoReal({ perfil, registros: comidas(2600), medidas: pesos(() => 70), hoy: HOY })
+    expect(mucho.error).toBe(260)
+    expect(mucho.confianza).toBe('media')
   })
   test('el ejercicio ya contado se descuenta para sacar el factor del resto', () => {
     const entrenos = Array.from({ length: 28 }, (_, i) => ({ fecha: dia(i), kcal: 300 }))

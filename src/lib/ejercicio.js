@@ -2,11 +2,13 @@
 //
 // Se usa el dato más preciso que haya, en este orden:
 //   1. reloj      lo que marcó el reloj (la persona lo carga a mano). Los relojes también se equivocan entre 20 y 40 %.
+//                 Pueden ser calorías TOTALES (incluyen lo que el cuerpo gasta en reposo) o ACTIVAS (solo lo gastado moviéndose).
 //   2. pulso      pulso promedio, con la fórmula de Keytel (2005). Sirve de unos 90 latidos para arriba.
 //   3. distancia  distancia y desnivel, con las ecuaciones del ACSM para caminar y correr y, en bici, los METs según la velocidad.
 //   4. mets       METs del Compendio de Actividades Físicas según duración y esfuerzo (de 1 a 10).
 // Lo que se guarda y se suma al día son calorías NETAS: las del entrenamiento menos el metabolismo basal de esos minutos,
-// que ya está contado en el TMB (si no, se contaría dos veces). Es una estimación con rango, nunca una medición.
+// que ya está contado en el TMB (si no, se contaría dos veces). Las calorías ACTIVAS del reloj ya vienen sin el reposo: valen
+// directamente como netas. Es una estimación con rango, nunca una medición.
 // Son funciones puras.
 import { redondear } from './nutricion'
 
@@ -94,7 +96,8 @@ const numero = (v) => (v === '' || v === null || v === undefined ? null : Number
 
 // Calcula las calorías de un entrenamiento. Devuelve { kcal, bruto, metodo, rango, basal, aviso } o { error } si no se puede.
 //   tipo:    la actividad del catálogo { metrica, mets_suave, mets_medio, mets_fuerte, category }
-//   datos:   { minutos, distancia (km), desnivel (m de subida), pulso, esfuerzo (1 a 10), reloj (kcal) }
+//   datos:   { minutos, distancia (km), desnivel (m de subida), pulso, esfuerzo (1 a 10), reloj (kcal), relojActivas (el reloj
+//            dio calorías activas y no totales) }
 //   persona: { peso, edad, sexo, tmb } (tmb en kcal por día)
 export function calcularEntrenamiento(tipo, datos, persona) {
   const minutos = numero(datos.minutos)
@@ -114,7 +117,8 @@ export function calcularEntrenamiento(tipo, datos, persona) {
 
   if (reloj != null && reloj > 0) {
     if (reloj > tope) return { error: 'Las calorías del reloj parecen demasiado altas para esa duración. Revisalas.' }
-    bruto = reloj
+    // Las activas ya no incluyen el reposo: se le suma para que al restarlo después queden tal cual
+    bruto = datos.relojActivas ? reloj + basal : reloj
     metodo = 'reloj'
   } else if (pulso != null && pulso >= PULSO_MINIMO_PARA_CALCULAR) {
     bruto = kcalPorMinutoConPulso({ sexo, edad, peso, pulso }) * minutos
@@ -149,7 +153,9 @@ export function calcularEntrenamiento(tipo, datos, persona) {
   }
 
   if (!(bruto >= 0) || !Number.isFinite(bruto)) return { error: 'No se pudo calcular. Revisá los datos.' }
-  if (bruto > tope) bruto = tope
+  // (a las calorías activas se les sumó el reposo, así que el tope también lo incluye)
+  const topeBruto = metodo === 'reloj' && datos.relojActivas ? tope + basal : tope
+  if (bruto > topeBruto) bruto = topeBruto
   const neto = Math.max(0, bruto - basal)
   const margen = margenDe(metodo, categoria)
   return {
