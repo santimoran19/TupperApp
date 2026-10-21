@@ -27,6 +27,9 @@ const LATERAL = [
   { a: '/alimentos', icono: 'eco', texto: 'Mis alimentos' },
 ]
 
+// Solo aparece con el cálculo de gasto prendido (F-19)
+const EJERCICIO = { a: '/ejercicio', icono: 'fitness_center', texto: 'Ejercicio' }
+
 // Logo: en tamaños chicos va la versión simple (un tupper plano que se lee bien);
 // en grande, la ilustración completa, que es la misma del ícono de la app.
 export function Logo({ size = 36 }) {
@@ -117,7 +120,7 @@ function Conexion({ sinConexion, pendientes, trabada }) {
 }
 
 // Barra de navegación al costado (computadora)
-function BarraLateral({ nombre, inicial }) {
+function BarraLateral({ nombre, inicial, conEjercicio }) {
   return (
     <aside className="fixed inset-y-0 left-0 z-40 w-64 flex flex-col bg-superficie border-r border-linea px-4 py-5">
       <Link to="/" className="flex items-center gap-3 px-2 mb-6" aria-label="Tupper, ir al diario">
@@ -128,7 +131,7 @@ function BarraLateral({ nombre, inicial }) {
         <Icono n="add" size={22} /> Registrar
       </Link>
       <nav aria-label="Principal" className="flex-1 min-h-0 overflow-y-auto space-y-1">
-        {LATERAL.map((p) => (
+        {(conEjercicio ? [...LATERAL, EJERCICIO] : LATERAL).map((p) => (
           <NavLink
             key={p.a}
             to={p.a}
@@ -173,7 +176,7 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
 
   return (
     <div className={`min-h-screen bg-fondo ${escritorio ? 'pl-64' : ''}`}>
-      {escritorio && <BarraLateral nombre={perfil?.name || ''} inicial={inicial} />}
+      {escritorio && <BarraLateral nombre={perfil?.name || ''} inicial={inicial} conEjercicio={!!perfil?.gasto_activo} />}
       <header className="sticky top-0 z-30 bg-fondo/90 backdrop-blur border-b border-verde-suave/60">
         <div className="max-w-[440px] lg:max-w-[1240px] 2xl:max-w-[1480px] mx-auto h-16 px-4 lg:px-8 flex items-center gap-3">
           {atras ? (

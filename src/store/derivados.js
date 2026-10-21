@@ -2,6 +2,8 @@
 // Cada cosa se recalcula solo cuando cambia la tabla de la que sale.
 import { useCallback, useMemo } from 'react'
 import { hoy, sumarDias } from '../lib/fechas'
+import { ejercicioDelDia } from '../lib/ejercicio'
+import { gastoBase, gastoDelDia, objetivoDelDia, pesoDelDia } from '../lib/gasto'
 import { macrosReceta } from '../lib/nutricion'
 import { estadoDelPlan } from '../lib/planificador'
 import { baseDe, conFamilia, convertir, equivalentesPorBase, itemsEnBase, productoEnUso, stockParaRecetas } from '../lib/equivalencias'
@@ -85,8 +87,36 @@ export function useDerivados(e) {
     })
   }, [e.plan, e.registros, recetasPorId, itemsPlan, stockRecetas, preparadoMap, alimentoPlan])
 
+  // Gasto y ejercicio de un día (F-19). Con el cálculo apagado no hay nada de eso: el objetivo es el fijo de siempre.
+  //   { activo, base (el gasto sin entrenar), ejercicio (lo entrenado ese día), gasto (todo junto), objetivo ({ kcal, dinamico, base, extra }) }
+  const gastoDe = useCallback(
+    (fecha) => {
+      const perfil = e.perfil
+      if (!perfil)
+        return { activo: false, base: null, ejercicio: null, gasto: null, objetivo: { kcal: 0, dinamico: false, base: 0, extra: 0 } }
+      if (!perfil.gasto_activo) {
+        const kcal = Number(perfil.kcal_target) || 0
+        return { activo: false, base: null, ejercicio: null, gasto: null, objetivo: { kcal, dinamico: false, base: kcal, extra: 0 } }
+      }
+      const base = gastoBase(perfil, pesoDelDia(perfil, e.medidas, fecha), fecha)
+      const ejercicio = ejercicioDelDia(e.entrenamientos, fecha)
+      return {
+        activo: true,
+        base,
+        ejercicio,
+        gasto: gastoDelDia(base, ejercicio.kcal, ejercicio.rango),
+        objetivo: objetivoDelDia(perfil, base, ejercicio.kcal),
+      }
+    },
+    [e.perfil, e.medidas, e.entrenamientos],
+  )
+  // El objetivo de calorías de un día: el fijo, o el del día si la persona eligió el modo dinámico
+  const objetivoDe = useCallback((fecha) => gastoDe(fecha).objetivo.kcal, [gastoDe])
+
   return useMemo(
     () => ({
+      gastoDe,
+      objetivoDe,
       alimentos,
       alimentosPorId,
       deLaBase,
@@ -110,6 +140,8 @@ export function useDerivados(e) {
       ingredientes,
     }),
     [
+      gastoDe,
+      objetivoDe,
       alimentos,
       alimentosPorId,
       deLaBase,

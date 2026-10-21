@@ -30,6 +30,46 @@ const TONOS = {
   abajo: { caja: 'bg-teal-suave', titulo: 'text-teal-oscuro', icono: 'trending_down', rotulo: 'VENÍS ABAJO' },
 }
 
+// El gasto estimado del día contra lo comido (solo con el cálculo de gasto prendido). Siempre es una estimación, con su rango.
+function TarjetaGasto({ gasto, comido, fecha }) {
+  const total = gasto.gasto
+  const balance = comido - Math.round(total.total)
+  const dinamico = gasto.objetivo.dinamico
+  return (
+    <section className="tarjeta rounded-2xl p-4 mb-4" data-tour="diario-gasto">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs font-bold tracking-wider text-gris flex items-center gap-1.5">
+          <Icono n="local_fire_department" size={16} lleno /> GASTO DEL DÍA
+        </p>
+        <Link to={`/ejercicio?fecha=${fecha}`} className="btn-chico h-8 bg-verde-claro text-verde-texto whitespace-nowrap">
+          <Icono n="fitness_center" size={15} /> Ejercicio
+        </Link>
+      </div>
+      <div className="grid grid-cols-3 gap-2 mt-3 text-center">
+        <div className="rounded-2xl p-2.5 bg-campo">
+          <p className="text-[11px] font-semibold text-gris">Gastás</p>
+          <p className="text-base font-bold">~{Math.round(total.total).toLocaleString('es-AR')}</p>
+        </div>
+        <div className="rounded-2xl p-2.5 bg-campo">
+          <p className="text-[11px] font-semibold text-gris">Ejercicio</p>
+          <p className="text-base font-bold">{gasto.ejercicio.kcal > 0 ? `+${gasto.ejercicio.kcal.toLocaleString('es-AR')}` : '0'}</p>
+        </div>
+        <div className={`rounded-2xl p-2.5 ${balance > 0 ? 'bg-naranja-suave' : 'bg-verde-claro'}`}>
+          <p className="text-[11px] font-semibold text-gris">Balance</p>
+          <p className={`text-base font-bold ${balance > 0 ? 'text-naranja-oscuro' : 'text-verde-texto'}`}>
+            {balance > 0 ? '+' : balance < 0 ? '−' : ''}
+            {Math.abs(balance).toLocaleString('es-AR')}
+          </p>
+        </div>
+      </div>
+      <p className="text-xs text-gris mt-2.5">
+        Estimado: entre {Math.round(total.rango[0]).toLocaleString('es-AR')} y {Math.round(total.rango[1]).toLocaleString('es-AR')} kcal.{' '}
+        {dinamico ? 'Tu objetivo de hoy se ajusta con el ejercicio.' : 'Tu objetivo no cambia con el ejercicio.'}
+      </p>
+    </section>
+  )
+}
+
 export default function Diario() {
   const d = useDatos()
   const nav = useNavigate()
@@ -64,9 +104,12 @@ export default function Diario() {
     const m = macrosDeFila(fila, d)
     if (m) planHoy.set(comida, m)
   }
-  const consejo = consejoDelDia({ objetivoKcal: d.perfil.kcal_target, objetivoProt: d.perfil.protein_target, total, registradas, planHoy })
+  // El objetivo del día: el fijo, o el que sale del gasto si la persona prendió el cálculo dinámico (F-19)
+  const gasto = d.gastoDe(fecha)
+  const kcalObj = gasto.objetivo.kcal
+  const consejo = consejoDelDia({ objetivoKcal: kcalObj, objetivoProt: d.perfil.protein_target, total, registradas, planHoy })
   const tono = TONOS[consejo.tono]
-  const restante = d.perfil.kcal_target - redondear(total.kcal)
+  const restante = kcalObj - redondear(total.kcal)
 
   // Recetas que entran en lo que queda para la próxima comida
   const ideas = useMemo(() => {
@@ -219,9 +262,9 @@ export default function Diario() {
         <div>
           <section className="tarjeta rounded-3xl p-5 mb-4" data-tour="diario-resumen">
             <div className="flex items-center gap-5">
-              <Anillo valor={total.kcal} total={d.perfil.kcal_target}>
+              <Anillo valor={total.kcal} total={kcalObj}>
                 <span className="text-2xl font-bold leading-none">{redondear(total.kcal).toLocaleString('es-AR')}</span>
-                <span className="text-[11px] text-gris mt-1">kcal de {d.perfil.kcal_target.toLocaleString('es-AR')}</span>
+                <span className="text-[11px] text-gris mt-1">kcal de {kcalObj.toLocaleString('es-AR')}</span>
               </Anillo>
               <div className="flex-1 space-y-2">
                 <div className={`rounded-2xl p-3 ${restante < 0 ? 'bg-naranja-suave' : 'bg-verde-claro'}`}>
@@ -273,6 +316,8 @@ export default function Diario() {
               </div>
             </div>
           </section>
+
+          {gasto.activo && gasto.base && <TarjetaGasto gasto={gasto} comido={redondear(total.kcal)} fecha={fecha} />}
 
           <Link to={`/resumen?fecha=${fecha}`} className="flex items-center gap-2 text-sm font-semibold text-verde-texto mb-4 px-1">
             <Icono n="bar_chart" size={18} /> Ver el resumen de la semana{' '}

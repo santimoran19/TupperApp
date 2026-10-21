@@ -2,6 +2,16 @@
 import { hoy, sumarDias } from '../lib/fechas'
 import { ok, supabase, traerTodo } from './base'
 
+// Ejercicio y gimnasio (F-19, supabase/actualizacion-16.sql y -17.sql): solo se traen si la persona prendió el cálculo de gasto
+const EJERCICIO_VACIO = {
+  actividades: [], // catálogo de actividades (exercise_types): las base y las propias
+  entrenamientos: [], // los últimos 365 días (workouts)
+  ejerciciosGym: [], // catálogo de ejercicios de gimnasio (gym_exercises)
+  rutinas: [],
+  rutinaItems: [], // los ejercicios de cada rutina (routine_exercises)
+  series: [], // las series de los últimos 365 días (workout_sets)
+}
+
 // El estado antes de saber nada. Las listas son las tablas tal cual vienen de la base.
 export const VACIO = {
   cargando: true,
@@ -21,6 +31,52 @@ export const VACIO = {
   prefs: [],
   compras: [],
   analisis: [],
+  ...EJERCICIO_VACIO,
+}
+
+// Los días de ejercicio que se traen hacia atrás (el gráfico de progreso y el récord personal salen de ahí)
+export const DIAS_DE_EJERCICIO = 365
+
+// Lo de ejercicio y gimnasio vive en tablas que se crean con las actualizaciones 16 y 17. Con una base a la que todavía no se
+// le aplicaron, esas tablas no existen: se sigue sin ellas (como si la persona no hubiera cargado nada) en vez de trabar todo.
+const FALTA_LA_TABLA = new Set(['PGRST205', '42P01', 'PGRST200'])
+async function opcional(consulta) {
+  try {
+    return await consulta()
+  } catch (err) {
+    if (FALTA_LA_TABLA.has(err.codigo)) return []
+    throw err
+  }
+}
+
+// Lo de ejercicio y gimnasio de la persona. `dias`: cuántos días hacia atrás traer (null = todo el historial, para descargar los datos).
+export async function traerEjercicio(uid, { dias = DIAS_DE_EJERCICIO } = {}) {
+  const desde = dias == null ? null : sumarDias(hoy(), -dias)
+  const desdeFecha = (consulta) => (desde ? consulta.gte('fecha', desde) : consulta)
+  const [actividades, entrenamientos, ejerciciosGym, rutinas, series] = await Promise.all([
+    opcional(() => traerTodo(() => supabase.from('exercise_types').select('*').order('id'))),
+    opcional(() => traerTodo(() => desdeFecha(supabase.from('workouts').select('*').eq('user_id', uid)).order('fecha').order('id'))),
+    opcional(() => traerTodo(() => supabase.from('gym_exercises').select('*').order('id'))),
+    opcional(() => traerTodo(() => supabase.from('routines').select('*').eq('user_id', uid).order('created_at').order('id'))),
+    opcional(() => traerTodo(() => desdeFecha(supabase.from('workout_sets').select('*').eq('user_id', uid)).order('fecha').order('id'))),
+  ])
+  const rutinaItems =
+    rutinas.length === 0
+      ? []
+      : await opcional(() =>
+          traerTodo(() =>
+            supabase
+              .from('routine_exercises')
+              .select('*')
+              .in(
+                'routine_id',
+                rutinas.map((r) => r.id),
+              )
+              .order('routine_id')
+              .order('position'),
+          ),
+        )
+  return { actividades, entrenamientos, ejerciciosGym, rutinas, rutinaItems, series }
 }
 
 // El hogar de la persona, o null si no está en ninguno. Con una base a la que todavía no se le aplicó
@@ -59,10 +115,14 @@ export async function traer(uid) {
     supabase.from('shopping_items').select('*').eq('user_id', ambito).then(ok),
     traerTodo(() => supabase.from('purchases').select('*').eq('user_id', ambito).gte('date', desde).order('id')),
   ])
+  // Ejercicio y gimnasio, solo para quien prendió el cálculo de gasto (el resto no paga ese viaje)
+  const perfil = perfiles[0] || null
+  const ejercicio = perfil?.gasto_activo ? await traerEjercicio(uid) : EJERCICIO_VACIO
   return {
+    ...ejercicio,
     cargando: false,
     errorCarga: null,
-    perfil: perfiles[0] || null,
+    perfil,
     hogar,
     alimentos,
     stock,

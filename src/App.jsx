@@ -21,6 +21,8 @@ const Plan = lazy(() => import('./pages/Plan'))
 const Perfil = lazy(() => import('./pages/Perfil'))
 const MisAlimentos = lazy(() => import('./pages/MisAlimentos'))
 const Resumen = lazy(() => import('./pages/Resumen'))
+const Gasto = lazy(() => import('./pages/Gasto'))
+const Ejercicio = lazy(() => import('./pages/Ejercicio'))
 const Legal = lazy(() => import('./pages/Legal'))
 const NoEncontrada = lazy(() => import('./pages/NoEncontrada'))
 // Solo lo bajan las cuentas que están haciendo el recorrido inicial
@@ -101,6 +103,8 @@ function Pantallas() {
         <Route path="/recetas/:id/editar" element={<RecetaNueva />} />
         <Route path="/alimentos" element={<MisAlimentos />} />
         <Route path="/resumen" element={<Resumen />} />
+        <Route path="/gasto" element={<Gasto />} />
+        <Route path="/ejercicio" element={<Ejercicio />} />
         <Route path="/perfil" element={<Perfil />} />
         <Route path="*" element={<NoEncontrada />} />
       </Routes>

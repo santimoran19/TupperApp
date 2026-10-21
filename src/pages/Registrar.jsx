@@ -455,7 +455,7 @@ export default function Registrar() {
                   Con esto llevás
                   <br />
                   <b className="text-tinta">
-                    {redondear(yaComido.kcal + total.kcal)} de {d.perfil.kcal_target} kcal
+                    {redondear(yaComido.kcal + total.kcal)} de {d.objetivoDe(fecha)} kcal
                   </b>
                 </p>
               </div>

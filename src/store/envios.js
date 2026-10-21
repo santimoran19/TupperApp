@@ -96,6 +96,20 @@ export const ENVIOS = {
         .eq('food_id', d.food_id),
     ),
 
+  // Entrenamiento (y sus series, si es de gimnasio). Con el mismo identificador lo pisa: mandarlo dos veces da lo mismo.
+  // Sin series (una sesión común) no se manda el parámetro, así sigue andando con una base que solo tiene actualizacion-16.sql.
+  guardarEntreno: async (d) =>
+    ok(
+      await supabase.rpc('guardar_entrenamiento', {
+        p_id: d.id,
+        p_datos: d.datos,
+        ...(d.series ? { p_series: d.series } : {}),
+      }),
+    ),
+
+  // Si ya no existe (el pedido llegó dos veces), no hace nada. Las series se van con él.
+  borrarEntreno: async (d) => ok(await supabase.from('workouts').delete().eq('id', d.id)),
+
   comprar: async (d) =>
     ok(
       await supabase.rpc('comprar', {

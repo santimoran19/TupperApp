@@ -51,6 +51,7 @@ const TEXTOS = {
         'Disponibilidad y cambios',
         [
           'La app se ofrece tal como está. Puede tener errores, interrupciones o cambiar con el tiempo. Hacemos lo posible para que funcione bien, pero no podemos garantizar que esté siempre disponible ni que los cálculos sean exactos.',
+          'Las calorías y el gasto que muestra la app son estimaciones con un margen de error, calculadas con fórmulas de población (no son mediciones) y no reemplazan la consulta con un médico, nutricionista o profesional del ejercicio. Si tenés una condición de salud, un trastorno de la conducta alimentaria o estás embarazada, consultá con un profesional antes de seguir un objetivo de calorías.',
           'Si cambiamos estos términos de forma importante, lo vamos a avisar en la app.',
         ],
       ],
@@ -77,6 +78,7 @@ const TEXTOS = {
           'Los datos de tu perfil: nombre, nombre de usuario (si elegís uno), sexo, fecha de nacimiento, altura, peso, peso objetivo, nivel de actividad y objetivos diarios.',
           'Lo que registrás: comidas y bebidas, medidas de peso y cintura, tu despensa, tus recetas, tu plan semanal y tu lista de compras.',
           'Un registro técnico: si la app falla mientras la usás, se anota el error, en qué pantalla pasó, la versión de la app y el tipo de navegador, para poder arreglarlo. También se anota si una búsqueda de productos o un análisis con IA respondió o no. Ahí no se guarda lo que comés ni lo que buscás.',
+          'Solo si activás el cálculo de gasto (es opcional): datos para estimar cuánto gastás, como tu porcentaje de grasa corporal, el tipo de trabajo y los pasos por día que cargues, y tus entrenamientos y series de gimnasio, con sus calorías estimadas, y tus rutinas. Al activarlo se guarda la fecha en que diste tu consentimiento.',
           'Varios de estos son datos de salud, que la ley considera sensibles. Los cargás por decisión propia y, al hacerlo, das tu consentimiento para que los guardemos con el único fin de que la app funcione para vos.',
         ],
       ],
@@ -100,6 +102,13 @@ const TEXTOS = {
           'Para saber qué pantallas se usan, contamos las visitas de forma anónima con Vercel Web Analytics: no usa cookies y no permite identificarte.',
           'Para frenar a los programas que crean cuentas falsas, la pantalla de acceso puede usar Turnstile, un servicio de Cloudflare que comprueba que del otro lado hay una persona. Para eso recibe datos técnicos de tu navegador, como la dirección IP. No recibe tu contraseña ni lo que cargás en la app.',
           'Cuando elegís una contraseña, se consulta un servicio público (Have I Been Pwned) para saber si apareció en filtraciones de otros sitios. La contraseña no sale de tu dispositivo: se manda solo un fragmento de su huella, que no alcanza para reconstruirla.',
+        ],
+      ],
+      [
+        'Gasto y ejercicio',
+        [
+          'El cálculo de gasto y el registro de ejercicio son opcionales: se activan desde Perfil, con un aviso previo y tu consentimiento, y se pueden apagar cuando quieras. Apagarlos no borra lo que anotaste; para eso hay un botón de borrar todo lo de ejercicio, y también se borra con la cuenta.',
+          'Tus entrenamientos, series, rutinas y datos de gasto son solo tuyos: no se comparten con tu hogar y no se envían al análisis con IA del resumen semanal.',
         ],
       ],
       [

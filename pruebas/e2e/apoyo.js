@@ -198,3 +198,18 @@ export async function restPorFuera(pg) {
       await fetch(API + '/rest/v1/' + tabla + '?select=*' + filtro, { headers: { Authorization: 'Bearer ' + token, apikey: 'test' } })
     ).json()
 }
+
+// Escribe en la base simulada con la sesión de la página (alta, cambio o baja de filas): `filas` se manda con el user_id de la sesión
+export function pedir(pg, metodo, tabla, filtro = '', filas = null, cabeceras = {}) {
+  return pg.evaluate(
+    async ([api, metodo, tabla, filtro, filas, cabeceras]) => {
+      const k = Object.keys(localStorage).find((x) => x.includes('auth-token'))
+      const ses = JSON.parse(localStorage.getItem(k))
+      const h = { Authorization: 'Bearer ' + ses.access_token, apikey: 'test', 'Content-Type': 'application/json', ...cabeceras }
+      const cuerpo = filas ? JSON.stringify(filas.map((f) => ({ ...f, user_id: ses.user.id }))) : undefined
+      const r = await fetch(api + '/rest/v1/' + tabla + filtro, { method: metodo, headers: h, body: cuerpo })
+      if (!r.ok) throw new Error(`${metodo} ${tabla}: ${r.status} ${await r.text()}`)
+    },
+    [API, metodo, tabla, filtro, filas, cabeceras],
+  )
+}

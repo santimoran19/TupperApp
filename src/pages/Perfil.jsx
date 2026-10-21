@@ -71,6 +71,7 @@ export default function Perfil() {
     exportar,
     borrarCuenta,
     confirmar,
+    objetivoDe,
   } = useDatos()
   const [borrando, setBorrando] = useState(null) // texto de confirmación para borrar la cuenta
   const [trabajando, setTrabajando] = useState(false)
@@ -168,7 +169,11 @@ export default function Perfil() {
                 <p className="text-xl font-bold text-teal-oscuro">{litros(objetivoLiquido(perfil))} L</p>
               </div>
             </div>
-            <p className="text-xs text-gris mt-2">Objetivos por día.</p>
+            <p className="text-xs text-gris mt-2">
+              {perfil.gasto_activo && perfil.gasto_modo === 'dinamico'
+                ? `Objetivos por día. El de calorías se ajusta con tu ejercicio (hoy: ${objetivoDe(hoy()).toLocaleString('es-AR')} kcal).`
+                : 'Objetivos por día.'}
+            </p>
           </section>
 
           <section className="tarjeta p-5 mb-4" data-tour="perfil-progreso">
@@ -281,6 +286,8 @@ export default function Perfil() {
             {[
               ['/resumen', 'bar_chart', 'Resumen de la semana'],
               ['/alimentos', 'eco', 'Mis alimentos'],
+              ['/gasto', 'local_fire_department', perfil.gasto_activo ? 'Gasto y ejercicio' : 'Gasto y ejercicio (opcional)'],
+              ...(perfil.gasto_activo ? [['/ejercicio', 'fitness_center', 'Mi ejercicio']] : []),
             ].map(([a, icono, texto]) => (
               <Link key={a} to={a} className="flex items-center gap-3 py-3.5">
                 <Icono n={icono} className="text-verde-texto" size={20} /> <span className="flex-1 font-medium">{texto}</span>{' '}

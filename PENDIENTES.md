@@ -31,36 +31,36 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 2. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-3. F-19 · Gasto calórico y ejercicio (por fases; empezar por la 1, la 2 y la 4)
-4. F-18 · Registrarse e iniciar sesión con Google
-5. IA-01 · Chat con IA (va junto con IA-02)
-6. IA-02 · Proveedor de respaldo
-7. F-04 · Vencimientos en la despensa
-8. D-07 · Revisión completa de accesibilidad
-9. L-04 · Consentimiento al registrarse
-10. C-05 · Opiniones desde la app
-11. T-03 · Pruebas en Safari
-12. T-04 · Base de pruebas aparte
-13. T-01 · Actualizar las herramientas
-14. F-06 · Recordatorios
+3. F-18 · Registrarse e iniciar sesión con Google
+4. IA-01 · Chat con IA (va junto con IA-02)
+5. IA-02 · Proveedor de respaldo
+6. F-04 · Vencimientos en la despensa
+7. D-07 · Revisión completa de accesibilidad
+8. L-04 · Consentimiento al registrarse
+9. C-05 · Opiniones desde la app
+10. T-03 · Pruebas en Safari
+11. T-04 · Base de pruebas aparte
+12. T-01 · Actualizar las herramientas
+13. F-06 · Recordatorios
 
 **Cuando haya tiempo (P3)**
-15. F-08 · Copiar un día entero
-16. D-06 · Deshacer en más lugares
-17. D-04 · Esqueletos de carga
-18. F-10 · Peso: gráfico y fecha estimada
-19. F-11 · Exportar el registro a planilla
-20. F-09 · Combos frecuentes
-21. F-12b · Seguir sumando a la base común
-22. F-13 · Categorías editables por el usuario
-23. D-08 · Revisión de los textos
-24. IA-04 · Cargar una receta desde un texto
-25. IA-03 · Foto de un plato
-26. C-06 · Métricas de uso
-27. T-05 · Partir `sincronizacion.js`
-28. T-07 · Mandar lo cargado sin conexión con la app cerrada
-29. S-06 · Verificación en dos pasos
-30. S-03 · Contraseñas filtradas también del lado de Supabase
+14. F-08 · Copiar un día entero
+15. D-06 · Deshacer en más lugares
+16. D-04 · Esqueletos de carga
+17. F-10 · Peso: gráfico y fecha estimada
+18. F-11 · Exportar el registro a planilla
+19. F-09 · Combos frecuentes
+20. F-12b · Seguir sumando a la base común
+21. F-13 · Categorías editables por el usuario
+22. D-08 · Revisión de los textos
+23. IA-04 · Cargar una receta desde un texto
+24. IA-03 · Foto de un plato
+25. C-06 · Métricas de uso
+26. T-05 · Partir `sincronizacion.js`
+27. T-07 · Mandar lo cargado sin conexión con la app cerrada
+28. S-06 · Verificación en dos pasos
+29. S-03 · Contraseñas filtradas también del lado de Supabase
+30. F-19b · Seguir con gasto y ejercicio (importar archivos, IA con el objetivo de cada día, pulso en reposo, revisión de una nutricionista)
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
 31. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
@@ -85,18 +85,7 @@ Nada por ahora.
 - [ ] **F-08 · Copiar un día entero** · P3 · S. Hoy se puede repetir la comida de ayer; falta copiar el día completo (o un día cualquiera) a otra fecha.
 - [ ] **F-09 · Combos frecuentes** · P3 · M. Guardar "mi desayuno de siempre" con varios alimentos y registrarlo con un toque.
 - [ ] **F-18 · Registrarse e iniciar sesión con Google** · P2 · M. Un botón "Continuar con Google" en la pantalla de acceso, para crear la cuenta o entrar sin escribir mail ni contraseña. **Qué hace falta de tu lado:** crear un proyecto en Google Cloud, configurar la pantalla de consentimiento y las credenciales OAuth (cliente web), y activar el proveedor Google en Supabase (Authentication > Providers) con las direcciones de vuelta de la app y de Supabase. Gratis. **Cosas a resolver:** (1) el consentimiento de Google en modo de prueba solo deja entrar a 100 usuarios que vos agregues a mano; para abrirlo a cualquiera hay que publicarlo, y Google pide la Política de privacidad y la página de inicio en un dominio propio (esto se cruza con C-02, dominio propio); (2) si ya existe una cuenta con el mismo mail, Supabase puede unirla con la de Google; hay que dejarlo bien configurado para que nadie tome una cuenta ajena; (3) quien entra con Google no tiene contraseña: la pantalla de "Olvidé mi contraseña" y el Perfil tienen que explicarlo, y se podría ofrecer crear una; (4) igual hay que pasar por el perfil (fecha de nacimiento, para cumplir los 18 años de L-01) y, con F-17, elegir el nombre de usuario; (5) sumar a la Política de privacidad que Google es un proveedor y qué datos se reciben (mail y nombre; la foto no se guarda); (6) probarlo en el navegador del teléfono y en la app instalada (PWA), donde el regreso desde Google a veces se comporta distinto. Va con pruebas (el simulador de las pruebas tiene que fingir el regreso de Google) y los textos del botón. Borrar la cuenta y descargar los datos siguen igual.
-- [ ] **F-19 · Gasto calórico y ejercicio, por fases** · P2 · L. Hoy el objetivo sale de una fórmula general (Mifflin-St Jeor por un factor de actividad fijo de 1,2 a 1,725), que no sabe qué hacés cada día. La idea es estimar cuánto se gasta de verdad por día, anotar el ejercicio y comparar contra lo comido. Se hace en fases, cada una se publica sola y ninguna toca lo que ya cargó cada usuario (tablas y columnas nuevas, con valores por defecto).
-  - **El gasto de un día se separa en cuatro partes:** metabolismo basal (TMB), movimiento del día a día sin entrenar (NEAT: trabajo y pasos), efecto térmico de la comida (TEF, se calcula con los macros ya registrados: la proteína gasta mucho más que la grasa) y ejercicio (EAT). Hoy el factor de actividad mezcla NEAT y ejercicio: al sumar el ejercicio registrado hay que **separarlos**, o se cuenta dos veces.
-  - **Fase 1 · Motor de gasto y perfil ampliado (M).** Datos opcionales nuevos en el perfil: % de grasa corporal, tipo de trabajo (de escritorio, de pie, físico), pasos por día y pulso en reposo. Fórmula según lo que haya: Mifflin-St Jeor (la de hoy), Katch-McArdle si hay % de grasa. Pantalla "Cómo se calcula tu gasto" con cada parte, la fórmula y un rango (no un número falso de exacto). El objetivo actual de cada usuario **no cambia solo**: el modo nuevo se activa a mano.
-  - **Fase 2 · Registrar ejercicio de resistencia y deporte (L).** Tipo (correr, caminar, bici, natación, fútbol, pádel, baile, yoga, HIIT, lo que sea), duración y, según el tipo, distancia, desnivel, pulso promedio o cómo se sintió (esfuerzo de 1 a 10). Catálogo propio de unas 100 actividades con sus METs del Compendio de Actividades Físicas (se pueden crear otras). El cálculo usa el dato más preciso disponible, en este orden: lo que marca el reloj si lo cargás a mano, pulso promedio (fórmula de Keytel), distancia y ritmo (ecuaciones del ACSM para correr y caminar), y METs por duración e intensidad. Se cuenta el gasto **neto** (sin el basal de esos minutos, que ya está en el TMB). En el Diario: gasto estimado del día, comido contra gastado y balance.
-  - **Objetivo dinámico (opcional, en la fase 2):** objetivo = gasto del día menos el déficit elegido (o más el superávit), y de lo quemado entrenando se "devuelve" solo una parte configurable (se sugiere 50 %, porque las estimaciones de ejercicio se pasan seguido). Sigue existiendo el objetivo fijo de hoy.
-  - **Fase 3 · Gimnasio (L).** Rutinas (Día A, Día B), catálogo de unos 150 ejercicios (grupo muscular, equipo; se pueden crear otros), series con repeticiones, peso, esfuerzo (RPE o repeticiones en reserva) y marca de calentamiento. Muestra lo de la última vez al anotar, temporizador de descanso, copiar la sesión anterior, récord personal, 1RM estimado (Epley), volumen por grupo muscular y gráfico de progreso por ejercicio. **Aviso honesto:** las calorías de una sesión de pesas son difíciles de estimar (repeticiones por peso casi no dice nada del gasto): se estiman por METs, duración e intensidad, con un rango amplio. El valor de esta fase es el seguimiento del entrenamiento, no afinar las calorías. Es casi una app dentro de la app: conviene hacerla simple.
-  - **Fase 4 · Gasto real calculado con tus propios datos (M).** Con el peso (tendencia suavizada) y lo comido de 2 a 4 semanas se despeja cuánto gastás realmente (ingesta menos el cambio de peso, con 7700 kcal por kg como aproximación). Corrige la fórmula general con un factor propio, avisa qué tan confiable es (según cuántos días hay registrados) y sugiere ajustar el objetivo. **Es la parte que más afina el cálculo**, porque las fórmulas son promedios de población con un error de 10 a 15 %. Necesita días de datos, por eso conviene que corra desde temprano. No necesita tablas nuevas.
-  - **Orden sugerido:** 1, 2, 4 y al final 3. La fase 4 depende de la 1; la 3 es independiente y la más grande.
-  - **Base de datos (SQL nuevo por fase, todo aditivo):** columnas nuevas y opcionales en `profiles`; `exercise_types` (catálogo global y propios, como `foods`); `workouts` (fecha, duración, tipo, esfuerzo, pulso, calorías calculadas guardadas con el peso de ese día, calorías del reloj si las cargó); `workout_sets` (ejercicio, serie, repeticiones, peso, RPE, calentamiento); `routines` y `routine_exercises`; y opcionalmente `daily_activity` (pasos). Todo con RLS de cada usuario; los entrenamientos son personales, **no se comparten en el hogar**.
-  - **Lo que hay que tocar además de las tablas:** la cola de cambios y la copia del teléfono (`sincronizacion.js` y `store`) para que se pueda cargar sin conexión, el simulador de las pruebas, `borrar_mi_cuenta()`, la descarga de datos, la copia de seguridad diaria (S-01), el recorrido inicial (D-05) y la Política de privacidad: el ejercicio y el peso son datos de salud, que la Ley 25.326 trata como sensibles, así que el texto legal y el consentimiento (L-04) hay que revisarlos **antes** de publicar.
-  - **Límites a decir en la app:** son estimaciones con rango, no mediciones; el reloj o la pulsera también se equivocan entre 20 y 40 %; el piso mínimo de calorías que ya existe se mantiene, y a menores de 18 no se les calcula déficit (igual que hoy). Conviene que alguien que estudió nutrición revise las fórmulas y los textos antes de publicar.
-  - **Después, si se quiere:** importar entrenamientos desde archivos (.gpx, .tcx, .fit o la exportación de Apple Salud). Conectar Strava o Garmin directo necesita algo del lado del servidor. Leer Apple Salud o Health Connect directo no se puede desde una PWA.
+- [ ] **F-19b · Seguir con gasto y ejercicio** · P3 · M. Quedó afuera de la 1.23: (1) importar entrenamientos desde archivos (.gpx, .tcx, .fit o la exportación de Apple Salud); conectar Strava o Garmin directo necesita algo del lado del servidor, y leer Apple Salud o Health Connect directo no se puede desde una PWA; (2) que el análisis semanal con IA (`supabase/functions/analizar-semana/logica.ts`) use el objetivo de cada día en vez del fijo; (3) usar el pulso en reposo (`profiles.resting_hr`, ya existe la columna) en el cálculo; (4) revisión de las fórmulas y los textos por una nutricionista antes de abrirla al público.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
 - [ ] **F-11 · Exportar el registro a planilla** · P3 · S. Hoy "Descargar mis datos" baja un JSON; sumar un CSV que abra en Excel, útil para llevarle al nutricionista.
 - [ ] **F-12b · Seguir sumando a la base común** · P3 · S (continuo). Después de la quinta tanda (1.21), sumar alimentos y recetas cuando aparezcan faltantes: mirar los alimentos propios que repiten varios usuarios y lo que la gente busca y no encuentra. Se agrega en `scripts/seed-data.mjs` y se corre `npm run seed`.
@@ -152,6 +141,15 @@ Nada por ahora.
 ---
 
 ## Hecho
+
+- **F-19 · Gasto calórico y ejercicio** (versión 1.23.0; hay que correr en Supabase, en este orden y **antes** de publicar la app: `actualizacion-15.sql`, `actualizacion-16.sql`, `seed-6.sql`, `actualizacion-17.sql` y `seed-7.sql`; todo aditivo, no toca nada de lo ya cargado, y se pueden correr de nuevo). Las cuatro fases juntas; todo es opcional y arranca apagado, así que el objetivo de calorías de cada cuenta existente no cambia solo.
+  - *Fase 1, motor de gasto y perfil ampliado:* `src/lib/gasto.js` separa el gasto en metabolismo basal (Mifflin-St Jeor, o Katch-McArdle si hay % de grasa), movimiento del día a día (trabajo y pasos, sin contar el ejercicio para no sumarlo dos veces), efecto térmico de la comida (con los macros registrados) y ejercicio. Siempre con rango y confianza, no con un número falso de exacto. Pantalla `/gasto` (Perfil > Gasto y ejercicio) con "cómo se calcula" parte por parte. Se prende con una hoja de consentimiento (datos de salud, Ley 25.326) y la base no deja prenderlo sin la fecha del consentimiento. Modo de objetivo fijo (el de siempre) o dinámico (gasto del día menos el déficit elegido, devolviendo una parte configurable de lo entrenado); botón "Usar este cálculo como mi objetivo".
+  - *Fase 2, entrenamientos:* catálogo de 93 actividades con METs del Compendio (se pueden crear otras), calorías netas con el dato más preciso disponible (reloj, pulso con Keytel, distancia y ritmo con ACSM, o METs por intensidad), vista previa en vivo, editar y borrar. Pantalla `/ejercicio`. En el Diario, tarjeta "Gasto del día" con comido contra gastado y balance, y el objetivo del día sale del modo elegido. Funciona sin conexión (cola de cambios y copia del teléfono).
+  - *Fase 3, gimnasio:* catálogo de 150 ejercicios por grupo muscular y equipo (se pueden crear otros), rutinas, sesión con series (repeticiones, kilos, esfuerzo, calentamiento), referencia de la última vez, temporizador de descanso, récords (peso, repeticiones, 1RM de Epley y volumen), borrador de la sesión en curso (se retoma si se cerró la app), series por músculo de la semana y gráfico de progreso por ejercicio.
+  - *Fase 4, gasto real con tus datos:* con 2 a 4 semanas de comidas y pesajes se despeja cuánto gastás realmente (comido menos cambio de peso a 7.700 kcal/kg), con rango y confianza, y avisa cuánto falta si no alcanza. El ajuste nunca se aplica solo: se confirma y se puede sacar para volver a la fórmula general.
+  - *Alrededor:* el resumen semanal y el registrar usan el objetivo de cada día; Perfil muestra los accesos solo si está activo; textos legales (privacidad y términos: son estimaciones, no se comparten con el hogar ni van al análisis con IA); la descarga de datos incluye el ejercicio; borrar la cuenta lo borra todo. Eventos de medición: solo `gasto_activado` y `gasto_desactivado` (sin datos de salud).
+  - *Pruebas:* unitarias nuevas de gasto, ejercicio, gasto real, gimnasio y borrador (unas 140); de navegador `24-gasto-ejercicio`, `25-gimnasio` y `26-gasto-real`; el servidor de mentira simula las tablas, los catálogos y las dos funciones nuevas.
+  - *A tener en cuenta:* son estimaciones (el reloj también se equivoca entre 20 y 40 %; si se carga lo que marca el reloj se toma como gasto total de esos minutos); conviene que una nutricionista revise fórmulas y textos antes de abrirla al público; el análisis semanal con IA sigue usando el objetivo fijo y el pulso en reposo todavía no se usa (queda en F-19b). El respaldo de la base (S-04) vive en otro repositorio y hay que revisar que incluya las tablas nuevas.
 
 - **F-01c · Nombre del producto desde Precios Claros** (versión 1.22.2; no hay SQL nuevo). Salió de medir con datos reales: de 32 productos de góndola de Córdoba (atún, miel, puré de tomate, yerba, fideos, galletitas, aceite...) Open Food Facts tiene **7 (22 %)** y con calorías **3 (9 %)**; los eventos de la app daban lo mismo (1 de 11 búsquedas con datos completos).
   - *Qué se probó:* con un script en la PC (el entorno de trabajo no llega a esos servicios): UPCitemdb no conoce los códigos argentinos (0 resultados), MercadoLibre pide autenticación (403), USDA es de EE. UU. **Precios Claros** (sistema de precios del Estado) responde con CORS abierto, busca por código exacto y trae nombre, marca y presentación de casi todo lo que se vende; **no trae calorías**.

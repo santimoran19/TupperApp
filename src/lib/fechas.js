@@ -52,10 +52,11 @@ export function fechaCorta(texto) {
 export const mesDe = (texto) => texto.slice(0, 7)
 export const nombreMes = (texto) => MESES[aFecha(texto).getMonth()]
 
-export function edad(nacimiento) {
+// La edad en años. Con `referencia` ('AAAA-MM-DD') se cuenta hasta ese día; sin ella, hasta hoy.
+export function edad(nacimiento, referencia = null) {
   if (!nacimiento) return null
   const n = aFecha(nacimiento)
-  const h = new Date()
+  const h = referencia ? aFecha(referencia) : new Date()
   let e = h.getFullYear() - n.getFullYear()
   if (h.getMonth() < n.getMonth() || (h.getMonth() === n.getMonth() && h.getDate() < n.getDate())) e--
   return e

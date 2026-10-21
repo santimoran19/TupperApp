@@ -37,7 +37,44 @@ function moverStock(stock, cambios, uid, soloSiExiste = false) {
 const sinMarca = (registros, d) => registros.filter((x) => !(x.skipped && x.date === d.fecha && x.meal === d.comida))
 const sinFila = (lista, campo, valor) => lista.filter((x) => x[campo] !== valor)
 
+// Un entrenamiento y sus series (F-19). `d`: { id, datos (lo que viaja como p_datos), series (p_series, o null si no es de gimnasio), cuando }.
+// Las filas de acá llevan `pendiente: true` hasta que la base las devuelva; las series, un identificador armado con el del entrenamiento.
+const ENTRENO_LOCAL = (s, d, uid) => ({
+  ...s,
+  entrenamientos: reemplazar(
+    s.entrenamientos,
+    { ...d.datos, id: d.id, user_id: uid, created_at: d.cuando, pendiente: true },
+    (x) => x.id === d.id,
+  ),
+  // Sin `series` (una sesión que no es de gimnasio) las que hubiera se dejan como están
+  series: d.series
+    ? [
+        ...s.series.filter((x) => x.workout_id !== d.id),
+        ...d.series.map((x) => ({
+          ...x,
+          id: `${d.id}-${x.orden}-${x.set_no}`,
+          user_id: uid,
+          workout_id: d.id,
+          fecha: d.datos.fecha,
+          pendiente: true,
+        })),
+      ]
+    : s.series,
+})
+const sinEntreno = (s, id) => ({
+  ...s,
+  entrenamientos: sinFila(s.entrenamientos, 'id', id),
+  series: sinFila(s.series, 'workout_id', id),
+})
+
 export const GUARDADO = {
+  // La base devuelve { entrenamiento, series }: las series del entrenamiento se reemplazan por las que guardó
+  guardarEntreno: (s, r) => ({
+    ...s,
+    entrenamientos: reemplazar(s.entrenamientos, r.entrenamiento, (x) => x.id === r.entrenamiento.id),
+    series: r.series ? [...s.series.filter((x) => x.workout_id !== r.entrenamiento.id), ...r.series] : s.series,
+  }),
+  borrarEntreno: (s, _r, d) => sinEntreno(s, d.id),
   registrar: (s, r, d) => ({
     ...s,
     registros: [...sinMarca(s.registros, d), ...r.registros],
@@ -74,6 +111,8 @@ export const GUARDADO = {
 }
 
 export const LOCAL = {
+  guardarEntreno: ENTRENO_LOCAL,
+  borrarEntreno: (s, d) => sinEntreno(s, d.id),
   registrar: (s, d, uid) => {
     const usadas = new Map()
     for (const c of d.preparado || []) usadas.set(c.recipe_id, (usadas.get(c.recipe_id) || 0) + Number(c.delta))

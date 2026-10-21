@@ -6,6 +6,8 @@ import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { foods, recipes, conAlcohol } from '../../../scripts/seed-data.mjs'
+import { actividades } from '../../../scripts/ejercicio-data.mjs'
+import { ejercicios as ejerciciosGym } from '../../../scripts/gym-data.mjs'
 
 const PUERTO = 54321
 // Las funciones de verdad, corriendo en Deno: cada una en su puerto
@@ -36,6 +38,13 @@ const db = {
   // El catálogo compartido (supabase/actualizacion-14.sql): tampoco se lee ni se escribe directo
   catalogo: [],
   catalogo_aportes: [],
+  // Gasto, ejercicio y gimnasio (supabase/actualizacion-15.sql a 17)
+  exercise_types: [],
+  workouts: [],
+  gym_exercises: [],
+  routines: [],
+  routine_exercises: [],
+  workout_sets: [],
 }
 let numeroDeEvento = 0
 // IA simulada: lo que recibió el "modelo" y cómo tiene que responder (ok | texto | error | saturado)
@@ -51,7 +60,7 @@ const RESPUESTA_IA = {
     'Anotá el peso una vez esta semana.',
   ],
 }
-const SIN_ID = new Set(['stock', 'recipe_items', 'prepared', 'away_rules', 'measurements', 'profiles', 'recipe_prefs'])
+const SIN_ID = new Set(['stock', 'recipe_items', 'prepared', 'away_rules', 'measurements', 'profiles', 'recipe_prefs', 'routine_exercises'])
 const bySlug = new Map()
 for (const f of foods) {
   const row = {
@@ -87,6 +96,24 @@ for (const r of recipes) {
   })
   for (const [s, q] of r.items) db.recipe_items.push({ recipe_id: id, food_id: bySlug.get(s), qty: q })
 }
+
+// Los catálogos de actividades físicas y de ejercicios de gimnasio (supabase/seed-6.sql y seed-7.sql)
+for (const a of actividades)
+  db.exercise_types.push({
+    id: randomUUID(),
+    owner: null,
+    slug: a[0],
+    name: a[1],
+    category: a[2],
+    metrica: a[3],
+    mets_suave: a[4],
+    mets_medio: a[5],
+    mets_fuerte: a[6],
+    usa_distancia: a[7],
+    usa_desnivel: a[8],
+  })
+for (const e of ejerciciosGym)
+  db.gym_exercises.push({ id: randomUUID(), owner: null, slug: e[0], name: e[1], grupo: e[2], equipo: e[3], peso_corporal: e[4] })
 
 // ---------- Funciones de la base (las de supabase/actualizacion-7.sql, hechas a mano) ----------
 // Las de verdad se prueban contra un Postgres real en pruebas/unidad/base-de-datos.test.js; acá alcanza con que
@@ -288,7 +315,110 @@ const sinCamposInternos = (c) => ({
   confirmaciones: c.confirmaciones,
 })
 
+// ---------- Ejercicio y gimnasio (supabase/actualizacion-16.sql y 17). Las de verdad se prueban en pruebas/unidad/gasto-base.test.js ----------
+const aNumero = (v) => (v === '' || v === null || v === undefined ? null : Number(v))
+const checkPg = (nombre) => errorPg('23514', `new row violates check constraint "${nombre}"`)
+
+const guardarEntrenamiento = (uid, a) => {
+  const d = a.p_datos
+  const series = a.p_series ?? []
+  if (!a.p_id || !d || typeof d !== 'object' || Array.isArray(d)) throw errorPg('P0001', 'Los datos del entrenamiento no son válidos.')
+  if (!Array.isArray(series) || series.length > 500) throw errorPg('P0001', 'Las series no son válidas (hasta 500 por sesión).')
+  if (!db.profiles.some((p) => p.id === uid && p.gasto_activo))
+    throw errorPg('P0001', 'Para anotar ejercicio primero activá el cálculo de gasto en tu perfil.')
+  const tipo = db.exercise_types.some((t) => t.id === d.type_id && (t.owner === null || t.owner === uid)) ? d.type_id : null
+  const rutina = db.routines.some((r) => r.id === d.routine_id && r.user_id === uid) ? d.routine_id : null
+  if (!(Number(d.duration_min) >= 1 && Number(d.duration_min) <= 1440)) throw checkPg('workouts_duracion_chk')
+  if (!(Number(d.kcal) >= 0 && Number(d.kcal) <= 20000)) throw checkPg('workouts_kcal_chk')
+  if (!String(d.name ?? '').trim()) throw checkPg('workouts_nombre_chk')
+  const campos = {
+    fecha: d.fecha,
+    type_id: tipo,
+    name: String(d.name).trim(),
+    duration_min: Math.round(Number(d.duration_min)),
+    distance_km: aNumero(d.distance_km),
+    ascent_m: aNumero(d.ascent_m),
+    avg_hr: aNumero(d.avg_hr),
+    rpe: aNumero(d.rpe),
+    kcal_watch: aNumero(d.kcal_watch),
+    kcal: Number(d.kcal),
+    metodo: d.metodo || 'mets',
+    peso_kg: aNumero(d.peso_kg),
+    notes: String(d.notes ?? '').trim() || null,
+    routine_id: rutina,
+  }
+  let fila = db.workouts.find((w) => w.id === a.p_id)
+  if (fila && fila.user_id !== uid) throw errorPg('P0001', 'Ese entrenamiento no se puede editar.')
+  if (fila) Object.assign(fila, campos)
+  else {
+    fila = { id: a.p_id, user_id: uid, ...campos, created_at: ahora() }
+    db.workouts.push(fila)
+  }
+  // Las series se reemplazan por las que llegan
+  db.workout_sets = db.workout_sets.filter((s) => !(s.workout_id === a.p_id && s.user_id === uid))
+  const vistas = new Set()
+  for (const x of series) {
+    if (!db.gym_exercises.some((e) => e.id === x.exercise_id && (e.owner === null || e.owner === uid)))
+      throw errorPg('P0001', 'Hay un ejercicio que ya no existe.')
+    const clave = `${x.orden}|${x.set_no}`
+    if (vistas.has(clave)) throw errorPg('23505', 'duplicate key value violates unique constraint "workout_sets_unica_chk"')
+    vistas.add(clave)
+    db.workout_sets.push({
+      id: randomUUID(),
+      user_id: uid,
+      workout_id: a.p_id,
+      fecha: fila.fecha,
+      orden: x.orden,
+      exercise_id: x.exercise_id,
+      set_no: x.set_no,
+      reps: x.reps,
+      weight_kg: Number(x.weight_kg) || 0,
+      rpe: aNumero(x.rpe),
+      warmup: !!x.warmup,
+    })
+  }
+  return {
+    entrenamiento: fila,
+    series: db.workout_sets.filter((s) => s.workout_id === a.p_id).sort((p, q) => p.orden - q.orden || p.set_no - q.set_no),
+  }
+}
+
+const guardarRutina = (uid, a) => {
+  const lista = a.p_ejercicios
+  if (!a.p_id || !Array.isArray(lista) || lista.length > 40) throw errorPg('P0001', 'La rutina no es válida (hasta 40 ejercicios).')
+  const nombre = String(a.p_nombre ?? '').trim()
+  if (nombre.length < 1 || nombre.length > 40) throw errorPg('P0001', 'El nombre de la rutina tiene que tener entre 1 y 40 letras.')
+  if (lista.some((x) => !db.gym_exercises.some((e) => e.id === x.exercise_id && (e.owner === null || e.owner === uid))))
+    throw errorPg('P0001', 'Hay un ejercicio que ya no existe.')
+  let fila = db.routines.find((r) => r.id === a.p_id)
+  if (fila && fila.user_id !== uid) throw errorPg('P0001', 'Esa rutina no se puede editar.')
+  const notas = String(a.p_notas ?? '').trim() || null
+  if (fila) Object.assign(fila, { name: nombre, notes: notas })
+  else {
+    fila = { id: a.p_id, user_id: uid, name: nombre, notes: notas, created_at: ahora() }
+    db.routines.push(fila)
+  }
+  db.routine_exercises = db.routine_exercises.filter((i) => i.routine_id !== a.p_id)
+  lista.forEach((x, i) => {
+    const reps_min = x.reps_min ?? 8
+    const reps_max = x.reps_max ?? 12
+    if (reps_min > reps_max) throw checkPg('routine_exercises_reps_chk')
+    db.routine_exercises.push({
+      routine_id: a.p_id,
+      position: i,
+      exercise_id: x.exercise_id,
+      sets_target: x.sets_target ?? 3,
+      reps_min,
+      reps_max,
+      rest_seconds: aNumero(x.rest_seconds),
+    })
+  })
+  return { rutina: fila, ejercicios: db.routine_exercises.filter((i) => i.routine_id === a.p_id).sort((p, q) => p.position - q.position) }
+}
+
 const FUNCIONES = {
+  guardar_entrenamiento: guardarEntrenamiento,
+  guardar_rutina: guardarRutina,
   catalogo_aportar: (uid, a) => {
     const codigo = String(a.p_codigo ?? '').trim() || null
     const name = String(a.p_name ?? '').trim()
@@ -892,6 +1022,8 @@ const server = http.createServer(async (req, res) => {
       for (const [email, u] of users) if (u.id === uid) users.delete(email)
       dejarElHogar(uid)
       for (const c of db.purchases) if (c.comprado_por === uid) c.comprado_por = null
+      const rutinasDeLaCuenta = db.routines.filter((r) => r.user_id === uid).map((r) => r.id)
+      db.routine_exercises = db.routine_exercises.filter((i) => !rutinasDeLaCuenta.includes(i.routine_id))
       for (const t of Object.keys(db))
         db[t] = db[t].filter((r) => r.user_id !== uid && r.owner !== uid && !(t === 'profiles' && r.id === uid))
       return send(204)
@@ -927,6 +1059,9 @@ const server = http.createServer(async (req, res) => {
       if (servicio) return true
       if (tabla === 'foods' || tabla === 'recipes') return puedeVer(row.owner, uid)
       if (tabla === 'recipe_items') return true
+      // Los catálogos de ejercicio: los de todos (sin dueño) y los propios. Las rutinas se ven por su dueño.
+      if (tabla === 'exercise_types' || tabla === 'gym_exercises') return row.owner === null || row.owner === uid
+      if (tabla === 'routine_exercises') return db.routines.some((r) => r.id === row.routine_id && r.user_id === uid)
       if (tabla === 'profiles') return row.id === uid
       if (DEL_AMBITO.includes(tabla)) return row.user_id === dueno
       return row.user_id === uid
@@ -954,7 +1089,7 @@ const server = http.createServer(async (req, res) => {
       const upsert = (req.headers.prefer || '').includes('merge-duplicates')
       const out = []
       for (const f of filas) {
-        if ((tabla === 'foods' || tabla === 'recipes') && f.owner !== uid)
+        if ((tabla === 'foods' || tabla === 'recipes' || tabla === 'exercise_types' || tabla === 'gym_exercises') && f.owner !== uid)
           return send(403, { message: 'new row violates row-level security policy' })
         if (f.user_id && f.user_id !== (DEL_AMBITO.includes(tabla) ? dueno : uid))
           return send(403, { message: 'new row violates row-level security policy' })
@@ -980,7 +1115,24 @@ const server = http.createServer(async (req, res) => {
           const fila = { ...(SIN_ID.has(tabla) ? {} : { id: randomUUID() }), ...f }
           if (['log_entries', 'shopping_items', 'profiles', 'ai_analyses'].includes(tabla)) fila.created_at = new Date().toISOString()
           if (tabla === 'log_entries' && fila.skipped === undefined) fila.skipped = false
-          if (tabla === 'profiles') Object.assign(fila, { thermos_ml: 1000, water_target_ml: null, username: null, ...f })
+          if (tabla === 'profiles')
+            Object.assign(fila, {
+              thermos_ml: 1000,
+              water_target_ml: null,
+              username: null,
+              body_fat_pct: null,
+              work_type: null,
+              steps_per_day: null,
+              resting_hr: null,
+              gasto_activo: false,
+              gasto_consentimiento: null,
+              gasto_modo: 'fijo',
+              gasto_devuelve: 50,
+              gasto_ajuste_pct: null,
+              gasto_factor: null,
+              gasto_factor_fecha: null,
+              ...f,
+            })
           if (tabla === 'foods' && fila.alcohol === undefined) fila.alcohol = false
           if (tabla === 'purchases' && !fila.date) fila.date = new Date().toISOString().slice(0, 10)
           if (tabla === 'eventos')
@@ -999,8 +1151,18 @@ const server = http.createServer(async (req, res) => {
       }
       return lista(201, out)
     }
+    // Las actividades y ejercicios sin dueño son de todos: nadie los modifica ni los borra
+    const modificable = (r) => visible(r) && pasa(r) && !((tabla === 'exercise_types' || tabla === 'gym_exercises') && r.owner !== uid)
     if (req.method === 'PATCH') {
-      const out = db[tabla].filter((r) => visible(r) && pasa(r))
+      const out = db[tabla].filter(modificable)
+      // La base no deja prender el cálculo de gasto sin dejar constancia del consentimiento (actualizacion-15.sql)
+      if (tabla === 'profiles' && body.gasto_activo === true && out.some((r) => !(body.gasto_consentimiento || r.gasto_consentimiento)))
+        return send(400, {
+          code: '23514',
+          message: 'new row for relation "profiles" violates check constraint "profiles_gasto_chk"',
+          details: null,
+          hint: null,
+        })
       if (tabla === 'profiles')
         try {
           out.forEach((r) => cuidarUsuario(body, r, uid))
@@ -1012,9 +1174,24 @@ const server = http.createServer(async (req, res) => {
       return send(200, out)
     }
     if (req.method === 'DELETE') {
-      const borrar = db[tabla].filter((r) => visible(r) && pasa(r))
+      const borrar = db[tabla].filter(modificable)
+      // Un ejercicio con series cargadas no se puede borrar (se perdería el historial)
+      if (tabla === 'gym_exercises' && borrar.some((e) => db.workout_sets.some((s) => s.exercise_id === e.id)))
+        return send(409, {
+          code: '23503',
+          message: 'update or delete on table "gym_exercises" violates foreign key constraint "workout_sets_exercise_id_fkey"',
+          details: null,
+          hint: null,
+        })
       db[tabla] = db[tabla].filter((r) => !borrar.includes(r))
       if (tabla === 'recipes') db.recipe_items = db.recipe_items.filter((i) => !borrar.some((r) => r.id === i.recipe_id))
+      if (tabla === 'workouts') db.workout_sets = db.workout_sets.filter((s) => !borrar.some((w) => w.id === s.workout_id))
+      if (tabla === 'routines') {
+        db.routine_exercises = db.routine_exercises.filter((i) => !borrar.some((r) => r.id === i.routine_id))
+        for (const w of db.workouts) if (borrar.some((r) => r.id === w.routine_id)) w.routine_id = null
+      }
+      if (tabla === 'gym_exercises') db.routine_exercises = db.routine_exercises.filter((i) => !borrar.some((e) => e.id === i.exercise_id))
+      if (tabla === 'exercise_types') for (const w of db.workouts) if (borrar.some((t) => t.id === w.type_id)) w.type_id = null
       return send(200, borrar)
     }
     send(405, { message: 'método' })

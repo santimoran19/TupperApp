@@ -4,12 +4,13 @@
 //   derivados.js        lo que se calcula con eso (mapas por id, stock visto por las recetas, estado del plan)
 //   sincronizacion.js   cuándo se trae, la copia en el teléfono y los cambios hechos sin conexión
 //   cambios.js, envios.js   esos cambios: cómo quedan en el teléfono y cómo se mandan a la base
-//   acciones/           lo que se puede hacer, por tema (despensa, hogar, registros, compras, recetas, plan, perfil)
+//   acciones/           lo que se puede hacer, por tema (despensa, hogar, registros, compras, recetas, plan, perfil, ejercicio)
 //   avisos.jsx          el cartel flotante y la pregunta de confirmación
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { descartadas, descartar } from '../lib/equivalencias'
 import { accionesDeCompras } from './acciones/compras'
 import { accionesDeDespensa } from './acciones/despensa'
+import { accionesDeEjercicio } from './acciones/ejercicio'
 import { accionesDeHogar } from './acciones/hogar'
 import { accionesDePerfil } from './acciones/perfil'
 import { accionesDePlan } from './acciones/plan'
@@ -92,6 +93,7 @@ function Datos({ usuario, children }) {
       ...accionesDeCompras(k),
       ...accionesDeRecetas(k),
       ...accionesDePlan(k),
+      ...accionesDeEjercicio(k),
     }
   })
 

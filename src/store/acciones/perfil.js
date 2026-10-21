@@ -1,6 +1,7 @@
 // Perfil, medidas y cuenta (descargar los datos, cerrar sesión, borrar la cuenta).
 import { olvidarSesion, sesionGuardada } from '../../lib/supabase'
 import { ok, supabase, traerTodo } from '../base'
+import { traerEjercicio } from '../carga'
 import { reemplazar } from '../listas'
 
 // Cuánto se espera a que Supabase cierre la sesión antes de cerrarla a mano en el teléfono
@@ -72,6 +73,8 @@ export const accionesDePerfil = (k) => ({
     ])
     const v = k.ver()
     const { e } = v
+    // Con el cálculo de gasto prendido, todo el historial de ejercicio (no solo el último año que se muestra en la app)
+    const ejercicio = e.perfil?.gasto_activo ? await traerEjercicio(uid, { dias: null }) : null
     const nombreAlimento = (id) => v.alimentosPorId.get(id)?.name || null
     const nombreReceta = (id) => v.recetasPorId.get(id)?.name || null
     return {
@@ -97,6 +100,32 @@ export const accionesDePerfil = (k) => ({
         .map((r) => ({ ...r, ingredientes: v.itemsDe(r.id).map((i) => ({ alimento: nombreAlimento(i.food_id), cantidad: i.qty })) })),
       recetas_favoritas: [...v.favoritas].map(nombreReceta),
       recetas_ocultas: [...v.ocultas].map(nombreReceta),
+      ejercicio: ejercicio && {
+        actividades_propias: ejercicio.actividades.filter((a) => a.owner === uid).map(({ owner: _o, id: _i, slug: _s, ...a }) => a),
+        entrenamientos: ejercicio.entrenamientos.map(({ user_id: _u, type_id, routine_id, ...w }) => ({
+          ...w,
+          actividad: ejercicio.actividades.find((a) => a.id === type_id)?.name || null,
+          rutina: ejercicio.rutinas.find((r) => r.id === routine_id)?.name || null,
+        })),
+        series: ejercicio.series.map(({ user_id: _u, id: _i, exercise_id, ...s }) => ({
+          ...s,
+          ejercicio: ejercicio.ejerciciosGym.find((g) => g.id === exercise_id)?.name || null,
+        })),
+        rutinas: ejercicio.rutinas.map((r) => ({
+          nombre: r.name,
+          notas: r.notes,
+          ejercicios: ejercicio.rutinaItems
+            .filter((i) => i.routine_id === r.id)
+            .map((i) => ({
+              ejercicio: ejercicio.ejerciciosGym.find((g) => g.id === i.exercise_id)?.name || null,
+              series: i.sets_target,
+              repeticiones_desde: i.reps_min,
+              repeticiones_hasta: i.reps_max,
+              descanso_segundos: i.rest_seconds,
+            })),
+        })),
+        ejercicios_propios: ejercicio.ejerciciosGym.filter((g) => g.owner === uid).map(({ owner: _o, id: _i, slug: _s, ...g }) => g),
+      },
       analisis_con_ia: e.analisis.map((a) => ({ semana: a.week_start, generado: a.created_at, ...a.content })),
       registro_tecnico: eventos.map((ev) => ({
         fecha: ev.created_at,

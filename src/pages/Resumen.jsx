@@ -192,7 +192,7 @@ export default function Resumen() {
   const [lunes, setLunes] = useState(lunesDe(inicial))
   const [elegido, setElegido] = useState(inicial)
   const h = hoy()
-  const kcalObj = d.perfil.kcal_target
+  const objetivoDe = d.objetivoDe
   const protObj = d.perfil.protein_target
   const liqObj = objetivoLiquido(d.perfil)
 
@@ -204,21 +204,25 @@ export default function Resumen() {
         return {
           f,
           kcal: t.kcal,
+          // El objetivo de ese día: el fijo, o el que sale del gasto con el modo dinámico (F-19)
+          obj: objetivoDe(f),
           protein: t.protein,
           liquido: filas.reduce((s, r) => s + (cuentaComoLiquido(d.alimentosPorId.get(r.food_id)) ? Number(r.qty) : 0), 0),
           // Día con registro: tiene al menos una comida cargada (lo de entre comidas solo no alcanza)
           conRegistro: filas.some((r) => r.meal !== EXTRA && !r.skipped),
         }
       }),
-    [lunes, d.registros, d.alimentosPorId],
+    [lunes, d.registros, d.alimentosPorId, objetivoDe],
   )
 
   const registrados = dias.filter((x) => x.conRegistro)
   const n = registrados.length
   const prom = (campo) => (n ? registrados.reduce((s, x) => s + x[campo], 0) / n : 0)
   const kcalProm = prom('kcal')
+  // Con el objetivo fijo es el mismo todos los días; con el dinámico se promedia el de los días cargados
+  const kcalObj = n ? prom('obj') : objetivoDe(h)
   const protProm = prom('protein')
-  const enObjetivo = registrados.filter((x) => Math.abs(x.kcal - kcalObj) <= kcalObj * TOLERANCIA).length
+  const enObjetivo = registrados.filter((x) => Math.abs(x.kcal - x.obj) <= x.obj * TOLERANCIA).length
   const conLiquido = dias.filter((x) => x.liquido > 0)
   const liqProm = conLiquido.length ? conLiquido.reduce((s, x) => s + x.liquido, 0) / conLiquido.length : 0
 

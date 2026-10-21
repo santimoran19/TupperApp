@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { PGlite } from '@electric-sql/pglite'
 
 const SQL = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../supabase')
-// Si agregás una actualización de la base (supabase/actualizacion-14.sql), sumala acá
+// Si agregás una actualización de la base (supabase/actualizacion-17.sql), sumala acá
 const ARCHIVOS = [
   'schema.sql',
   'actualizacion-2.sql',
@@ -22,7 +22,12 @@ const ARCHIVOS = [
   'actualizacion-12.sql',
   'actualizacion-13.sql',
   'actualizacion-14.sql',
+  'actualizacion-15.sql',
+  'actualizacion-16.sql',
+  'actualizacion-17.sql',
   'seed.sql',
+  'seed-6.sql',
+  'seed-7.sql',
 ]
 
 // Lo mínimo de Supabase que usan esos archivos: los roles, los usuarios y auth.uid()
