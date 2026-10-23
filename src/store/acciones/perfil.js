@@ -3,6 +3,7 @@ import { olvidarSesion, sesionGuardada } from '../../lib/supabase'
 import { ok, supabase, traerTodo } from '../base'
 import { traerEjercicio } from '../carga'
 import { reemplazar } from '../listas'
+import { borrarFotos, rutasDe } from '../../lib/fotos'
 
 // Cuánto se espera a que Supabase cierre la sesión antes de cerrarla a mano en el teléfono
 const ESPERA_SALIR_MS = 4000
@@ -143,6 +144,12 @@ export const accionesDePerfil = (k) => ({
   borrarCuenta: k.accion(
     'borrarCuenta',
     async () => {
+      // Primero las fotos que subió (están en Storage, fuera de la base): si no se pueden borrar, no se borra la cuenta
+      try {
+        await borrarFotos(await rutasDe(k.uid), k.uid)
+      } catch (err) {
+        throw Object.assign(new Error('No se pudieron borrar tus fotos. Revisá la conexión y probá de nuevo.'), { causa: err })
+      }
       ok(await supabase.rpc('borrar_mi_cuenta'))
       await k.vaciar()
       await cerrarSesion()

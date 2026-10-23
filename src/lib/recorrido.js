@@ -203,7 +203,8 @@ export const PASOS = [
     ruta: '/despensa',
     ancla: 'des-resumen',
     titulo: 'Tu despensa',
-    texto: 'Es lo que tenés en casa. Arriba ves cuántos alimentos tenés, cuáles se agotaron y cuántas porciones de comida ya cocinada hay.',
+    texto:
+      'Es lo que tenés en casa. Arriba ves cuántos alimentos tenés, cuántos están por vencer, cuáles se agotaron y cuántas porciones de comida ya cocinada hay.',
   },
   {
     id: 'des-agregar',
@@ -211,14 +212,15 @@ export const PASOS = [
     ancla: 'des-agregar',
     titulo: 'Cargá lo que tenés',
     texto:
-      'Con este botón sumás un alimento y le ponés cuánto tenés. Después cambiás la cantidad con + y −, o tocándola. Al registrar una comida, lo que usaste se descuenta solo.',
+      'Con este botón sumás un alimento y le ponés cuánto tenés y, si querés, cuándo vence. Después cambiás la cantidad con + y −, o tocándola. Al registrar una comida, lo que usaste se descuenta solo.',
   },
   {
     id: 'des-compras',
     ruta: '/despensa',
     ancla: 'des-compras',
     titulo: 'Lista de compras',
-    texto: 'Lo que le falta a tu plan aparece solo en la lista. Lo que quieras comprar lo sumás vos con el botón Comprar de cada alimento.',
+    texto:
+      'Lo que le falta a tu plan aparece solo en la lista. Lo que quieras comprar lo sumás vos con el carrito de cada alimento, o marcándolo en «Se está acabando».',
   },
   {
     id: 'com-lista',

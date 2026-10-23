@@ -1,6 +1,6 @@
 // Ejercicio (F-19): los entrenamientos anotados, las sesiones de gimnasio, las rutinas y el progreso de cada ejercicio.
 // Solo se usa con el cálculo de gasto prendido (se prende en /gasto).
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import EntrenoForm from '../components/EntrenoForm'
 import GraficoProgreso from '../components/GraficoProgreso'
@@ -12,16 +12,11 @@ import { useDatos } from '../store/Datos'
 import { borrarBorrador, leerBorrador } from '../lib/borradorEntreno'
 import { METODOS, nombreDeCategoria, resumenDeEjercicio } from '../lib/ejercicio'
 import { fechaCorta, fechaLarga, hoy, lunesDe, sumarDias } from '../lib/fechas'
-import {
-  aMedioKilo,
-  ejerciciosHechos,
-  mejoresMarcas,
-  nombreDeEquipo,
-  nombreDeGrupo,
-  progresoDeEjercicio,
-  volumenPorGrupo,
-} from '../lib/gimnasio'
+import { aMedioKilo, ejerciciosHechos, mejoresMarcas, nombreDeEquipo, nombreDeGrupo, progresoDeEjercicio } from '../lib/gimnasio'
 import { errFecha, rangoDiario } from '../lib/validar'
+import MapaMuscular from '../components/MapaMuscular'
+import { GRUPOS_MUSCULARES, SERIES_LLENO, intensidad, textoDeTrabajo, trabajoPorMusculo } from '../lib/musculos'
+import Vista3D, { hayWebGL, tresDPrendido } from '../components/Vista3D'
 
 const miles = (n) => Math.round(Number(n) || 0).toLocaleString('es-AR')
 const DIAS_POR_PAGINA = 14
@@ -112,6 +107,8 @@ function Entrenamientos({ fecha, onAnotar, onAbrir }) {
         </div>
         <p className="text-xs text-gris mt-2">Calorías netas y estimadas: lo que gastaste de más por entrenar.</p>
       </section>
+
+      <SemanaPorMusculo />
 
       {dias.length === 0 ? (
         <Vacio
@@ -222,35 +219,104 @@ function Progreso() {
 
 function SemanaPorMusculo() {
   const d = useDatos()
+  const [activo, setActivo] = useState(null)
+  const [tresD, setTresD] = useState(false)
+  const tocar = useCallback((g) => setActivo((a) => (a === g ? null : g)), [])
   const lunes = lunesDe(hoy())
   const fin = sumarDias(lunes, 6)
   const ejerciciosPorId = useMemo(() => new Map(d.ejerciciosGym.map((e) => [e.id, e])), [d.ejerciciosGym])
-  const grupos = useMemo(
+  // Las series de gimnasio y los entrenamientos en los que se marcaron músculos (1.24)
+  const trabajo = useMemo(
     () =>
-      volumenPorGrupo(
-        d.series.filter((s) => s.fecha >= lunes && s.fecha <= fin),
+      trabajoPorMusculo({
+        series: d.series.filter((s) => s.fecha >= lunes && s.fecha <= fin),
+        entrenamientos: d.entrenamientos.filter((w) => w.fecha >= lunes && w.fecha <= fin),
         ejerciciosPorId,
-      ),
-    [d.series, ejerciciosPorId, lunes, fin],
+      }),
+    [d.series, d.entrenamientos, ejerciciosPorId, lunes, fin],
   )
-  if (grupos.length === 0) return null
+  const props3D = useMemo(
+    () => ({ sexo: d.perfil?.sex, grasa: d.perfil?.sex === 'f' ? 22 : 14, escala: 1, modo: 'musculos', trabajo, activo, onTocar: tocar }),
+    [d.perfil?.sex, trabajo, activo, tocar],
+  )
+  const lista = GRUPOS_MUSCULARES.map(([g, t]) => ({ g, t, ...trabajo.get(g), i: intensidad(trabajo.get(g)) })).sort((x, y) => y.i - x.i)
+  if (!lista.some((x) => x.i > 0)) return null
+  const elegido = activo ? lista.find((x) => x.g === activo) : null
   return (
-    <section className="tarjeta p-5 mb-4">
-      <h2 className="font-semibold mb-3">Esta semana por músculo</h2>
-      <div className="space-y-1.5">
-        {grupos.map((g) => (
-          <div key={g.grupo} className="flex items-center gap-2 text-sm">
-            <span className="w-32 shrink-0">{nombreDeGrupo(g.grupo)}</span>
-            <div className="flex-1 h-2 rounded-full bg-pista overflow-hidden">
-              <div className="h-full bg-verde rounded-full" style={{ width: `${(g.series / grupos[0].series) * 100}%` }} />
-            </div>
-            <span className="w-20 text-right text-gris">
-              {g.series} {g.series === 1 ? 'serie' : 'series'}
-            </span>
-          </div>
-        ))}
+    <section className="tarjeta p-5 mb-4" aria-labelledby="ej-musculos">
+      <h2 id="ej-musculos" className="font-semibold">
+        Esta semana por músculo
+      </h2>
+      <div className="flex items-start gap-2 mt-0.5 mb-3">
+        <p className="text-xs text-gris flex-1">Más oscuro, más trabajado. Tocá un músculo para ver el detalle.</p>
+        {tresDPrendido() && hayWebGL() && (
+          <button
+            type="button"
+            onClick={() => setTresD(!tresD)}
+            aria-pressed={tresD}
+            className={`btn-chico h-8 shrink-0 ${tresD ? 'bg-verde text-white' : 'bg-campo text-tinta'}`}
+          >
+            <Icono n="3d_rotation" size={16} /> {tresD ? '2D' : '3D'}
+          </button>
+        )}
       </div>
-      <p className="text-xs text-gris mt-2">Sin contar la entrada en calor.</p>
+      {tresD ? (
+        <Vista3D
+          tipo="cuerpo"
+          props={props3D}
+          etiqueta="Tu cuerpo en 3D con los músculos de la semana"
+          className="w-full max-w-[300px] mx-auto"
+          lienzo="w-full h-96"
+          giroSolo={false}
+          sinTresD={<MapaMuscular sexo={d.perfil?.sex} valores={trabajo} activo={activo} onTocar={tocar} />}
+        />
+      ) : (
+        <MapaMuscular sexo={d.perfil?.sex} valores={trabajo} activo={activo} onTocar={tocar} />
+      )}
+      <div className="rounded-2xl bg-campo px-4 py-3 mt-3 min-h-[60px]" aria-live="polite">
+        {elegido ? (
+          <>
+            <p className="font-semibold">{elegido.t}</p>
+            <p className="text-sm text-gris">
+              {textoDeTrabajo(elegido)}
+              {elegido.series > 0 && elegido.series < SERIES_LLENO
+                ? ` · para ganar músculo se suelen recomendar ${SERIES_LLENO} a 20 series por semana`
+                : ''}
+            </p>
+          </>
+        ) : (
+          <p className="text-sm text-gris">
+            Lo más trabajado:{' '}
+            <b className="text-tinta">
+              {lista
+                .filter((x) => x.i > 0)
+                .slice(0, 3)
+                .map((x) => x.t)
+                .join(', ')}
+            </b>
+            .
+            {lista.some((x) => x.i === 0) &&
+              ` Sin entrenar: ${lista
+                .filter((x) => x.i === 0)
+                .map((x) => x.t.toLowerCase())
+                .join(', ')}.`}
+          </p>
+        )}
+      </div>
+      <div className="space-y-1.5 mt-4">
+        {lista
+          .filter((x) => x.i > 0)
+          .map((x) => (
+            <div key={x.g} className="flex items-center gap-2 text-sm">
+              <span className="w-28 shrink-0 leading-tight">{x.t}</span>
+              <div className="flex-1 h-2 rounded-full bg-pista overflow-hidden">
+                <div className="h-full bg-verde rounded-full" style={{ width: `${x.i * 100}%` }} />
+              </div>
+              <span className="w-36 text-right text-gris text-xs leading-tight">{textoDeTrabajo(x)}</span>
+            </div>
+          ))}
+      </div>
+      <p className="text-xs text-gris mt-2">Sin contar la entrada en calor. Un entrenamiento con músculos marcados cuenta como 3 series.</p>
     </section>
   )
 }

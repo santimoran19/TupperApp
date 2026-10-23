@@ -12,6 +12,7 @@ import { anotarEvento } from '../lib/eventos'
 import { LIM, errNumero, errTexto, hayErrores } from '../lib/validar'
 import { nombreCorto, parecidoEnBase, sonCompatibles, sugerirBase } from '../lib/equivalencias'
 import { buscarAlimentos, normal } from '../lib/buscar'
+import Foto from './Foto'
 
 const cada100 = (a) => `${redondear(a.kcal)} kcal y ${redondear(a.protein, 1)} g prot. cada 100 ${a.unit === 'ml' ? 'ml' : 'g'}`
 
@@ -247,6 +248,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
           const hay = stockMap.get(a.id) || 0
           return (
             <button key={a.id} onClick={() => onElegir(a)} className="w-full flex items-center gap-3 py-3 text-left">
+              <Foto ruta={a.image_path} categoria={a.category} className="w-10 h-10 rounded-xl" icono={20} />
               <div className="min-w-0 flex-1">
                 <p className="font-medium truncate">{a.name}</p>
                 <p className="text-xs text-gris">

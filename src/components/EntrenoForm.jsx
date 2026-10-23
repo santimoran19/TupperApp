@@ -16,6 +16,8 @@ import {
 } from '../lib/ejercicio'
 import { pesoDelDia } from '../lib/gasto'
 import { rangoDiario, errFecha, errNumero } from '../lib/validar'
+import MapaMuscular from './MapaMuscular'
+import { CLAVES_MUSCULARES, CUERPO_COMPLETO, musculosTipicos } from '../lib/musculos'
 
 const miles = (n) => Math.round(n).toLocaleString('es-AR')
 const enTexto = (v) => (v === null || v === undefined ? '' : String(Number(v)))
@@ -153,6 +155,16 @@ export default function EntrenoForm({ inicial = null, fechaInicial = null, onCer
     relojActivas: !!inicial?.watch_activas,
     notas: inicial?.notes || '',
   })
+  // Los músculos que trabajó (1.24): para el mapa de la semana
+  const [musculos, setMusculos] = useState(() => new Set(inicial?.muscles || []))
+  const alternarMusculo = (g) =>
+    setMusculos((s) => {
+      const n = new Set(s)
+      if (n.has(g)) n.delete(g)
+      else n.add(g)
+      n.delete(CUERPO_COMPLETO)
+      return n
+    })
   const [intento, setIntento] = useState(false)
   const [guardando, setGuardando] = useState(false)
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }))
@@ -208,6 +220,7 @@ export default function EntrenoForm({ inicial = null, fechaInicial = null, onCer
       reloj: f.reloj,
       relojActivas: f.relojActivas,
       notas: f.notas,
+      musculos: [...musculos],
       rutina: inicial?.routine_id ?? rutina ?? null,
     })
     setGuardando(false)
@@ -360,6 +373,29 @@ export default function EntrenoForm({ inicial = null, fechaInicial = null, onCer
               Con estos datos el cálculo es más preciso, aunque los relojes también se equivocan (entre un 20 y un 40 %). Para no contar dos
               veces, a las calorías totales les descontamos lo que igual habrías gastado en reposo.
             </p>
+          </details>
+
+          <details className="rounded-2xl bg-campo px-3 py-2.5" open={musculos.size > 0 ? true : undefined}>
+            <summary className="text-sm font-semibold cursor-pointer flex items-center gap-2">
+              <Icono n="body_system" size={18} className="text-verde-texto" /> ¿Qué músculos trabajaste? (opcional)
+              {musculos.size > 0 && <span className="pill bg-coral text-white ml-auto">{musculos.size}</span>}
+            </summary>
+            <p className="text-xs text-gris mt-2">Tocá el cuerpo o los nombres. Sirve para ver en el mapa qué entrenaste en la semana.</p>
+            {musculosTipicos(tipo).length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  const t = musculosTipicos(tipo)
+                  setMusculos(new Set(t[0] === CUERPO_COMPLETO ? CLAVES_MUSCULARES : t))
+                }}
+                className="btn-chico bg-superficie text-verde-texto h-8 mt-2"
+              >
+                <Icono n="check" size={14} /> Marcar los de {tipo.name.toLowerCase()}
+              </button>
+            )}
+            <div className="mt-2">
+              <MapaMuscular sexo={d.perfil?.sex} modo="elegir" seleccion={musculos} onTocar={alternarMusculo} />
+            </div>
           </details>
 
           <label className="block">

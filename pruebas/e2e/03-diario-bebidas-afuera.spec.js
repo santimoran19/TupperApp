@@ -232,7 +232,7 @@ test('no comí, bebidas y extras, comidas afuera y validaciones', async ({ brows
     await pg.waitForSelector('input[placeholder="Buscar..."]')
     await pg.locator('button:has-text("unidades")').first().click()
     await pg.waitForSelector('text=¿Cuánto tenés?')
-    await pg.locator('div.fixed input').fill('99999999')
+    await pg.locator('div.fixed input[inputmode]').fill('99999999')
     await pg.waitForSelector('text=Como mucho 2.000')
     expect(await pg.locator('div.fixed button:has-text("Guardar")').isDisabled()).toBe(true)
     await captura(pg, 'v40_stock_error', false)

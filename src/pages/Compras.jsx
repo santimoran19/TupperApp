@@ -9,6 +9,8 @@ import { cantidadTexto, pasoDe, redondear, unidadDe } from '../lib/nutricion'
 import { convertir, nombreCorto } from '../lib/equivalencias'
 import { enlaceWhatsApp, textoDeLista } from '../lib/compartir'
 import { LIM, errCantidad, errNumero, maxEnStock } from '../lib/validar'
+import Foto from '../components/Foto'
+import { fechaAlSumar } from '../lib/despensa'
 
 // Redondea lo que falta a una cantidad razonable de comprar
 function redondearCompra(a, falta) {
@@ -61,6 +63,8 @@ export default function Compras() {
   }
   const gasto = comprasMes.reduce((s, c) => s + Number(c.price), 0)
 
+  const errVence =
+    comprando?.vence && !(comprando.vence >= '2000-01-01' && comprando.vence <= '2100-12-31') ? 'Esa fecha no es válida.' : null
   const errCompra = comprando
     ? {
         qty: errCantidad(comprando.producto, comprando.qty, maxEnStock(comprando.producto)),
@@ -71,18 +75,22 @@ export default function Compras() {
   function empezarCompra(a, qty) {
     // Se propone lo que viene reemplazando al alimento en la despensa o, si no, un producto propio vinculado
     const producto = d.enUso.get(a.id) || (d.equivalentes.get(a.id) || []).find((p) => p.owner) || a
-    setComprando({ alimento: a, producto, qty: String(pasar(a, producto, qty)), price: '' })
+    setComprando({ alimento: a, producto, qty: String(pasar(a, producto, qty)), price: '', vence: '' })
   }
   const pasar = (de, a, qty) => redondear(convertir(de, a, Number(qty) || 0), a.unit === 'u' ? 1 : 0)
   const opcionesCompra = comprando ? [comprando.alimento, ...(d.equivalentes.get(comprando.alimento.id) || [])] : []
   async function confirmar() {
-    if (errCompra.qty || errCompra.price) return
+    if (errCompra.qty || errCompra.price || errVence) return
+    const antes = d.vencimientos.get(comprando.producto.id) || null
     const listo = await d.comprar({
       food_id: comprando.producto.id,
       qty: Number(comprando.qty),
       price: Number(comprando.price) || 0,
       anotado: comprando.alimento.id,
     })
+    // La fecha del que vence primero: si lo que ya había vence antes, queda esa (F-04)
+    const fecha = fechaAlSumar(antes, comprando.vence || null)
+    if (listo && fecha && fecha !== antes) await d.fijarVencimiento(comprando.producto.id, fecha)
     if (listo) {
       setComprando(null)
       d.avisar(d.hogar ? 'Sumado a la despensa del hogar' : 'Sumado a tu despensa')
@@ -91,6 +99,7 @@ export default function Compras() {
 
   const Fila = ({ a, qty, origen, id }) => (
     <div className="flex items-center gap-2 py-3">
+      <Foto ruta={a.image_path} categoria={a.category} className="w-10 h-10 rounded-xl" icono={20} />
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{a.name}</p>
         <p className="text-xs text-gris">
@@ -250,10 +259,26 @@ export default function Compras() {
               <Err>{errCompra.price}</Err>
             </div>
           </div>
+          <div className="mt-3">
+            <label className="etiqueta" htmlFor="cp-vence">
+              ¿Cuándo vence? (opcional)
+            </label>
+            <input
+              id="cp-vence"
+              type="date"
+              className="campo"
+              min="2000-01-01"
+              max="2100-12-31"
+              value={comprando.vence}
+              onChange={(e) => setComprando({ ...comprando, vence: e.target.value })}
+            />
+            <Err>{errVence}</Err>
+          </div>
           <p className="text-xs text-gris mt-2">
-            {d.hogar ? 'Se suma a la despensa del hogar' : 'Se suma a tu despensa'} y el precio cuenta para el gasto del mes.
+            {d.hogar ? 'Se suma a la despensa del hogar' : 'Se suma a tu despensa'} y el precio cuenta para el gasto del mes. Con la fecha,
+            la despensa te avisa antes de que venza.
           </p>
-          <button onClick={confirmar} disabled={!!errCompra.qty || !!errCompra.price} className="btn-primario w-full mt-4">
+          <button onClick={confirmar} disabled={!!errCompra.qty || !!errCompra.price || !!errVence} className="btn-primario w-full mt-4">
             Confirmar compra
           </button>
         </Hoja>

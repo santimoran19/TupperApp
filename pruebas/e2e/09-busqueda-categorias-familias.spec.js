@@ -231,7 +231,8 @@ test('buscador con sinónimos, Open Food Facts, categorías, familias y recetas 
     await pg.waitForTimeout(300)
     expect(await tarjeta('Cosa rara').locator('p.text-xs').innerText()).toBe('Snacks y dulces')
     expect((await api('GET', 'foods?select=*')).filter((f) => f.id === rara.id)[0].category).toBe('Snacks y dulces')
-    const chips = await pg.locator('div.sin-scroll button').allInnerTexts()
+    // Los botones de categoría muestran cuántos hay: "Snacks y dulces (1)"
+    const chips = (await pg.locator('div.sin-scroll button').allInnerTexts()).map((t) => t.replace(/\s*\(\d+\)$/, ''))
     expect(chips).toContain('Snacks y dulces')
     expect(chips).toContain('Pastas y arroz')
   })

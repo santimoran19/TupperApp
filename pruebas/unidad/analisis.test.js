@@ -1,7 +1,15 @@
 // Análisis semanal con IA: la parte que arma los datos y lee la respuesta, y la elección del proveedor.
 // Son los mismos archivos que corren en la función de Supabase (ahí con Deno; acá se simula lo poco que usan de Deno).
-import { afterEach, expect, test, vi } from 'vitest'
-import { armarDatos, esFecha, interpretar, lunesDe, sumarDias } from '../../supabase/functions/analizar-semana/logica.ts'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import {
+  armarDatos,
+  esFecha,
+  INSTRUCCIONES,
+  interpretar,
+  leerObjetivos,
+  lunesDe,
+  sumarDias,
+} from '../../supabase/functions/analizar-semana/logica.ts'
 import { proveedor } from '../../supabase/functions/analizar-semana/proveedores.ts'
 
 // ---------- Fechas ----------
@@ -106,6 +114,80 @@ test('el objetivo de líquido propio le gana al calculado', () => {
     hoy: '2026-09-28',
   })
   expect(datos.objetivos_por_dia.liquido_ml).toBe(3000)
+})
+
+// ---------- Objetivo de cada día (modo dinámico) ----------
+describe('objetivos por día', () => {
+  const lunes = '2026-09-28'
+  const dia = (fecha, extra = {}) => ({ fecha, objetivo_kcal: 2200, dinamico: true, ...extra })
+
+  test('se leen solo los días de la semana, sin repetir, con números razonables', () => {
+    const m = leerObjetivos(
+      [
+        dia('2026-09-28', { objetivo_kcal: 2349.6 }),
+        dia('2026-09-28', { objetivo_kcal: 3000 }), // repetido: se queda el primero
+        dia('2026-10-05'), // de otra semana
+        dia('2026-09-29', { objetivo_kcal: 100 }), // objetivo imposible: se descarta el día
+        dia('2026-09-30', { dinamico: 'si' }),
+        dia('2026-10-01', { objetivo_kcal: null }),
+        dia('2026-10-02', { objetivo_kcal: '' }),
+        null,
+        'texto',
+        dia('mañana'),
+      ],
+      lunes,
+    )
+    expect([...m.keys()]).toEqual(['2026-09-28', '2026-09-30'])
+    expect(m.get('2026-09-28')).toEqual({ objetivo_kcal: 2350, dinamico: true })
+    // "dinámico" solo vale si es true
+    expect(m.get('2026-09-30')).toEqual({ objetivo_kcal: 2200, dinamico: false })
+  })
+
+  test('algo que no es una lista, o más de siete días, no rompe nada', () => {
+    expect(leerObjetivos(undefined, lunes).size).toBe(0)
+    expect(leerObjetivos({ fecha: lunes }, lunes).size).toBe(0)
+    expect(
+      leerObjetivos(
+        Array.from({ length: 50 }, (_, i) => dia(sumarDias(lunes, i % 7))),
+        lunes,
+      ).size,
+    ).toBe(7)
+  })
+
+  test('cualquier dato de ejercicio o gasto que venga se descarta: no llega al modelo', () => {
+    const m = leerObjetivos([dia('2026-09-28', { ejercicio_kcal: 300, ejercicio_min: 40, mantenimiento_kcal: 2500, gasto: 3000 })], lunes)
+    expect(m.get('2026-09-28')).toEqual({ objetivo_kcal: 2200, dinamico: true })
+    const { datos } = armarDatos({ perfil, registros, alimentos, medidas, lunes, hoy: '2026-10-01', objetivos: m })
+    expect(JSON.stringify(datos)).not.toMatch(/ejercicio|mantenimiento|gasto/)
+  })
+
+  test('cada día lleva su objetivo; con el dinámico no se manda un número fijo', () => {
+    const objetivos = leerObjetivos([dia('2026-09-28', { objetivo_kcal: 2350 }), dia('2026-09-29', { objetivo_kcal: 2050 })], lunes)
+    const { datos } = armarDatos({ perfil, registros, alimentos, medidas, lunes, hoy: '2026-10-01', objetivos })
+    const [d1, d2] = datos.semana.dias
+    expect(d1.objetivo_kcal).toBe(2350)
+    expect(d2.objetivo_kcal).toBe(2050)
+    expect(datos.objetivos_por_dia).toEqual({ proteina_g: 120, liquido_ml: 2800 })
+    expect(datos.objetivo_de_calorias).toMatch(/dinámico/)
+    // el día sin registro no lleva objetivo
+    expect(datos.semana.dias[2]).toEqual({ dia: 'miércoles', fecha: '2026-09-30', sin_registro: true })
+  })
+
+  test('con el objetivo fijo, o con una app vieja que no manda nada, queda un solo número', () => {
+    const fijo = leerObjetivos([dia('2026-09-28', { objetivo_kcal: 2100, dinamico: false })], lunes)
+    expect(
+      armarDatos({ perfil, registros, alimentos, medidas, lunes, hoy: '2026-10-01', objetivos: fijo }).datos.objetivos_por_dia.kcal,
+    ).toBe(2100)
+    const viejo = armarDatos({ perfil, registros, alimentos, medidas, lunes, hoy: '2026-10-01' }).datos
+    expect(viejo.objetivos_por_dia.kcal).toBe(2100)
+    expect(viejo.objetivo_de_calorias).toBe('fijo')
+    expect(viejo.semana.dias[0].objetivo_kcal).toBeUndefined()
+  })
+
+  test('las instrucciones le piden comparar cada día con el suyo y hablar de las cifras como estimaciones', () => {
+    expect(INSTRUCCIONES).toMatch(/objetivo_kcal/)
+    expect(INSTRUCCIONES).toMatch(/estimaciones/)
+  })
 })
 
 // ---------- Lectura de la respuesta ----------

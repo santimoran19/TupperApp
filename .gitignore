@@ -10,3 +10,7 @@ test-results
 playwright-report
 pruebas/e2e/.estado
 pruebas/e2e/capturas
+
+# Fotos con IA (scripts/fotos-ia.mjs)
+.fotos-ia.json
+fotos-ia

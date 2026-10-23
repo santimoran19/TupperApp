@@ -5,6 +5,7 @@ import { Err, Numero } from './ui'
 import { ACTIVIDADES, liquidoSugerido, objetivoSugerido } from '../lib/nutricion'
 import { edad } from '../lib/fechas'
 import { LIM, errNacimiento, errNumero, errTexto, hayErrores, rangoNacimiento } from '../lib/validar'
+import SiluetaInteractiva from './SiluetaInteractiva'
 
 export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
   const [f, setF] = useState({
@@ -196,6 +197,19 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
           </select>
         </div>
       </div>
+
+      {datosOk && (
+        <section className="rounded-2xl border border-linea p-4" aria-label="Cómo te verías">
+          <p className="font-semibold mb-1">Cómo te verías</p>
+          <p className="text-xs text-gris mb-3">Mové la barra o arrastrá la silueta para elegir tu peso meta.</p>
+          <SiluetaInteractiva
+            compacta
+            perfil={{ ...inicial, sex: f.sex, birth_date: f.birth_date, height_cm: f.height_cm, goal_weight_kg: f.goal_weight_kg }}
+            peso={Number(f.weight_kg)}
+            onUsarMeta={(kg) => set('goal_weight_kg')(String(kg))}
+          />
+        </section>
+      )}
 
       <div className="rounded-2xl bg-verde-claro p-4">
         <div className="flex items-center justify-between mb-2">

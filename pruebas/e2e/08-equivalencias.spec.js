@@ -246,14 +246,14 @@ test('equivalencias: un producto propio vale por un alimento de las recetas', as
     await pg.waitForSelector('p.font-semibold:text-is("Atún al natural La Campagnola")')
     const tarjeta = pg.locator('div.tarjeta', { has: pg.locator('p.font-semibold:text-is("Atún al natural La Campagnola")') })
     // la sugerencia
-    await tarjeta.locator('div.bg-teal-suave').innerText()
+    await tarjeta.locator('div.bg-teal-suave:has-text("¿Cuenta como")').innerText()
     await tarjeta.scrollIntoViewIfNeeded()
     await captura(pg, 'e04_sugerencia', false)
     expect(await tarjeta.innerText()).toContain('¿Cuenta como Atún al natural en las recetas?')
     await tarjeta.locator('button:text-is("Sí")').click()
     await pg.waitForSelector('text=Las recetas ya lo usan como atún al natural')
     await pg.waitForSelector('p:has-text("cuenta como Atún al natural")')
-    expect(await tarjeta.locator('div.bg-teal-suave').count()).toBe(0)
+    expect(await tarjeta.locator('div.bg-teal-suave:has-text("¿Cuenta como")').count()).toBe(0)
     fideos = (await rest(pg, 'recipes')).filter((r) => r.slug === 'fideos-con-atun')[0]
     await pg.goto(APP + '/recetas/' + fideos.id)
     await pg.waitForSelector('text=Ingredientes')

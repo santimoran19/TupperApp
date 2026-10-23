@@ -6,6 +6,8 @@ import { Hoja, Icono, Vacio } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { redondear } from '../lib/nutricion'
 import { nombreCorto } from '../lib/equivalencias'
+import Foto from '../components/Foto'
+import ElegirFoto from '../components/ElegirFoto'
 
 export default function MisAlimentos() {
   const d = useDatos()
@@ -47,6 +49,7 @@ export default function MisAlimentos() {
             <div className="tarjeta px-4 divide-y divide-linea">
               {propios.map((a) => (
                 <div key={a.id} className="flex items-center gap-1 py-3">
+                  <Foto ruta={a.image_path} categoria={a.category} className="w-11 h-11 rounded-xl mr-2" icono={20} />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{a.name}</p>
                     <p className="text-xs text-gris">
@@ -72,6 +75,17 @@ export default function MisAlimentos() {
 
       {editando && (
         <Hoja titulo={editando === 'nuevo' ? 'Nuevo alimento' : 'Editar alimento'} onCerrar={() => setEditando(null)}>
+          {editando !== 'nuevo' && d.alimentosPorId.get(editando.id) && (
+            <div className="mb-4">
+              <p className="etiqueta">Foto</p>
+              <ElegirFoto
+                tipo="alimento"
+                fila={d.alimentosPorId.get(editando.id)}
+                categoria={d.alimentosPorId.get(editando.id).category}
+                className="w-20 h-20 rounded-2xl"
+              />
+            </div>
+          )}
           <NuevoAlimento
             inicial={editando === 'nuevo' ? null : editando}
             onCancelar={() => setEditando(null)}

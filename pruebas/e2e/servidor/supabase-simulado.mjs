@@ -167,8 +167,15 @@ function miHogar(uid) {
 function hogarSumar(uid, hogar) {
   for (const s of db.stock.filter((x) => x.user_id === uid)) {
     const h = db.stock.find((x) => x.user_id === hogar && x.food_id === s.food_id)
-    if (h) h.qty = entre(Number(h.qty) + Number(s.qty), 1000000, 2)
-    else db.stock.push({ user_id: hogar, food_id: s.food_id, qty: s.qty, updated_at: ahora() })
+    if (h) {
+      h.qty = entre(Number(h.qty) + Number(s.qty), 1000000, 2)
+      // Queda la fecha que vence antes (actualizacion-19.sql)
+      if (s.expires_on && (!h.expires_on || s.expires_on < h.expires_on)) h.expires_on = s.expires_on
+      sinFechaSiAgotado(h)
+    } else
+      db.stock.push(
+        sinFechaSiAgotado({ user_id: hogar, food_id: s.food_id, qty: s.qty, expires_on: s.expires_on ?? null, updated_at: ahora() }),
+      )
   }
   for (const l of db.shopping_items.filter((x) => x.user_id === uid)) {
     const h = db.shopping_items.find((x) => x.user_id === hogar && x.food_id === l.food_id)
@@ -229,6 +236,12 @@ function dejarElHogar(uid) {
   } else if (m.rol === 'creador') quedan[0].rol = 'creador'
 }
 
+// Como el disparador de actualizacion-19.sql: lo agotado no tiene fecha de vencimiento
+function sinFechaSiAgotado(fila) {
+  if (fila.expires_on === undefined || Number(fila.qty) <= 0) fila.expires_on = null
+  return fila
+}
+
 function moverStock(uid, cambios, soloSiExiste = false) {
   const juntos = new Map()
   for (const c of Array.isArray(cambios) ? cambios : []) juntos.set(c.food_id, (juntos.get(c.food_id) || 0) + Number(c.delta))
@@ -245,6 +258,7 @@ function moverStock(uid, cambios, soloSiExiste = false) {
       db.stock.push(fila)
     }
     fila.updated_at = ahora()
+    sinFechaSiAgotado(fila)
     tocadas.push(fila)
   }
   return tocadas
@@ -348,11 +362,31 @@ const guardarEntrenamiento = (uid, a) => {
     notes: String(d.notes ?? '').trim() || null,
     routine_id: rutina,
   }
+  // Los músculos marcados (actualizacion-19.sql): solo grupos conocidos; si el pedido no los trae, quedan los que había
+  const GRUPOS = [
+    'pecho',
+    'espalda',
+    'hombros',
+    'biceps',
+    'triceps',
+    'antebrazos',
+    'abdomen',
+    'cuadriceps',
+    'isquios',
+    'gluteos',
+    'pantorrillas',
+    'cuerpo_completo',
+  ]
+  if ('muscles' in d) {
+    if (!Array.isArray(d.muscles) || d.muscles.length > 12 || d.muscles.some((x) => !GRUPOS.includes(x)))
+      throw checkPg('workouts_musculos_chk')
+    campos.muscles = [...new Set(d.muscles)]
+  }
   let fila = db.workouts.find((w) => w.id === a.p_id)
   if (fila && fila.user_id !== uid) throw errorPg('P0001', 'Ese entrenamiento no se puede editar.')
   if (fila) Object.assign(fila, campos)
   else {
-    fila = { id: a.p_id, user_id: uid, ...campos, created_at: ahora() }
+    fila = { id: a.p_id, user_id: uid, muscles: [], ...campos, created_at: ahora() }
     db.workouts.push(fila)
   }
   // Las series se reemplazan por las que llegan
@@ -827,6 +861,73 @@ function filtros(url) {
     })
 }
 
+// ---------- Storage: el lugar "fotos" (actualizacion-19.sql) ----------
+// Público para ver; cada persona sube y borra solo en u/<su id>/. Hasta 300 KB, solo WebP o JPEG.
+const FOTO_VALIDA = /^(base\/[a-z0-9-]{1,80}|u\/[0-9a-f-]{36}\/[a-z0-9-]{1,80})\.(webp|jpg)$/
+const fotos = new Map() // ruta -> { tipo, bytes }
+function storage(req, url, cuerpo, send, res, cors) {
+  let bytes = cuerpo
+  const partes = url.pathname.replace('/storage/v1/', '').split('/')
+  // Ver una foto: GET /storage/v1/object/public/fotos/<ruta>
+  if (req.method === 'GET' && partes[0] === 'object' && partes[1] === 'public' && partes[2] === 'fotos') {
+    const f = fotos.get(decodeURIComponent(partes.slice(3).join('/')))
+    if (!f) return send(400, { statusCode: '404', error: 'not_found', message: 'Object not found' })
+    res.writeHead(200, { ...cors, 'Content-Type': f.tipo, 'Cache-Control': 'max-age=3600' })
+    return res.end(f.bytes)
+  }
+  const uid = uidDe(req)
+  if (!uid) return send(400, { statusCode: '403', error: 'Unauthorized', message: 'Invalid JWT' })
+  const propia = (ruta) => ruta.startsWith(`u/${uid}/`)
+  // Listar una carpeta: POST /storage/v1/object/list/fotos { prefix }
+  if (req.method === 'POST' && partes[0] === 'object' && partes[1] === 'list' && partes[2] === 'fotos') {
+    const pedido = JSON.parse(bytes.toString('utf8') || '{}')
+    const prefijo = String(pedido.prefix || '').replace(/\/?$/, '/')
+    if (!propia(prefijo)) return send(200, [])
+    const nombres = [...fotos.keys()].filter((r) => r.startsWith(prefijo)).map((r) => ({ name: r.slice(prefijo.length), id: r }))
+    return send(200, nombres)
+  }
+  // Subir: POST /storage/v1/object/fotos/<ruta>
+  if (req.method === 'POST' && partes[0] === 'object' && partes[1] === 'fotos') {
+    const ruta = decodeURIComponent(partes.slice(2).join('/'))
+    if (!propia(ruta)) return send(400, { statusCode: '403', error: 'Unauthorized', message: 'new row violates row-level security policy' })
+    let tipo = String(req.headers['content-type'] || '').split(';')[0]
+    // supabase-js manda un Blob como multipart/form-data: el archivo es la parte que trae su propio Content-Type
+    if (tipo === 'multipart/form-data') {
+      const limite = Buffer.from('--' + /boundary=([^;]+)/.exec(req.headers['content-type'])[1])
+      let desde = bytes.indexOf(limite)
+      while (desde !== -1) {
+        const hasta = bytes.indexOf(limite, desde + limite.length)
+        if (hasta === -1) break
+        const parte = bytes.subarray(desde + limite.length + 2, hasta - 2)
+        const fin = parte.indexOf('\r\n\r\n')
+        const cabecera = parte.subarray(0, fin).toString('utf8')
+        const t = /content-type:\s*([^\r\n;]+)/i.exec(cabecera)
+        if (t) {
+          tipo = t[1].trim()
+          bytes = parte.subarray(fin + 4)
+          break
+        }
+        desde = hasta
+      }
+    }
+    if (!['image/webp', 'image/jpeg'].includes(tipo))
+      return send(400, { statusCode: '415', error: 'invalid_mime_type', message: `mime type ${tipo} is not supported` })
+    if (bytes.length > 300000)
+      return send(400, { statusCode: '413', error: 'Payload too large', message: 'The object exceeded the maximum allowed size' })
+    if (fotos.has(ruta)) return send(400, { statusCode: '409', error: 'Duplicate', message: 'The resource already exists' })
+    fotos.set(ruta, { tipo, bytes })
+    return send(200, { Key: `fotos/${ruta}`, Id: randomUUID() })
+  }
+  // Borrar: DELETE /storage/v1/object/fotos { prefixes: [...] }
+  if (req.method === 'DELETE' && partes[0] === 'object' && partes[1] === 'fotos') {
+    const pedido = JSON.parse(bytes.toString('utf8') || '{}')
+    const borradas = []
+    for (const r of pedido.prefixes || []) if (propia(r) && fotos.delete(r)) borradas.push({ name: r })
+    return send(200, borradas)
+  }
+  return send(404, { message: 'storage: no simulado' })
+}
+
 let listo = false
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x')
@@ -841,8 +942,12 @@ const server = http.createServer(async (req, res) => {
     res.end(body === undefined ? '' : JSON.stringify(body))
   }
   if (req.method === 'OPTIONS') return send(204)
-  let raw = ''
-  for await (const c of req) raw += c
+  const pedazos = []
+  for await (const c of req) pedazos.push(c)
+  const bytes = Buffer.concat(pedazos)
+  // Las fotos (Storage) llegan como bytes; todo lo demás, como JSON
+  if (url.pathname.startsWith('/storage/v1/')) return storage(req, url, bytes, send, res, cors)
+  const raw = bytes.toString('utf8')
   const body = raw ? JSON.parse(raw) : null
   try {
     // Para que las pruebas (y Playwright) sepan cuándo está todo listo y si hay función de IA
@@ -1111,6 +1216,7 @@ const server = http.createServer(async (req, res) => {
           }
         if (existente) {
           Object.assign(existente, f)
+          if (tabla === 'stock') sinFechaSiAgotado(existente)
           out.push(existente)
         } else {
           const fila = { ...(SIN_ID.has(tabla) ? {} : { id: randomUUID() }), ...f }
@@ -1135,6 +1241,8 @@ const server = http.createServer(async (req, res) => {
               ...f,
             })
           if (tabla === 'foods' && fila.alcohol === undefined) fila.alcohol = false
+          if ((tabla === 'foods' || tabla === 'recipes') && fila.image_path === undefined) fila.image_path = null
+          if (tabla === 'stock') sinFechaSiAgotado(fila)
           if (tabla === 'purchases' && !fila.date) fila.date = new Date().toISOString().slice(0, 10)
           if (tabla === 'eventos')
             Object.assign(fila, {
@@ -1171,7 +1279,23 @@ const server = http.createServer(async (req, res) => {
           if (!e.pg) throw e
           return send(e.pg === '23505' ? 409 : 400, { code: e.pg, message: e.message, details: null, hint: null })
         }
+      // Las mismas reglas que la base para la fecha de vencimiento y la foto (actualizacion-19.sql)
+      if (tabla === 'stock' && body.expires_on && !(body.expires_on >= '2000-01-01' && body.expires_on <= '2100-12-31'))
+        return send(400, {
+          code: '23514',
+          message: 'new row for relation "stock" violates check constraint "stock_vence_chk"',
+          details: null,
+          hint: null,
+        })
+      if ((tabla === 'foods' || tabla === 'recipes') && body.image_path && !FOTO_VALIDA.test(body.image_path))
+        return send(400, {
+          code: '23514',
+          message: `new row for relation "${tabla}" violates check constraint "${tabla}_foto_chk"`,
+          details: null,
+          hint: null,
+        })
       out.forEach((r) => Object.assign(r, body))
+      if (tabla === 'stock') out.forEach(sinFechaSiAgotado)
       return send(200, out)
     }
     if (req.method === 'DELETE') {

@@ -9,6 +9,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { descartadas, descartar } from '../lib/equivalencias'
 import { accionesDeCompras } from './acciones/compras'
+import { accionesDeFotos } from './acciones/fotos'
 import { accionesDeDespensa } from './acciones/despensa'
 import { accionesDeEjercicio } from './acciones/ejercicio'
 import { accionesDeHogar } from './acciones/hogar'
@@ -94,6 +95,7 @@ function Datos({ usuario, children }) {
       ...accionesDeRecetas(k),
       ...accionesDePlan(k),
       ...accionesDeEjercicio(k),
+      ...accionesDeFotos(k),
     }
   })
 

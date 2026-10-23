@@ -149,7 +149,7 @@ describe('fase 2: actividades', () => {
     const correr = await una(
       `select mets_suave, mets_medio, mets_fuerte, metrica, usa_distancia from public.exercise_types where slug = 'correr'`,
     )
-    expect(correr).toMatchObject({ mets_suave: '7', mets_medio: '9.8', mets_fuerte: '12.3', metrica: 'correr', usa_distancia: true })
+    expect(correr).toMatchObject({ mets_suave: '7.5', mets_medio: '9.3', mets_fuerte: '12', metrica: 'correr', usa_distancia: true })
   })
 
   test('todas las personas ven las actividades base y no pueden cambiarlas', async () => {

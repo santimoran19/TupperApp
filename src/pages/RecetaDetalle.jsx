@@ -1,13 +1,83 @@
 // Detalle de una receta: ingredientes contra el stock, pasos y cocinar.
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Marco from '../components/Marco'
+import Foto from '../components/Foto'
+import ElegirFoto from '../components/ElegirFoto'
 import { Err, Hoja, Icono, Macros, Numero } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { cantidadEscalada, cantidadTexto, listaComidas, porcionesMas, porcionesMenos, redondear } from '../lib/nutricion'
 import { disponibilidad } from '../lib/planificador'
 import { convertir, nombreCorto } from '../lib/equivalencias'
 import { LIM, errNumero } from '../lib/validar'
+import Vista3D, { hayWebGL, tresDPrendido } from '../components/Vista3D'
+import { partesDeReceta } from '../lib/plato'
+
+// Arriba de todo: la foto o, si no tiene (o si se elige), el plato en 3D con la comida repartida según de qué está hecha
+function Portada({ receta }) {
+  const d = useDatos()
+  const partes = useMemo(() => partesDeReceta(d.itemsDe(receta.id), d.alimentosPorId), [d, receta.id])
+  const props = useMemo(() => ({ partes }), [partes])
+  const [vista, setVista] = useState(receta.image_path ? 'foto' : 'plato')
+  const total = partes.reduce((s, p) => s + p.gramos, 0)
+  const foto = (
+    <Foto
+      ruta={receta.image_path}
+      categoria="receta"
+      nombre={receta.name}
+      className="w-full aspect-[16/10] rounded-3xl lg:aspect-[21/9]"
+      icono={64}
+    />
+  )
+  const puede3D = partes.length > 0 && tresDPrendido() && hayWebGL()
+  return (
+    <div className="mb-4">
+      {vista === 'plato' && puede3D ? (
+        <div className="rounded-3xl bg-gradient-to-b from-verde-claro to-superficie">
+          <Vista3D
+            tipo="plato"
+            props={props}
+            etiqueta={`Plato de ${receta.name} en 3D`}
+            lienzo="w-full aspect-[16/10] lg:aspect-[21/9]"
+            sinTresD={foto}
+          />
+          <ul className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-4 pb-3 -mt-2 text-xs">
+            {partes.map((p) => (
+              <li key={p.nombre} className="flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: p.color }} />
+                {p.nombre} <span className="text-gris">{Math.round((p.gramos / total) * 100)} %</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        foto
+      )}
+      {puede3D && receta.image_path && (
+        <div className="flex justify-center gap-2 mt-2" role="group" aria-label="Cómo ver la receta">
+          {receta.image_path && (
+            <button
+              type="button"
+              onClick={() => setVista('foto')}
+              aria-pressed={vista === 'foto'}
+              className={`btn-chico h-8 ${vista === 'foto' ? 'bg-verde text-white' : 'bg-campo text-tinta'}`}
+            >
+              <Icono n="image" size={16} /> Foto
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setVista('plato')}
+            aria-pressed={vista === 'plato'}
+            className={`btn-chico h-8 ${vista === 'plato' ? 'bg-verde text-white' : 'bg-campo text-tinta'}`}
+          >
+            <Icono n="3d_rotation" size={16} /> Plato en 3D
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function RecetaDetalle() {
   const { id } = useParams()
@@ -80,6 +150,7 @@ export default function RecetaDetalle() {
             </button>
           </div>
         )}
+        <Portada receta={receta} />
         <div className="flex items-start gap-2">
           <h2 className="flex-1 text-2xl font-bold tracking-tight leading-tight">{receta.name}</h2>
           {!oculta && (
@@ -99,6 +170,12 @@ export default function RecetaDetalle() {
         </p>
         <Macros m={m} />
         <p className="text-xs text-gris mt-1.5 mb-4">Valores por porción.</p>
+        {receta.owner === d.usuario.id && (
+          <div className="tarjeta p-4 mb-4">
+            <p className="etiqueta">Foto de la receta</p>
+            <ElegirFoto tipo="receta" fila={receta} categoria="receta" className="w-20 h-20 rounded-2xl" />
+          </div>
+        )}
 
         {cocinadas > 0 && (
           <div className="rounded-2xl bg-teal-suave p-4 mb-4 flex items-center gap-3">

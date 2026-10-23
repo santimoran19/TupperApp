@@ -36,7 +36,6 @@ export const semanaDe = (texto) => {
 export const nombreDia = (texto) => DIAS[diaSemana(texto)]
 export const diaCorto = (texto) => DIAS_CORTOS[diaSemana(texto)]
 export const numeroDia = (texto) => aFecha(texto).getDate()
-export const nombresDias = DIAS
 export const diasCortos = DIAS_CORTOS
 
 export function fechaLarga(texto) {

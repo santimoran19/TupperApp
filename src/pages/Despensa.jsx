@@ -1,37 +1,134 @@
-// Despensa: el stock de cada alimento y la comida que ya está cocinada.
+// Despensa: el stock de cada alimento, cuándo vence, cuánto queda y la comida que ya está cocinada.
+// Rediseño de la 1.24 (F-04 vencimientos): cada alimento con su foto, el estado de su fecha y una barra de cuánto queda
+// respecto de lo que se suele comprar; arriba, lo que hay que usar primero; al costado (abajo en el teléfono), lo que se
+// está acabando para anotarlo en la lista, un consejo para que dure más y de qué está hecha la despensa.
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Marco from '../components/Marco'
+import Foto from '../components/Foto'
+import ElegirFoto from '../components/ElegirFoto'
 import SelectorAlimento, { ValePor } from '../components/SelectorAlimento'
 import { Chip, Err, Hoja, Icono, Numero, Vacio } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { CATEGORIAS, cantidadTexto, pasoDe, redondear, unidadDe } from '../lib/nutricion'
 import { errCantidad, maxEnStock } from '../lib/validar'
 import { nombreCorto, sugerirBase } from '../lib/equivalencias'
+import { hoy, sumarDias } from '../lib/fechas'
+import { DIAS_URGENTE, compararVencimiento, consejoDe, distribucion, estadoVencimiento, nivelDeStock } from '../lib/despensa'
+
+const ORDENES = [
+  ['vence', 'Vence primero'],
+  ['nombre', 'Nombre'],
+  ['poco', 'Lo que se acaba'],
+]
+
+// Colores de cada estado de la fecha (clases enteras para Tailwind)
+const COLOR_VENCE = {
+  vencido: 'bg-rojo-suave text-rojo-texto',
+  urgente: 'bg-rojo-suave text-rojo-texto',
+  pronto: 'bg-naranja-suave text-naranja-oscuro',
+  bien: 'bg-verde-suave text-verde-texto',
+}
+export function EtiquetaVence({ estado, className = '' }) {
+  if (!estado) return null
+  return (
+    <span className={`pill whitespace-nowrap ${COLOR_VENCE[estado.nivel]} ${className}`}>
+      {estado.nivel !== 'bien' && <span className="w-1.5 h-1.5 rounded-full bg-current" aria-hidden="true" />}
+      {estado.texto}
+    </span>
+  )
+}
+
+// Rosca de la distribución por categoría. Los colores son los de la marca, en orden.
+const TONOS = ['--c-verde', '--c-teal', '--c-naranja', '--c-coral', '--c-verde-tenue', '--c-gris']
+function Rosca({ partes, total }) {
+  const r = 42
+  const largo = 2 * Math.PI * r
+  let hecho = 0
+  return (
+    <svg viewBox="0 0 100 100" className="w-28 h-28 shrink-0 -rotate-90" role="img" aria-label="Distribución de la despensa por categoría">
+      <circle cx="50" cy="50" r={r} fill="none" stroke="rgb(var(--c-pista))" strokeWidth="13" />
+      {partes.map((p, i) => {
+        const tramo = total ? (p.cantidad / total) * largo : 0
+        const el = (
+          <circle
+            key={p.categoria}
+            cx="50"
+            cy="50"
+            r={r}
+            fill="none"
+            stroke={`rgb(var(${TONOS[i % TONOS.length]}))`}
+            strokeWidth="13"
+            strokeDasharray={`${Math.max(0, tramo - 1.2)} ${largo}`}
+            strokeDashoffset={-hecho}
+          />
+        )
+        hecho += tramo
+        return el
+      })}
+    </svg>
+  )
+}
 
 export default function Despensa() {
   const d = useDatos()
+  const hoyTexto = hoy()
   const [texto, setTexto] = useState('')
   const [categoria, setCategoria] = useState('Todos')
+  const [orden, setOrden] = useState('vence')
   const [agregando, setAgregando] = useState(false)
-  const [editar, setEditar] = useState(null) // { alimento, qty }
+  const [editar, setEditar] = useState(null) // { alimento, qty, vence, nuevo }
+  const [marcados, setMarcados] = useState(() => new Set())
 
+  // Cada alimento con su fecha, su estado y cuánto queda
   const filas = useMemo(
     () =>
       d.stock
         .filter((s) => d.alimentosPorId.has(s.food_id))
-        .map((s) => ({ a: d.alimentosPorId.get(s.food_id), qty: Number(s.qty) }))
-        .sort((x, y) => x.a.name.localeCompare(y.a.name, 'es')),
-    [d.stock, d.alimentosPorId],
+        .map((s) => {
+          const a = d.alimentosPorId.get(s.food_id)
+          const qty = Number(s.qty)
+          const vence = d.vencimientos.get(s.food_id) || null
+          return {
+            a,
+            qty,
+            vence,
+            estado: estadoVencimiento(vence, hoyTexto),
+            nivel: nivelDeStock(qty, d.referencias.get(s.food_id)),
+          }
+        }),
+    [d.stock, d.alimentosPorId, d.vencimientos, d.referencias, hoyTexto],
   )
+  const porNombre = (x, y) => x.a.name.localeCompare(y.a.name, 'es')
+  const ordenadas = useMemo(() => {
+    const lista = [...filas]
+    if (orden === 'nombre') return lista.sort(porNombre)
+    if (orden === 'poco')
+      return lista.sort(
+        (x, y) => Number(x.qty > 0) - Number(y.qty > 0) || (x.nivel ? x.nivel.pct : 101) - (y.nivel ? y.nivel.pct : 101) || porNombre(x, y),
+      )
+    // Vence primero: lo agotado al final, lo que no tiene fecha después de lo que sí
+    return lista.sort((x, y) => Number(x.qty <= 0) - Number(y.qty <= 0) || compararVencimiento(x.vence, y.vence) || porNombre(x, y))
+  }, [filas, orden])
+
   // Los filtros van en el orden de la lista de categorías; las que no estén en la lista, al final
-  const orden = (c) => (CATEGORIAS.indexOf(c) === -1 ? 99 : CATEGORIAS.indexOf(c))
-  const categorias = ['Todos', ...[...new Set(filas.map((f) => f.a.category))].sort((x, y) => orden(x) - orden(y))]
+  const ordenCat = (c) => (CATEGORIAS.indexOf(c) === -1 ? 99 : CATEGORIAS.indexOf(c))
+  const cuentaCat = new Map()
+  for (const f of filas) cuentaCat.set(f.a.category, (cuentaCat.get(f.a.category) || 0) + 1)
+  const categorias = ['Todos', ...[...cuentaCat.keys()].sort((x, y) => ordenCat(x) - ordenCat(y))]
   const q = texto.trim().toLowerCase()
-  const visibles = filas.filter((f) => (categoria === 'Todos' || f.a.category === categoria) && (!q || f.a.name.toLowerCase().includes(q)))
+  const visibles = ordenadas.filter(
+    (f) => (categoria === 'Todos' || f.a.category === categoria) && (!q || f.a.name.toLowerCase().includes(q)),
+  )
+
   const activos = filas.filter((f) => f.qty > 0).length
   const agotados = filas.filter((f) => f.qty <= 0).length
+  const urgentes = ordenadas.filter((f) => f.qty > 0 && f.estado && f.estado.dias <= DIAS_URGENTE)
+  const porVencer = filas.filter((f) => f.qty > 0 && f.estado && f.estado.nivel !== 'bien').length
   const faltanPlan = d.planFuturo.faltantes.size
+  const ingredientes = useMemo(() => new Set(d.ingredientes.map((a) => a.id)), [d.ingredientes])
+  const seCocina = (a) => ingredientes.has(d.base(a).id)
+
   // Productos propios que se parecen a un ingrediente de las recetas y todavía no se dijo si valen por él
   const parecidos = useMemo(() => {
     const m = new Map()
@@ -44,9 +141,48 @@ export default function Despensa() {
   }, [filas, d.usuario.id, d.sinEquivalencia, d.ingredientes, d.deLaBase, d.equivalentes])
   const cocinado = d.preparado.filter((p) => Number(p.portions) > 0 && d.recetasPorId.has(p.recipe_id))
 
+  // Lo que se está acabando y no está anotado en la lista: agotado o con poco respecto de lo que se suele comprar
+  const anotados = useMemo(() => new Set(d.lista.map((x) => x.food_id)), [d.lista])
+  const seAcaban = useMemo(
+    () =>
+      filas
+        .filter((f) => !anotados.has(f.a.id) && (f.qty <= 0 || f.nivel?.bajo))
+        .sort((x, y) => Number(x.qty > 0) - Number(y.qty > 0) || porNombre(x, y))
+        .slice(0, 6)
+        .map((f) => {
+          const ref = d.referencias.get(f.a.id)
+          // Lo que falta para llegar a lo que se suele comprar (redondeado hacia arriba al paso de ese alimento)
+          const paso = pasoDe(f.a)
+          const sugerido = ref ? Math.max(paso, Math.ceil((ref - f.qty) / paso) * paso) : paso
+          return { ...f, sugerido }
+        }),
+    [filas, anotados, d.referencias],
+  )
+  const anotarMarcados = async () => {
+    const elegidos = seAcaban.filter((f) => marcados.has(f.a.id))
+    let bien = 0
+    for (const f of elegidos) if (await d.agregarALista(f.a.id, f.sugerido)) bien++
+    setMarcados(new Set())
+    if (bien > 0) d.avisar(bien === 1 ? 'Anotado en la lista de compras' : `${bien} anotados en la lista de compras`)
+  }
+
+  // Un consejo para que dure más: el de lo más urgente o, si no hay fechas, uno distinto cada día
+  const consejo = useMemo(() => {
+    const conConsejo = (f) => f.qty > 0 && consejoDe(f.a)
+    const urgente = ordenadas.find((f) => f.estado && f.estado.nivel !== 'bien' && conConsejo(f))
+    if (urgente) return { f: urgente, texto: consejoDe(urgente.a) }
+    const todos = ordenadas.filter(conConsejo)
+    if (todos.length === 0) return null
+    const f = todos[Number(hoyTexto.slice(-2)) % todos.length]
+    return { f, texto: consejoDe(f.a) }
+  }, [ordenadas, hoyTexto])
+  const dist = useMemo(() => distribucion(filas), [filas])
+
   // El alimento de la hoja, al día (la hoja guarda una copia de cuando se abrió)
   const actual = editar ? d.alimentosPorId.get(editar.alimento.id) || editar.alimento : null
   const errorEditar = editar ? errCantidad(editar.alimento, editar.qty, maxEnStock(editar.alimento), { permitirCero: true }) : null
+  const errorVence = editar?.vence && !(editar.vence >= '2000-01-01' && editar.vence <= '2100-12-31') ? 'Esa fecha no es válida.' : null
+  const abrir = (a, qty, nuevo = false) => setEditar({ alimento: a, qty: String(qty ?? ''), vence: d.vencimientos.get(a.id) || '', nuevo })
   async function quitar(a) {
     if (
       !(await d.confirmar({
@@ -61,10 +197,109 @@ export default function Despensa() {
     return listo
   }
   async function guardarCantidad() {
-    if (errorEditar) return
-    const listo = await d.fijarStock(editar.alimento.id, Number(editar.qty) || 0)
-    if (listo) setEditar(null)
+    if (errorEditar || errorVence) return
+    const id = editar.alimento.id
+    const qty = Number(editar.qty) || 0
+    if (!(await d.fijarStock(id, qty))) return
+    const antes = d.vencimientos.get(id) || ''
+    if (qty > 0 && (editar.vence || '') !== antes && !(await d.fijarVencimiento(id, editar.vence || null))) return
+    setEditar(null)
   }
+
+  const resumen = [
+    ['inventory_2', activos, 'En stock', 'text-verde-texto'],
+    ['event_busy', porVencer, 'Por vencer', porVencer > 0 ? 'text-rojo-texto' : 'text-gris'],
+    ['hourglass_empty', agotados, 'Agotados', 'text-naranja-oscuro'],
+    [
+      'takeout_dining',
+      redondear(
+        cocinado.reduce((s, p) => s + Number(p.portions), 0),
+        1,
+      ),
+      'Porciones listas',
+      'text-teal-oscuro',
+    ],
+  ]
+
+  const lateral = (lugar) => (
+    <>
+      {seAcaban.length > 0 && (
+        <section className="tarjeta p-4 mb-4" aria-labelledby={`des-acaban-${lugar}`}>
+          <div className="flex items-center gap-2">
+            <Icono n="checklist" className="text-verde-texto" />
+            <h2 id={`des-acaban-${lugar}`} className="font-bold flex-1">
+              Se está acabando
+            </h2>
+            <span className="pill bg-naranja-suave text-naranja-oscuro">{seAcaban.length}</span>
+          </div>
+          <p className="text-xs text-gris mt-1">Agotado o con poco respecto de lo que solés comprar. Marcá lo que quieras anotar.</p>
+          <ul className="mt-3 space-y-2">
+            {seAcaban.map((f) => (
+              <li key={f.a.id}>
+                <label className="flex items-center gap-3 rounded-xl bg-campo px-3 py-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 accent-[rgb(var(--c-verde))]"
+                    checked={marcados.has(f.a.id)}
+                    onChange={(e) => {
+                      const m = new Set(marcados)
+                      if (e.target.checked) m.add(f.a.id)
+                      else m.delete(f.a.id)
+                      setMarcados(m)
+                    }}
+                  />
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-sm font-semibold truncate">{f.a.name}</span>
+                    <span className="block text-xs text-gris">
+                      {f.qty <= 0 ? 'Agotado' : `Queda ${f.nivel.pct} %`} · sugerido {cantidadTexto(f.a, f.sugerido)}
+                    </span>
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          <button onClick={anotarMarcados} disabled={marcados.size === 0} className="btn-primario w-full mt-3">
+            <Icono n="add_shopping_cart" size={20} /> Anotar {marcados.size > 0 ? marcados.size : ''} en la lista
+          </button>
+        </section>
+      )}
+
+      {consejo && (
+        <section className="tarjeta p-4 mb-4">
+          <p className="text-[11px] font-bold tracking-wider text-verde-texto flex items-center gap-1.5">
+            <Icono n="lightbulb" size={16} /> PARA QUE DURE MÁS
+          </p>
+          <div className="flex items-start gap-3 mt-2">
+            <Foto ruta={consejo.f.a.image_path} categoria={consejo.f.a.category} className="w-12 h-12 rounded-xl" icono={22} />
+            <div className="min-w-0">
+              <h3 className="font-semibold">{consejo.f.a.name}</h3>
+              <p className="text-sm text-gris mt-0.5">{consejo.texto}</p>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {dist.total > 0 && (
+        <section className="tarjeta p-4 mb-4">
+          <h2 className="font-bold flex items-center gap-2">
+            <Icono n="donut_large" className="text-verde-texto" /> De qué está hecha tu despensa
+          </h2>
+          <div className="flex items-center gap-4 mt-3">
+            <Rosca partes={dist.partes} total={dist.total} />
+            <ul className="flex-1 min-w-0 space-y-1.5">
+              {dist.partes.map((p, i) => (
+                <li key={p.categoria} className="flex items-center gap-2 text-sm">
+                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: `rgb(var(${TONOS[i % TONOS.length]}))` }} />
+                  <span className="flex-1 truncate">{p.categoria}</span>
+                  <span className="font-semibold tabular-nums">{p.pct} %</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
+    </>
+  )
 
   return (
     <Marco titulo="Despensa">
@@ -75,27 +310,14 @@ export default function Despensa() {
               <Icono n="home" size={14} /> Despensa compartida · {d.hogar.nombre}
             </Link>
           )}
-          <div className="grid grid-cols-3 gap-2 mb-4" data-tour="des-resumen">
-            <div className="tarjeta p-3">
-              <Icono n="inventory_2" className="text-verde-texto" size={20} />
-              <p className="text-2xl font-bold leading-tight">{activos}</p>
-              <p className="text-xs text-gris">En stock</p>
-            </div>
-            <div className="tarjeta p-3">
-              <Icono n="hourglass_empty" className="text-naranja-oscuro" size={20} />
-              <p className="text-2xl font-bold leading-tight text-naranja-oscuro">{agotados}</p>
-              <p className="text-xs text-gris">Agotados</p>
-            </div>
-            <div className="tarjeta p-3">
-              <Icono n="takeout_dining" className="text-teal-oscuro" size={20} />
-              <p className="text-2xl font-bold leading-tight text-teal-oscuro">
-                {redondear(
-                  cocinado.reduce((s, p) => s + Number(p.portions), 0),
-                  1,
-                )}
-              </p>
-              <p className="text-xs text-gris">Porciones listas</p>
-            </div>
+          <div className="grid grid-cols-4 gap-2 mb-4" data-tour="des-resumen">
+            {resumen.map(([ic, n, t, color]) => (
+              <div key={t} className="tarjeta px-2 py-3 text-center">
+                <Icono n={ic} className={`mx-auto ${color}`} size={20} />
+                <p className={`text-xl font-bold leading-tight mt-0.5 ${color === 'text-gris' ? '' : color}`}>{n}</p>
+                <p className="text-[11px] leading-tight text-gris">{t}</p>
+              </div>
+            ))}
           </div>
 
           <Link to="/compras" className="tarjeta p-4 mb-4 flex items-center gap-3" data-tour="des-compras">
@@ -121,7 +343,8 @@ export default function Despensa() {
               <div className="mt-2 space-y-2">
                 {cocinado.map((p) => (
                   <div key={p.recipe_id} className="flex items-center gap-2 text-sm">
-                    <Link to={`/recetas/${p.recipe_id}`} className="flex-1 font-medium">
+                    <Foto ruta={d.recetasPorId.get(p.recipe_id).image_path} categoria="receta" className="w-9 h-9 rounded-xl" icono={18} />
+                    <Link to={`/recetas/${p.recipe_id}`} className="flex-1 min-w-0 font-medium">
                       {d.recetasPorId.get(p.recipe_id).name}
                     </Link>
                     <button
@@ -147,9 +370,39 @@ export default function Despensa() {
               </div>
             </section>
           )}
+
+          <div className="hidden xl:block">{lateral('costado')}</div>
         </div>
 
         <div className="min-w-0">
+          {urgentes.length > 0 && (
+            <section className="rounded-3xl bg-rojo-suave/70 p-4 mb-4" aria-labelledby="des-primero">
+              <h2 id="des-primero" className="text-[11px] font-bold tracking-wider text-rojo-texto flex items-center gap-1.5">
+                <Icono n="warning" size={16} /> USÁ ESTO PRIMERO
+              </h2>
+              <div className="flex gap-3 overflow-x-auto sin-scroll -mx-4 px-4 mt-3 pb-1">
+                {urgentes.map((f) => (
+                  <div key={f.a.id} className="w-40 shrink-0 rounded-2xl bg-superficie p-3 shadow-tarjeta">
+                    <Foto
+                      ruta={f.a.image_path}
+                      categoria={f.a.category}
+                      nombre={f.a.name}
+                      className="w-full aspect-[4/3] rounded-xl"
+                      icono={36}
+                    />
+                    <p className="font-semibold text-sm mt-2 leading-tight line-clamp-2">{f.a.name}</p>
+                    <EtiquetaVence estado={f.estado} className="mt-1.5" />
+                    {seCocina(f.a) && (
+                      <Link to={`/recetas?con=${d.base(f.a).id}`} className="btn-chico bg-verde text-white w-full mt-2">
+                        <Icono n="skillet" size={16} /> Ver recetas
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           {filas.length === 0 ? (
             <Vacio icono="kitchen" titulo="Tu despensa está vacía" texto="Cargá lo que tenés en casa y la app te dice qué podés cocinar.">
               <button onClick={() => setAgregando(true)} className="btn-primario" data-tour="des-agregar">
@@ -165,6 +418,7 @@ export default function Despensa() {
                     className="campo pl-11 bg-superficie shadow-tarjeta"
                     maxLength={60}
                     placeholder="Buscar..."
+                    aria-label="Buscar en la despensa"
                     value={texto}
                     onChange={(e) => setTexto(e.target.value)}
                   />
@@ -173,33 +427,72 @@ export default function Despensa() {
                   <Icono n="add" size={20} /> Agregar
                 </button>
               </div>
+              <div className="flex items-center gap-2 mb-3">
+                <label htmlFor="des-orden" className="text-xs font-semibold text-gris shrink-0">
+                  Ordenar por
+                </label>
+                <select
+                  id="des-orden"
+                  className="h-9 rounded-full bg-superficie shadow-tarjeta px-3 text-sm font-semibold outline-none"
+                  value={orden}
+                  onChange={(e) => setOrden(e.target.value)}
+                >
+                  {ORDENES.map(([k, t]) => (
+                    <option key={k} value={k}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="chips-hilera sin-scroll mb-4">
                 {categorias.map((c) => (
                   <Chip key={c} activo={c === categoria} onClick={() => setCategoria(c)}>
-                    {c}
+                    {c} <span className="opacity-60">({c === 'Todos' ? filas.length : cuentaCat.get(c)})</span>
                   </Chip>
                 ))}
               </div>
-              <div className="grilla-tarjetas [--min:18.5rem]">
-                {visibles.map(({ a, qty }) => (
-                  <div key={a.id} className="tarjeta p-4">
-                    <div className="flex items-start gap-2">
+              <div className="grilla-tarjetas [--min:19rem]">
+                {visibles.map(({ a, qty, estado, nivel }) => (
+                  <div key={a.id} className={`tarjeta p-3.5 ${qty <= 0 ? 'opacity-80' : ''}`}>
+                    <div className="flex items-start gap-3">
+                      <Foto ruta={a.image_path} categoria={a.category} nombre={a.name} className="w-16 h-16 rounded-2xl" />
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold truncate">{a.name}</p>
+                        <div className="flex items-start gap-1">
+                          <p className="font-semibold leading-snug flex-1 min-w-0 line-clamp-2">{a.name}</p>
+                          <button
+                            onClick={() => quitar(a)}
+                            className="toque w-8 h-8 -mt-1.5 -mr-1.5 flex items-center justify-center text-gris"
+                            aria-label={`Quitar ${a.name} de la despensa`}
+                          >
+                            <Icono n="delete" size={19} />
+                          </button>
+                        </div>
                         <p className="text-xs text-gris">
                           {a.category}
                           {d.base(a).id !== a.id && <span className="text-teal-oscuro"> · cuenta como {nombreCorto(d.base(a))}</span>}
                         </p>
+                        <div className="flex flex-wrap gap-1 mt-1.5">
+                          {qty <= 0 && <span className="pill bg-naranja-suave text-naranja-oscuro">Agotado</span>}
+                          <EtiquetaVence estado={qty > 0 ? estado : null} />
+                        </div>
                       </div>
-                      {qty <= 0 && <span className="pill bg-naranja-suave text-naranja-oscuro">Agotado</span>}
-                      <button
-                        onClick={() => quitar(a)}
-                        className="toque w-8 h-8 -mt-1 -mr-1.5 flex items-center justify-center text-gris"
-                        aria-label={`Quitar ${a.name} de la despensa`}
-                      >
-                        <Icono n="delete" size={19} />
-                      </button>
                     </div>
+                    {qty > 0 && nivel && (
+                      <div className="mt-3">
+                        <div className="flex justify-between text-xs">
+                          <span className="font-semibold">Queda {nivel.pct} %</span>
+                          <span className={nivel.bajo ? 'text-naranja-oscuro font-semibold' : 'text-gris'}>
+                            {nivel.bajo ? 'Nivel bajo' : 'de lo que solés comprar'}
+                          </span>
+                        </div>
+                        <div className="h-2 rounded-full bg-pista mt-1 overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-[width] duration-500 ${nivel.bajo ? 'bg-naranja' : estado?.nivel === 'urgente' || estado?.nivel === 'vencido' ? 'bg-rojo' : 'bg-verde'}`}
+                            style={{ width: `${Math.max(4, nivel.pct)}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 mt-3">
                       <div className="flex items-center rounded-full bg-campo">
                         <button
@@ -210,10 +503,7 @@ export default function Despensa() {
                         >
                           <Icono n="remove" size={20} />
                         </button>
-                        <button
-                          onClick={() => setEditar({ alimento: a, qty: String(qty) })}
-                          className="min-w-[92px] px-1 text-sm font-semibold"
-                        >
+                        <button onClick={() => abrir(a, qty)} className="min-w-[84px] px-1 text-sm font-semibold">
                           {cantidadTexto(a, qty)}
                         </button>
                         <button
@@ -225,12 +515,25 @@ export default function Despensa() {
                           <Icono n="add" size={20} />
                         </button>
                       </div>
-                      <button
-                        onClick={() => d.agregarALista(a.id, pasoDe(a)).then((ok) => ok && d.avisar('Anotado en la lista de compras'))}
-                        className="ml-auto btn-chico bg-verde-suave text-verde-texto"
-                      >
-                        <Icono n="add_shopping_cart" size={16} /> Comprar
-                      </button>
+                      <div className="ml-auto flex items-center gap-1.5">
+                        {qty > 0 && seCocina(a) && (
+                          <Link
+                            to={`/recetas?con=${d.base(a).id}`}
+                            className="btn-chico bg-verde-suave text-verde-texto px-3"
+                            aria-label={`Recetas con ${a.name}`}
+                          >
+                            <Icono n="skillet" size={16} /> Cocinar
+                          </Link>
+                        )}
+                        <button
+                          onClick={() => d.agregarALista(a.id, pasoDe(a)).then((ok) => ok && d.avisar('Anotado en la lista de compras'))}
+                          className="toque w-9 h-9 rounded-full bg-campo text-verde-texto flex items-center justify-center"
+                          aria-label={`Comprar ${a.name}`}
+                          title="Anotar en la lista de compras"
+                        >
+                          <Icono n="add_shopping_cart" size={18} />
+                        </button>
+                      </div>
                     </div>
                     {parecidos.has(a.id) && (
                       <div className="mt-3 rounded-xl bg-teal-suave px-3 py-2 flex items-center gap-2">
@@ -261,6 +564,7 @@ export default function Despensa() {
               </div>
             </>
           )}
+          <div className="xl:hidden mt-4">{lateral('abajo')}</div>
         </div>
       </div>
 
@@ -269,7 +573,7 @@ export default function Despensa() {
           <SelectorAlimento
             onElegir={(a) => {
               setAgregando(false)
-              setEditar({ alimento: a, qty: String(d.stockMap.get(a.id) || ''), nuevo: true })
+              abrir(a, d.stockMap.get(a.id) || '', true)
             }}
           />
         </Hoja>
@@ -291,8 +595,54 @@ export default function Despensa() {
           />
           <Err>{editar.qty !== '' && errorEditar}</Err>
           {editar.alimento.unit !== 'u' && <p className="text-xs text-gris mt-1.5">1 kg son 1000 g y 1 litro son 1000 ml.</p>}
+
+          <div className="mt-4">
+            <label className="etiqueta" htmlFor="dp-vence">
+              ¿Cuándo vence? (opcional)
+            </label>
+            <input
+              id="dp-vence"
+              type="date"
+              className="campo"
+              min="2000-01-01"
+              max="2100-12-31"
+              value={editar.vence}
+              onChange={(e) => setEditar({ ...editar, vence: e.target.value })}
+            />
+            <Err>{errorVence}</Err>
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {[
+                [3, '3 días'],
+                [7, '1 semana'],
+                [30, '1 mes'],
+                [180, '6 meses'],
+              ].map(([n, t]) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setEditar({ ...editar, vence: sumarDias(hoyTexto, n) })}
+                  className="btn-chico bg-campo text-tinta h-8"
+                >
+                  +{t}
+                </button>
+              ))}
+              {editar.vence && (
+                <button type="button" onClick={() => setEditar({ ...editar, vence: '' })} className="btn-chico bg-campo text-gris h-8">
+                  Sin fecha
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-gris mt-1.5">
+              Si tenés varios, poné la fecha del que vence primero. Al agotarse, la fecha se borra sola.
+            </p>
+          </div>
+
           {editar.alimento.owner === d.usuario.id && (
             <div className="mt-4 space-y-3">
+              <div>
+                <p className="etiqueta">Foto</p>
+                <ElegirFoto tipo="alimento" fila={actual} categoria={actual.category} className="w-20 h-20 rounded-2xl" />
+              </div>
               <div>
                 <label className="etiqueta" htmlFor="dp-categoria">
                   Categoría
@@ -328,7 +678,7 @@ export default function Despensa() {
                 <Icono n="delete" size={20} /> Quitar
               </button>
             )}
-            <button onClick={guardarCantidad} disabled={!!errorEditar} className="btn-primario flex-1">
+            <button onClick={guardarCantidad} disabled={!!errorEditar || !!errorVence} className="btn-primario flex-1">
               Guardar
             </button>
           </div>

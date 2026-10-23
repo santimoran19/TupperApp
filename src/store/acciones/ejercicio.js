@@ -8,6 +8,7 @@ import { gastoBase, pesoDelDia } from '../../lib/gasto'
 import { ok, supabase } from '../base'
 import { traerEjercicio } from '../carga'
 import { invalido, nuevaClave } from '../listas'
+import { musculosValidos } from '../../lib/musculos'
 
 // Texto → número o null (los campos vacíos de los formularios)
 const numero = (v) => (v === '' || v === null || v === undefined ? null : Number(v))
@@ -150,6 +151,8 @@ export const accionesDeEjercicio = (k) => ({
           peso_kg: peso,
           notes: (datos.notas || '').trim().slice(0, 300) || null,
           routine_id: datos.rutina ?? null,
+          // Los músculos que la persona marcó (1.24). Si no vienen (corregir una sesión de gimnasio), se dejan los que tenía.
+          muscles: musculosValidos(datos.musculos ?? (v.e.entrenamientos || []).find((w) => w.id === id)?.muscles ?? []),
         },
         series,
         cuando: new Date().toISOString(),

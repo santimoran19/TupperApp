@@ -22,6 +22,7 @@ import {
 } from '../lib/nutricion'
 import { disponibilidad, macrosDeFila } from '../lib/planificador'
 import { rangoDiario } from '../lib/validar'
+import Vista3D from '../components/Vista3D'
 
 const TONOS = {
   info: { caja: 'bg-verde-claro', titulo: 'text-verde-texto', icono: 'eco', rotulo: 'TU DÍA' },
@@ -107,6 +108,11 @@ export default function Diario() {
   // El objetivo del día: el fijo, o el que sale del gasto si la persona prendió el cálculo dinámico (F-19)
   const gasto = d.gastoDe(fecha)
   const kcalObj = gasto.objetivo.kcal
+  // El tupper 3D se llena con las calorías de cada macronutriente (1.24)
+  const tupper = useMemo(
+    () => ({ proteina: total.protein * 4, hidratos: total.carbs * 4, grasas: total.fat * 9, objetivo: kcalObj }),
+    [total.protein, total.carbs, total.fat, kcalObj],
+  )
   const consejo = consejoDelDia({ objetivoKcal: kcalObj, objetivoProt: d.perfil.protein_target, total, registradas, planHoy })
   const tono = TONOS[consejo.tono]
   const restante = kcalObj - redondear(total.kcal)
@@ -262,10 +268,22 @@ export default function Diario() {
         <div>
           <section className="tarjeta rounded-3xl p-5 mb-4" data-tour="diario-resumen">
             <div className="flex items-center gap-5">
-              <Anillo valor={total.kcal} total={kcalObj}>
+              <Vista3D
+                tipo="tupper"
+                props={tupper}
+                etiqueta={`Tupper del día: ${redondear(total.kcal)} de ${kcalObj} calorías`}
+                className="w-[140px] shrink-0"
+                lienzo="w-full h-[104px]"
+                sinTresD={
+                  <Anillo valor={total.kcal} total={kcalObj}>
+                    <span className="text-2xl font-bold leading-none">{redondear(total.kcal).toLocaleString('es-AR')}</span>
+                    <span className="text-[11px] text-gris mt-1">kcal de {kcalObj.toLocaleString('es-AR')}</span>
+                  </Anillo>
+                }
+              >
                 <span className="text-2xl font-bold leading-none">{redondear(total.kcal).toLocaleString('es-AR')}</span>
                 <span className="text-[11px] text-gris mt-1">kcal de {kcalObj.toLocaleString('es-AR')}</span>
-              </Anillo>
+              </Vista3D>
               <div className="flex-1 space-y-2">
                 <div className={`rounded-2xl p-3 ${restante < 0 ? 'bg-naranja-suave' : 'bg-verde-claro'}`}>
                   <p className="text-xs font-semibold text-gris">{restante < 0 ? 'Te pasaste' : 'Restante'}</p>

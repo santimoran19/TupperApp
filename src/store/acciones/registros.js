@@ -2,6 +2,7 @@
 import { pasaDeCalorias } from '../../lib/ajuste'
 import { anotarEvento } from '../../lib/eventos'
 import { hoy } from '../../lib/fechas'
+import { objetivosDeLaSemana } from '../../lib/gastodia'
 import { macrosDe, redondear } from '../../lib/nutricion'
 import { supabase } from '../base'
 import { invalido, nuevaClave } from '../listas'
@@ -135,7 +136,10 @@ export const accionesDeRegistros = (k) => ({
   // No usa `accion` porque el error se muestra en la misma tarjeta: devuelve { analisis } o { error }.
   analizarSemana: async (lunes) => {
     try {
-      const { data, error } = await supabase.functions.invoke('analizar-semana', { body: { semana: lunes, hoy: hoy() } })
+      // Se le cuenta el objetivo de cada día (con el modo dinámico cambia según lo entrenado). Una versión vieja de la función lo ignora.
+      const { perfil, medidas, entrenamientos } = k.ver().e
+      const objetivos = objetivosDeLaSemana(perfil, medidas, entrenamientos, lunes, hoy())
+      const { data, error } = await supabase.functions.invoke('analizar-semana', { body: { semana: lunes, hoy: hoy(), objetivos } })
       if (error) {
         // Cuando la función responde con un error, el detalle viene en el cuerpo de la respuesta
         const detalle = await error.context?.json?.().catch(() => null)

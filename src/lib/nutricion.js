@@ -30,7 +30,6 @@ export const CATEGORIAS = [
 
 export const CON_ARTICULO = { desayuno: 'el desayuno', almuerzo: 'el almuerzo', merienda: 'la merienda', cena: 'la cena' }
 
-export const esBebida = (alimento) => alimento?.category === 'Bebidas'
 export const tieneAlcohol = (alimento) => !!alimento?.alcohol
 
 // ---------- Medidas rápidas: cada cosa se carga como se toma o se sirve ----------

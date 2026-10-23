@@ -18,7 +18,6 @@ export const METODOS = {
   distancia: { texto: 'Distancia y ritmo', margen: 0.2 },
   mets: { texto: 'Esfuerzo y duración', margen: 0.3 },
 }
-export const ORDEN_DE_METODOS = ['reloj', 'pulso', 'distancia', 'mets']
 
 // Margen de error para mostrar un rango. Las pesas se estiman peor que el resto.
 export const margenDe = (metodo, categoria = null) => (categoria === 'fuerza' ? 0.4 : (METODOS[metodo]?.margen ?? 0.3))

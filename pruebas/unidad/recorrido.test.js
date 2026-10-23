@@ -108,7 +108,7 @@ test('los textos nombran botones y pantallas que existen', () => {
     ['Mis alimentos', 'pages/Perfil.jsx'],
     ['Descargar mis datos', 'pages/Perfil.jsx'],
     ['Open Food Facts', 'components/SelectorAlimento.jsx'],
-    ['Comprar', 'pages/Despensa.jsx'],
+    ['Se está acabando', 'pages/Despensa.jsx'],
     ['Editar', 'pages/Perfil.jsx'],
     ['Nueva', 'pages/Recetas.jsx'],
     ['Agregar', 'pages/RecetaNueva.jsx'],

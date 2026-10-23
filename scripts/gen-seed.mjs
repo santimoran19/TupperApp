@@ -52,7 +52,7 @@ for (const [slug, , , metrica, suave, medio, fuerte] of actividades)
 let ejercicio =
   '-- Catálogo de actividades físicas (F-19, fase 2). Va después de supabase/actualizacion-16.sql. Generado con scripts/gen-seed.mjs\n'
 ejercicio +=
-  '-- Los METs son del Compendio de Actividades Físicas (Ainsworth et al., 2011). Se puede correr de nuevo: pone al día lo que ya estaba.\n\n'
+  '-- Los METs son del Compendio de Actividades Físicas 2024 (Herrmann et al.). Se puede correr de nuevo: pone al día lo que ya estaba.\n\n'
 ejercicio +=
   'insert into public.exercise_types (slug, name, category, metrica, mets_suave, mets_medio, mets_fuerte, usa_distancia, usa_desnivel) values\n'
 ejercicio += actividades.map((a) => `  (${a.map((v) => (typeof v === 'boolean' ? String(v) : q(v))).join(', ')})`).join(',\n')

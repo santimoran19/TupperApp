@@ -11,7 +11,6 @@ import {
   objetivoDesdeGasto,
   partesDelGasto,
   pesoDelDia,
-  tefDeMacros,
 } from '../../src/lib/gasto.js'
 
 const HOY = '2026-10-20'
@@ -235,7 +234,7 @@ describe('objetivo', () => {
   })
 })
 
-describe('gasto del día y efecto térmico', () => {
+describe('gasto del día', () => {
   test('mantenimiento más ejercicio, con rango', () => {
     const base = gastoBase(hombre, 70, HOY)
     const d = gastoDelDia(base, 400, [300, 500])
@@ -244,11 +243,5 @@ describe('gasto del día y efecto térmico', () => {
     expect(d.rango[1]).toBeCloseTo(base.rango[1] + 500, 6)
     expect(gastoDelDia(base, 0).total).toBeCloseTo(base.mantenimiento, 6)
     expect(gastoDelDia(null, 100)).toBeNull()
-  })
-  test('el efecto térmico de los macros: la proteína gasta más', () => {
-    expect(tefDeMacros({ protein: 100, carbs: 0, fat: 0 })).toBeCloseTo(100)
-    expect(tefDeMacros({ protein: 0, carbs: 100, fat: 0 })).toBeCloseTo(30)
-    expect(tefDeMacros({ protein: 0, carbs: 0, fat: 100 })).toBeCloseTo(13.5)
-    expect(tefDeMacros({})).toBe(0)
   })
 })

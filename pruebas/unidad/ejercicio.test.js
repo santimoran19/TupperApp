@@ -3,6 +3,7 @@ import { describe, expect, test } from 'vitest'
 import {
   agruparActividades,
   calcularEntrenamiento,
+  CATEGORIAS_EJERCICIO,
   ejercicioDelDia,
   filtrarPorNombre,
   kcalDeSubirEnBici,
@@ -15,6 +16,7 @@ import {
   vo2Caminando,
   vo2Corriendo,
 } from '../../src/lib/ejercicio.js'
+import { actividades } from '../../scripts/ejercicio-data.mjs'
 
 const persona = { peso: 70, edad: 30, sexo: 'm', tmb: 1650 } // el basal reparte 1,146 kcal por minuto
 const correr = { metrica: 'correr', category: 'cardio', mets_suave: 7, mets_medio: 9.8, mets_fuerte: 12.3 }
@@ -260,5 +262,47 @@ describe('buscar por nombre', () => {
   test('sin texto devuelve todo', () => {
     expect(filtrarPorNombre(lista, '  ')).toBe(lista)
     expect(paraBuscar(null)).toBe('')
+  })
+})
+
+// ---------- Catálogo de actividades ----------
+// Valores del Compendio de Actividades Físicas 2024 (pacompendium.com), revisados el 2026-10-21. Si cambia alguno, que sea a propósito.
+describe('catálogo de actividades (METs del Compendio 2024)', () => {
+  const por = Object.fromEntries(
+    actividades.map(([slug, nombre, categoria, metrica, suave, medio, fuerte, dist, desn]) => [
+      slug,
+      { nombre, categoria, metrica, suave, medio, fuerte, dist, desn },
+    ]),
+  )
+  const categorias = CATEGORIAS_EJERCICIO.map(([k]) => k)
+
+  test('no hay actividades repetidas y todas tienen categoría y métrica válidas', () => {
+    expect(new Set(actividades.map((a) => a[0])).size).toBe(actividades.length)
+    for (const a of Object.values(por)) {
+      expect(categorias).toContain(a.categoria)
+      expect(['correr', 'caminar', 'bici', 'general']).toContain(a.metrica)
+    }
+  })
+  test('los METs van de menos a más y dentro de lo que acepta la base (1 a 20)', () => {
+    for (const [slug, a] of Object.entries(por)) {
+      expect(a.suave, slug).toBeGreaterThanOrEqual(1)
+      expect(a.fuerte, slug).toBeLessThanOrEqual(20)
+      expect(a.suave, slug).toBeLessThanOrEqual(a.medio)
+      expect(a.medio, slug).toBeLessThanOrEqual(a.fuerte)
+    }
+  })
+  test('solo usan distancia las actividades que tienen una cuenta con distancia', () => {
+    for (const [slug, a] of Object.entries(por)) expect(a.dist, slug).toBe(a.metrica !== 'general')
+  })
+  test('valores puntuales del Compendio 2024', () => {
+    expect([por.correr.suave, por.correr.medio, por.correr.fuerte]).toEqual([7.5, 9.3, 12]) // trote, 6 mph y 8 mph
+    expect(por.step).toMatchObject({ suave: 5.5, medio: 7.3, fuerte: 9 }) // escalón de 4, 6-8 y 10-12 pulgadas
+    expect(por.soga).toMatchObject({ suave: 8.3, medio: 11.8, fuerte: 12.3 })
+    expect(por.escaleras).toMatchObject({ suave: 4.5, medio: 6.8, fuerte: 9.3 })
+    expect(por.spinning.medio).toBe(9)
+    expect(por.tenis).toMatchObject({ suave: 4.5, medio: 6.8, fuerte: 8 })
+    expect(por.boxeo).toMatchObject({ suave: 5.8, medio: 7.8, fuerte: 12.3 })
+    expect(por.yoga.medio).toBe(2.3)
+    expect(por.pesas).toMatchObject({ suave: 3, medio: 3.5, fuerte: 6 })
   })
 })

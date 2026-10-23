@@ -37,7 +37,7 @@ La base tiene sus propios topes por cuenta (`supabase/actualizacion-8.sql`): no 
 
 ## Qué se manda
 
-Sexo, edad, altura, peso, objetivos, totales de cada día, los alimentos registrados y las medidas de peso. No se manda el nombre ni el email.
+Sexo, edad, altura, peso, objetivos (con el objetivo de calorías de cada día: el modo dinámico cambia de un día a otro y la app lo manda en `objetivos`), totales de cada día, los alimentos registrados y las medidas de peso. No se manda el nombre ni el email, ni nada de ejercicio o gasto (la función descarta cualquier campo que no sea la fecha y el objetivo de cada día). Si la app es nueva y la función vieja, la IA compara con el objetivo fijo como antes; si es al revés, funciona igual.
 
 ## Volver a publicarla
 

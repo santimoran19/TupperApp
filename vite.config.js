@@ -9,12 +9,16 @@ export default defineConfig({
   // La versión del package.json queda disponible en el código (se muestra en el perfil y va en el registro de errores)
   define: { __APP_VERSION__: JSON.stringify(version) },
   build: {
+    // three.js mide unos 750 KB sin comprimir (190 KB comprimido) y se carga solo cuando se usa: no hace falta el aviso
+    chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         // React y Supabase cambian poco: van en archivos aparte para que el navegador los guarde entre versiones
         manualChunks: {
           react: ['react', 'react-dom', 'react-router-dom'],
           supabase: ['@supabase/supabase-js'],
+          // three.js (los dibujos 3D) es grande: va aparte y solo se baja si se usa (ver abajo, `runtimeCaching`)
+          tres: ['three'],
         },
       },
     },
@@ -45,8 +49,26 @@ export default defineConfig({
       workbox: {
         navigateFallback: '/index.html',
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        // La imagen de vista previa es para las redes: no hace falta guardarla en el teléfono
-        globIgnores: ['**/og.png'],
+        // La imagen de vista previa es para las redes: no hace falta guardarla en el teléfono. three.js tampoco se guarda de
+        // entrada (pesa ~190 KB comprimido y se puede apagar): se guarda la primera vez que se usa
+        globIgnores: ['**/og.png', '**/assets/tres-*.js'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/assets/tres-'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'tres', expiration: { maxEntries: 4 } },
+          },
+          // Las fotos de alimentos y recetas (Supabase Storage): una vez vistas, se guardan para verlas sin conexión
+          {
+            urlPattern: ({ url }) => url.pathname.includes('/storage/v1/object/public/fotos/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'fotos',
+              expiration: { maxEntries: 800, maxAgeSeconds: 60 * 60 * 24 * 60 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

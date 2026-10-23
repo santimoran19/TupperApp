@@ -100,6 +100,7 @@ export const GUARDADO = {
   ajustarStock: (s, filas) => ({ ...s, stock: conFilas(s.stock, filas, 'food_id') }),
   fijarStock: (s, filas) => ({ ...s, stock: conFilas(s.stock, filas, 'food_id') }),
   quitarDeDespensa: (s, _r, d) => ({ ...s, stock: sinFila(s.stock, 'food_id', d.food_id) }),
+  fijarVencimiento: (s, filas) => ({ ...s, stock: conFilas(s.stock, filas, 'food_id') }),
   agregarALista: (s, [fila]) => ({ ...s, lista: reemplazar(s.lista, fila, (x) => x.food_id === fila.food_id) }),
   quitarDeLista: (s, _r, d) => ({ ...s, lista: sinFila(s.lista, 'food_id', d.food_id) }),
   comprar: (s, r) => ({
@@ -195,6 +196,11 @@ export const LOCAL = {
   ajustarStock: (s, d, uid) => ({ ...s, stock: moverStock(s.stock, [d], ambito(s, uid)) }),
   fijarStock: (s, d) => ({ ...s, stock: reemplazar(s.stock, d.fila, (x) => x.food_id === d.fila.food_id) }),
   quitarDeDespensa: (s, d) => GUARDADO.quitarDeDespensa(s, null, d),
+  // Como la base: sin stock no queda fecha
+  fijarVencimiento: (s, d) => ({
+    ...s,
+    stock: s.stock.map((x) => (x.food_id === d.food_id ? { ...x, expires_on: Number(x.qty) > 0 ? d.fecha : null } : x)),
+  }),
   agregarALista: (s, d, uid) => {
     const estaba = s.lista.find((x) => x.food_id === d.food_id)
     const fila = estaba ? { ...estaba, qty: d.qty } : { id: d.id, user_id: ambito(s, uid), food_id: d.food_id, qty: d.qty, pendiente: true }

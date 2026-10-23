@@ -70,6 +70,16 @@ export const ENVIOS = {
         .select(),
     ),
 
+  fijarVencimiento: async (d, uid) =>
+    ok(
+      await supabase
+        .from('stock')
+        .update({ expires_on: d.fecha })
+        .eq('user_id', await ambito(uid))
+        .eq('food_id', d.food_id)
+        .select(),
+    ),
+
   quitarDeDespensa: async (d, uid) =>
     ok(
       await supabase

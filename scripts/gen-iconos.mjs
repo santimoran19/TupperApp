@@ -10,15 +10,16 @@ swap_horiz takeout_dining trending_down trending_up wb_twilight
 glass_cup local_bar no_meals travel_explore undo water_drop
 bar_chart description download favorite history lock_reset mark_email_read person_remove replay visibility visibility_off
 cloud_off sync home group content_copy key share barcode_scanner photo_camera flashlight_on
-fitness_center trophy timer directions_run play_arrow keyboard_arrow_down info monitor_heart show_chart tune bolt pause calendar_month`.split(
-  /\s+/,
-)
+fitness_center trophy timer directions_run play_arrow keyboard_arrow_down info monitor_heart show_chart tune bolt pause calendar_month
+egg set_meal water_full nutrition grocery ramen_dining grain bakery_dining breakfast_dining soup_kitchen cookie ac_unit lunch_dining
+local_drink add_a_photo image event event_busy schedule warning lightbulb donut_large checklist 3d_rotation view_in_ar
+accessibility_new body_system monitor_weight touch_app straighten`.split(/\s+/)
 
 const carpeta = new URL('../node_modules/@material-symbols/svg-400/outlined/', import.meta.url)
 const trazo = (archivo) => readFileSync(new URL(archivo, carpeta), 'utf8').match(/ d="([^"]+)"/)[1]
 
 let js = '// Generado con scripts/gen-iconos.mjs. Cada ícono: [contorno, relleno].\nexport const ICONOS = {\n'
-for (const n of USADOS) js += `  ${n}: ['${trazo(n + '.svg')}', '${trazo(n + '-fill.svg')}'],\n`
+for (const n of USADOS) js += `  ${/^\d/.test(n) ? `'${n}'` : n}: ['${trazo(n + '.svg')}', '${trazo(n + '-fill.svg')}'],\n`
 js += '}\n'
 writeFileSync(new URL('../src/components/iconos.js', import.meta.url), js)
 console.log('ok', USADOS.length, 'iconos')

@@ -208,12 +208,6 @@ export function gastoDelDia(base, ejercicio = 0, rangoEjercicio = null) {
   }
 }
 
-// Calorías que cuesta digerir lo comido: 25 % de las de la proteína, 7,5 % de las de los hidratos y 1,5 % de las de la
-// grasa. Se muestra como dato del día; para el objetivo se usa el 10 % de siempre (así lo comido no mueve el objetivo).
-export function tefDeMacros({ protein = 0, carbs = 0, fat = 0 }) {
-  return Number(protein) * 4 * 0.25 + Number(carbs) * 4 * 0.075 + Number(fat) * 9 * 0.015
-}
-
 // Las partes del gasto de un día sin entrenar, listas para mostrar
 export function partesDelGasto(base) {
   if (!base) return []

@@ -3,6 +3,7 @@ import { hoy } from '../../lib/fechas'
 import { ok, supabase } from '../base'
 import { reemplazar } from '../listas'
 import { guardarFilasPlan } from './plan'
+import { borrarFotos } from '../../lib/fotos'
 
 async function guardarPref(k, recipe_id, cambios) {
   const actual = k.ver().e.prefs.find((p) => p.recipe_id === recipe_id)
@@ -57,7 +58,10 @@ export const accionesDeRecetas = (k) => ({
   mostrarReceta: k.accion('mostrarReceta', (id) => guardarPref(k, id, { hidden: false })),
 
   borrarReceta: k.accion('borrarReceta', async (id) => {
+    const foto = k.ver().e.recetas.find((r) => r.id === id)?.image_path
     ok(await supabase.from('recipes').delete().eq('id', id))
+    // Su foto también (si se corta, queda en Storage: se borra con la cuenta)
+    if (foto) borrarFotos([foto], k.uid).catch(() => {})
     k.setE((s) => ({
       ...s,
       recetas: s.recetas.filter((r) => r.id !== id),

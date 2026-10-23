@@ -94,9 +94,10 @@ const TEXTOS = {
         [
           'La base de datos y el inicio de sesión están en Supabase, en servidores ubicados en São Paulo, Brasil. El sitio se sirve desde Vercel. Los dos actúan como proveedores y no usan tus datos para otra cosa.',
           'Cuando buscás un producto de marca, el texto de la búsqueda se manda a Open Food Facts. No se manda tu email ni ningún dato tuyo.',
+          'Si le ponés una foto a un alimento o a una receta, se achica en tu teléfono y se guarda en Supabase (São Paulo). Se ve con su dirección, que lleva un código al azar y no se publica en ningún lado; si compartís ese alimento o receta en un hogar, las personas del hogar también la ven. Al quitar la foto, borrar el alimento o la receta, o borrar tu cuenta, la foto se borra. Las fotos de los alimentos y recetas de la base están generadas con inteligencia artificial y son ilustrativas.',
           'Si escaneás el código de barras de un producto, la cámara se usa solo en ese momento, en tu dispositivo: la imagen no se graba ni se manda a ningún lado. Si en vez de eso elegís sacarle una foto al código, la foto se lee en tu dispositivo y tampoco se guarda ni se envía. Lo que sí se manda es el número del código, para buscar el producto: a Open Food Facts y, si ahí no está, a Precios Claros (el sistema de precios del Estado argentino), para saber cómo se llama. No se manda nada tuyo.',
           'Catálogo compartido: cuando guardás un producto (traído de Open Food Facts, escaneado o cargado a mano) se guardan para el resto de las personas solo sus datos: el código de barras, el nombre, los valores cada 100 g o 100 ml y la categoría. No se guarda quién lo cargó para mostrarlo, y recién se muestra a otras personas cuando dos cuentas distintas cargaron valores que coinciden. En la carga a mano podés elegir no compartirlo. Si borrás tu cuenta se borran tus aportes; los productos que ya se habían confirmado se quedan en el catálogo, porque son datos de una etiqueta y no tuyos.',
-          'Si pedís el análisis con IA del resumen semanal, se envía a Groq (el proveedor del modelo de IA) un resumen de esa semana: tu sexo, edad, altura, peso, objetivos, los totales de cada día, los alimentos que registraste y tus medidas de peso. No se envían tu nombre ni tu email. Solo pasa cuando tocás el botón, y la devolución queda guardada en tu cuenta.',
+          'Si pedís el análisis con IA del resumen semanal, se envía a Groq (el proveedor del modelo de IA) un resumen de esa semana: tu sexo, edad, altura, peso, objetivos (incluido el objetivo de calorías de cada día), los totales de cada día, los alimentos que registraste y tus medidas de peso. No se envían tu nombre ni tu email. Solo pasa cuando tocás el botón, y la devolución queda guardada en tu cuenta.',
           'En tu teléfono o computadora se guarda la sesión iniciada y alguna preferencia, como la forma en que endulzás las infusiones. La app no usa cookies de publicidad ni de seguimiento.',
           'Para que la app abra rápido y se pueda usar sin conexión, en ese mismo dispositivo también queda una copia de tus datos y de los cambios que todavía no se enviaron. Esa copia se borra cuando cerrás sesión; si el dispositivo lo usa otra persona, cerrá sesión al terminar.',
           'Para saber qué pantallas se usan, contamos las visitas de forma anónima con Vercel Web Analytics: no usa cookies y no permite identificarte.',
@@ -108,7 +109,7 @@ const TEXTOS = {
         'Gasto y ejercicio',
         [
           'El cálculo de gasto y el registro de ejercicio son opcionales: se activan desde Perfil, con un aviso previo y tu consentimiento, y se pueden apagar cuando quieras. Apagarlos no borra lo que anotaste; para eso hay un botón de borrar todo lo de ejercicio, y también se borra con la cuenta.',
-          'Tus entrenamientos, series, rutinas y datos de gasto son solo tuyos: no se comparten con tu hogar y no se envían al análisis con IA del resumen semanal.',
+          'Tus entrenamientos, series, rutinas y datos de gasto son solo tuyos: no se comparten con tu hogar y no se envían al análisis con IA del resumen semanal. Lo único que le llega es el objetivo de calorías de cada día, que con el modo dinámico es más alto los días que entrenás.',
         ],
       ],
       [
@@ -120,13 +121,22 @@ const TEXTOS = {
       ],
       [
         'Cómo los protegemos',
-        ['La conexión va cifrada y cada cuenta puede leer y modificar únicamente sus propios datos, y los que compartís en un hogar.'],
+        [
+          'La conexión va cifrada y cada cuenta puede leer y modificar únicamente sus propios datos, y los que compartís en un hogar.',
+          'Todos los días se hace una copia de seguridad cifrada de la base, que se guarda en un repositorio privado de GitHub (servidores en Estados Unidos) y solo sirve para recuperar los datos si algo falla. Las copias se van reemplazando por las nuevas, así que lo que borrás desaparece también de ellas con el tiempo.',
+        ],
       ],
       [
         'Tus derechos',
         [
           `Podés ver, corregir y borrar tus datos cuando quieras. Desde Perfil podés descargar una copia de todo y borrar tu cuenta. Para cualquier otro pedido podés comunicarte ${contacto}.`,
+          'El titular de los datos personales tiene la facultad de ejercer el derecho de acceso a los mismos en forma gratuita a intervalos no inferiores a seis meses, salvo que se acredite un interés legítimo al efecto conforme lo establecido en el artículo 14, inciso 3 de la Ley N.º 25.326.',
           'La Agencia de Acceso a la Información Pública, en su carácter de órgano de control de la Ley N.º 25.326, tiene la atribución de atender las denuncias y reclamos de quienes resulten afectados en sus derechos por incumplimiento de las normas vigentes en materia de protección de datos personales.',
+          ...(MARCA.registroAAIP
+            ? [
+                `La base de datos de ${MARCA.nombre} está inscripta en el Registro Nacional de Bases de Datos Personales con el número ${MARCA.registroAAIP}.`,
+              ]
+            : []),
         ],
       ],
       [

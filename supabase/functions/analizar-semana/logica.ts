@@ -31,11 +31,32 @@ const ACTIVIDAD: Record<string, string> = { '1.2': 'sedentario', '1.375': 'liger
 // deno-lint-ignore no-explicit-any
 type Fila = Record<string, any>
 
+// Lo que la app cuenta de cada día de la semana: el objetivo de calorías de ese día. Con el modo dinámico cambia de un día a
+// otro, así que el análisis lo compara día por día. Lo manda el teléfono y solo se usa para escribir el texto de esta persona,
+// pero igual se revisa: fechas de la semana, número en un rango razonable, sin repetir días. Cualquier otro dato que venga
+// (por ejemplo, de ejercicio o gasto) se descarta: los términos de la app prometen que eso no se manda a la IA.
+export type ObjetivoDia = { objetivo_kcal: number; dinamico: boolean }
+export function leerObjetivos(valor: unknown, lunes: string): Map<string, ObjetivoDia> {
+  const salida = new Map<string, ObjetivoDia>()
+  if (!Array.isArray(valor)) return salida
+  const domingo = sumarDias(lunes, 6)
+  for (const o of valor.slice(0, 7)) {
+    if (!o || typeof o !== 'object' || !esFecha(o.fecha) || o.fecha < lunes || o.fecha > domingo || salida.has(o.fecha)) continue
+    const n = Number(o.objetivo_kcal)
+    if (o.objetivo_kcal === null || o.objetivo_kcal === '' || !Number.isFinite(n) || n < 500 || n > 8000) continue
+    salida.set(o.fecha, { objetivo_kcal: Math.round(n), dinamico: o.dinamico === true })
+  }
+  return salida
+}
+
 // Junta todo en un objeto chico: lo justo para opinar de la semana, sin nombre ni email.
-export function armarDatos({ perfil, registros, alimentos, medidas, lunes, hoy }: { perfil: Fila; registros: Fila[]; alimentos: Fila[]; medidas: Fila[]; lunes: string; hoy: string }) {
+export function armarDatos({ perfil, registros, alimentos, medidas, lunes, hoy, objetivos = new Map() }: { perfil: Fila; registros: Fila[]; alimentos: Fila[]; medidas: Fila[]; lunes: string; hoy: string; objetivos?: Map<string, ObjetivoDia> }) {
   const alimento = new Map(alimentos.map((a) => [a.id, a]))
   const peso = Number(perfil.weight_kg) || null
   const liquidoObjetivo = perfil.water_target_ml || (peso ? Math.min(4000, Math.max(1500, Math.round((peso * 35) / 100) * 100)) : 2000)
+
+  const modoDinamico = [...objetivos.values()].some((o) => o.dinamico)
+  const metaFija = objetivos.size ? [...objetivos.values()][0].objetivo_kcal : num(perfil.kcal_target)
 
   const dias = []
   let conRegistro = 0
@@ -57,8 +78,10 @@ export function armarDatos({ perfil, registros, alimentos, medidas, lunes, hoy }
       if (a.alcohol) alcohol += Number(r.qty) || 0
       else if (a.category === 'Bebidas' || a.category === 'Lácteos') liquido += Number(r.qty) || 0
     }
+    const meta = objetivos.get(fecha)
     dias.push({
       dia: DIAS[i], fecha,
+      ...(meta ? { objetivo_kcal: meta.objetivo_kcal } : {}),
       kcal: num(filas.reduce((s, r) => s + Number(r.kcal || 0), 0)),
       proteina_g: num(filas.reduce((s, r) => s + Number(r.protein || 0), 0)),
       carbohidratos_g: num(filas.reduce((s, r) => s + Number(r.carbs || 0), 0)),
@@ -92,7 +115,13 @@ export function armarDatos({ perfil, registros, alimentos, medidas, lunes, hoy }
       peso_objetivo_kg: Number(perfil.goal_weight_kg) || null,
       actividad: ACTIVIDAD[String(Number(perfil.activity))] || 'ligero',
     },
-    objetivos_por_dia: { kcal: num(perfil.kcal_target), proteina_g: num(perfil.protein_target), liquido_ml: num(liquidoObjetivo) },
+    // Con el objetivo dinámico las calorías cambian cada día (están en cada día como objetivo_kcal); si no, es un solo número
+    objetivos_por_dia: {
+      ...(modoDinamico ? {} : { kcal: metaFija }),
+      proteina_g: num(perfil.protein_target),
+      liquido_ml: num(liquidoObjetivo),
+    },
+    objetivo_de_calorias: modoDinamico ? 'dinámico: cambia cada día y sube los días que entrenó' : 'fijo',
     semana: { desde: lunes, hasta: sumarDias(lunes, 6), hoy, dias },
     mas_consumido: masConsumido,
     peso_registrado: medidas.filter((m) => m.weight_kg).slice(-6).map((m) => ({ fecha: m.date, kg: Number(m.weight_kg) })),
@@ -107,6 +136,8 @@ Vas a recibir un JSON con los objetivos de una persona y lo que registró durant
 Reglas:
 - Basate solo en los datos. Si hay días sin registro o pocos datos, decilo y no saques conclusiones fuertes.
 - No diagnostiques ni nombres enfermedades. No recomiendes medicación, suplementos, ayunos ni dietas extremas.
+- Cada día se compara con su propio objetivo de calorías (objetivo_kcal del día; si no está, el de objetivos_por_dia). Con el objetivo dinámico el número cambia de un día a otro (es más alto los días que la persona entrenó). No lo compares con el de otro día.
+- Los objetivos de calorías son estimaciones con un margen de error de 10 a 15 %: no hables de déficit o superávit como si fueran exactos y decí "alrededor de".
 - Nunca propongas comer menos calorías que el objetivo diario configurado.
 - Si la persona tiene menos de 18 años, no des consejos para bajar de peso: hablá de variedad y regularidad y sugerí consultar con un profesional.
 - Si los datos muestran que come muy por debajo del objetivo varios días o que saltea muchas comidas, no lo festejes: marcalo con cuidado y recomendá hablarlo con un médico o un nutricionista.

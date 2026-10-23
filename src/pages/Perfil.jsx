@@ -11,6 +11,8 @@ import { COMIDAS, NOMBRE_COMIDA, litros, objetivoLiquido, redondear } from '../l
 import { LIM, errFecha, errNumero } from '../lib/validar'
 import { TEMAS, elegirTema, temaGuardado } from '../lib/tema'
 import { VERSION } from '../lib/eventos'
+import SiluetaInteractiva from '../components/SiluetaInteractiva'
+import { hayWebGL, prenderTresD, tresDPrendido } from '../components/Vista3D'
 
 function Grafico({ puntos, meta }) {
   if (puntos.length < 2) return <p className="text-sm text-gris">Cuando tengas dos registros aparece la curva.</p>
@@ -72,6 +74,7 @@ export default function Perfil() {
     borrarCuenta,
     confirmar,
     objetivoDe,
+    ajustarPerfil,
   } = useDatos()
   const [borrando, setBorrando] = useState(null) // texto de confirmación para borrar la cuenta
   const [trabajando, setTrabajando] = useState(false)
@@ -98,6 +101,7 @@ export default function Perfil() {
   const nav = useNavigate()
   const [editando, setEditando] = useState(false)
   const [tema, setTema] = useState(temaGuardado)
+  const [tresD, setTresD] = useState(tresDPrendido)
   const [nueva, setNueva] = useState(null)
 
   const ordenadas = useMemo(() => [...medidas].sort((a, b) => a.date.localeCompare(b.date)), [medidas])
@@ -223,6 +227,23 @@ export default function Perfil() {
             )}
           </section>
 
+          {actual && (
+            <section className="tarjeta p-5 mb-4" aria-labelledby="pf-silueta">
+              <h2 id="pf-silueta" className="font-semibold flex items-center gap-2">
+                <Icono n="accessibility_new" className="text-verde-texto" /> Cómo te verías
+              </h2>
+              <p className="text-sm text-gris mt-1 mb-3">Elegí un peso con la barra o arrastrando la silueta.</p>
+              <SiluetaInteractiva
+                perfil={perfil}
+                peso={actual}
+                onUsarMeta={async (kg) => {
+                  if (await ajustarPerfil({ goal_weight_kg: kg }))
+                    avisar(`Tu meta ahora es ${String(kg).replace('.', ',')} kg. Si usás un objetivo fijo de calorías, revisalo en Editar.`)
+                }}
+              />
+            </section>
+          )}
+
           <section className="tarjeta p-5 mb-4">
             <h2 className="font-semibold">Comidas fuera de casa</h2>
             <p className="text-sm text-gris mt-1 mb-3">
@@ -280,6 +301,26 @@ export default function Perfil() {
                 </button>
               ))}
             </div>
+            {hayWebGL() && (
+              <label className="flex items-center gap-3 mt-4 cursor-pointer">
+                <span className="flex-1">
+                  <span className="block text-sm font-medium">Dibujos en 3D</span>
+                  <span className="block text-xs text-gris">
+                    El tupper del día, el cuerpo y los platos. Apagalos si tu teléfono anda lento.
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  role="switch"
+                  className="w-5 h-5 accent-[rgb(var(--c-verde))]"
+                  checked={tresD}
+                  onChange={(e) => {
+                    prenderTresD(e.target.checked)
+                    setTresD(e.target.checked)
+                  }}
+                />
+              </label>
+            )}
           </section>
 
           <section className="tarjeta px-4 mb-4 divide-y divide-linea" data-tour="perfil-atajos">

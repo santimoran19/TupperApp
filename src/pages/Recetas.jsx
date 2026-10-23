@@ -1,14 +1,18 @@
 // Recetas: cuáles se pueden cocinar con lo que hay en la despensa.
 import { useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import Marco from '../components/Marco'
+import Foto from '../components/Foto'
 import { Chip, Icono } from '../components/ui'
+import { DIAS_URGENTE, estadoVencimiento, vencimientoDeReceta } from '../lib/despensa'
+import { hoy } from '../lib/fechas'
 import { useDatos } from '../store/Datos'
 import { listaComidas, redondear } from '../lib/nutricion'
 import { disponibilidad, porcionesPosibles } from '../lib/planificador'
 
 const FILTROS = [
   ['todas', 'Todas'],
+  ['vence', 'Salvá lo que vence'],
   ['listas', 'Puedo hacerlas'],
   ['favoritas', 'Favoritas'],
   ['llevar', 'Para llevar'],
@@ -26,8 +30,13 @@ const normal = (t) =>
 
 export default function Recetas() {
   const d = useDatos()
+  // `?con=<id>` llega desde la despensa ("Cocinar"): solo las recetas que usan ese alimento
+  const [params, setParams] = useSearchParams()
+  const con = params.get('con')
+  const conAlimento = con ? d.alimentosPorId.get(con) : null
   const [filtro, setFiltro] = useState('todas')
   const [texto, setTexto] = useState('')
+  const hoyTexto = hoy()
 
   const lista = useMemo(
     () =>
@@ -36,7 +45,11 @@ export default function Recetas() {
           const items = d.itemsPlan(r.id)
           const cocinadas = d.preparadoMap.get(r.id) || 0
           const disp = disponibilidad(r, items, d.stockRecetas)
+          // Si usa algo que vence pronto, se puede cocinar y así no se tira (F-04)
+          const vence = estadoVencimiento(vencimientoDeReceta(items, d.vencePorBase), hoyTexto)
           return {
+            vence: vence && vence.dias <= DIAS_URGENTE ? vence : null,
+            usa: new Set(items.map((it) => it.food_id)),
             r,
             m: d.macrosPorReceta.get(r.id),
             cocinadas,
@@ -49,15 +62,19 @@ export default function Recetas() {
           (a, b) =>
             Number(b.cocinadas > 0) - Number(a.cocinadas > 0) ||
             Number(b.disp.ok) - Number(a.disp.ok) ||
+            Number(!!b.vence) - Number(!!a.vence) ||
             a.disp.faltan.length - b.disp.faltan.length ||
             Number(d.favoritas.has(b.r.id)) - Number(d.favoritas.has(a.r.id)) ||
             a.r.name.localeCompare(b.r.name, 'es'),
         ),
-    [d],
+    [d, hoyTexto],
   )
   const ocultas = [...d.recetasOcultas].sort((a, b) => a.name.localeCompare(b.name, 'es'))
   // El filtro "Ocultas" solo aparece si hay alguna
-  const filtros = FILTROS.filter(([k]) => k !== 'ocultas' || ocultas.length > 0 || filtro === 'ocultas')
+  const conVence = lista.filter((x) => x.vence).length
+  const filtros = FILTROS.filter(
+    ([k]) => (k !== 'ocultas' || ocultas.length > 0 || filtro === 'ocultas') && (k !== 'vence' || conVence > 0 || filtro === 'vence'),
+  )
   const favorita = async (ev, r) => {
     ev.preventDefault()
     ev.stopPropagation()
@@ -68,8 +85,10 @@ export default function Recetas() {
   const q = normal(texto.trim())
   const coincide = (r) =>
     !q || normal(r.name).includes(q) || d.itemsDe(r.id).some((it) => normal(d.alimentosPorId.get(it.food_id)?.name || '').includes(q))
-  const visibles = lista.filter(({ r, disp, cocinadas }) => {
+  const visibles = lista.filter(({ r, disp, cocinadas, vence, usa }) => {
     if (!coincide(r)) return false
+    if (con && !usa.has(con)) return false
+    if (filtro === 'vence') return !!vence
     if (filtro === 'ocultas') return false
     if (filtro === 'listas') return disp.ok || cocinadas > 0
     if (filtro === 'favoritas') return d.favoritas.has(r.id)
@@ -119,46 +138,70 @@ export default function Recetas() {
         </div>
       </div>
 
+      {con && (
+        <div className="flex items-center gap-3 rounded-2xl bg-verde-suave px-4 py-3 mb-4">
+          <Foto ruta={conAlimento?.image_path} categoria={conAlimento?.category} className="w-10 h-10 rounded-xl" icono={20} />
+          <p className="flex-1 text-sm">
+            Recetas con <b>{conAlimento ? conAlimento.name.split(' (')[0] : 'ese alimento'}</b>
+          </p>
+          <button
+            onClick={() => setParams({}, { replace: true })}
+            className="toque w-9 h-9 rounded-full bg-superficie flex items-center justify-center"
+            aria-label="Ver todas las recetas"
+          >
+            <Icono n="close" size={18} />
+          </button>
+        </div>
+      )}
+
       <div className="grilla-tarjetas">
-        {visibles.map(({ r, m, cocinadas, disp, posibles, total }) => (
-          <Link key={r.id} to={`/recetas/${r.id}`} className="tarjeta p-4 block">
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {cocinadas > 0 && (
-                <span className="pill bg-teal-suave text-teal-oscuro">
-                  <Icono n="takeout_dining" size={14} lleno /> {redondear(cocinadas, 1)} ya cocinadas
-                </span>
-              )}
-              {disp.ok ? (
-                <span className="pill bg-verde-suave text-verde-texto">
-                  <Icono n="check" size={14} /> Tenés todo{posibles > 1 ? ` · alcanza para ${posibles}` : ''}
-                </span>
-              ) : (
-                <span className="pill bg-naranja-suave text-naranja-oscuro">
-                  <Icono n="shopping_basket" size={14} />{' '}
-                  {disp.faltan.length === 1
-                    ? `Falta: ${d.alimentosPorId.get(disp.faltan[0].food_id)?.name.split(' (')[0]}`
-                    : `Faltan ${disp.faltan.length} de ${total} ingredientes`}
-                </span>
-              )}
-            </div>
-            <div className="flex items-start gap-2">
-              <p className="flex-1 font-semibold text-[17px] leading-snug">{r.name}</p>
-              <button
-                onClick={(ev) => favorita(ev, r)}
-                aria-label={d.favoritas.has(r.id) ? `Quitar ${r.name} de favoritas` : `Marcar ${r.name} como favorita`}
-                className={`toque w-9 h-9 -mt-1.5 -mr-1.5 rounded-full flex items-center justify-center ${d.favoritas.has(r.id) ? 'text-coral-oscuro' : 'text-gris/80'}`}
-              >
-                <Icono n="favorite" lleno={d.favoritas.has(r.id)} />
-              </button>
-            </div>
-            <p className="text-xs text-gris mt-0.5">
-              {r.minutes} min · {listaComidas(r.meal_types)}
-              {r.servings > 1 ? ` · rinde ${r.servings}` : ''}
-            </p>
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              <span className="pill bg-verde-suave text-verde-texto">{redondear(m.kcal)} kcal</span>
-              <span className="pill bg-coral-suave text-coral-oscuro">{redondear(m.protein)} g prot.</span>
-              {r.portable && <span className="pill bg-campo text-gris">Se puede llevar</span>}
+        {visibles.map(({ r, m, cocinadas, disp, posibles, total, vence }) => (
+          <Link key={r.id} to={`/recetas/${r.id}`} className="tarjeta p-4 flex gap-3.5">
+            <Foto ruta={r.image_path} categoria="receta" className="w-[84px] h-[84px] rounded-2xl" icono={34} />
+            <div className="flex-1 min-w-0">
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {vence && (
+                  <span className="pill bg-rojo-suave text-rojo-texto">
+                    <Icono n="event_busy" size={14} /> Usa algo que {vence.texto.toLowerCase()}
+                  </span>
+                )}
+                {cocinadas > 0 && (
+                  <span className="pill bg-teal-suave text-teal-oscuro">
+                    <Icono n="takeout_dining" size={14} lleno /> {redondear(cocinadas, 1)} ya cocinadas
+                  </span>
+                )}
+                {disp.ok ? (
+                  <span className="pill bg-verde-suave text-verde-texto">
+                    <Icono n="check" size={14} /> Tenés todo{posibles > 1 ? ` · alcanza para ${posibles}` : ''}
+                  </span>
+                ) : (
+                  <span className="pill bg-naranja-suave text-naranja-oscuro">
+                    <Icono n="shopping_basket" size={14} />{' '}
+                    {disp.faltan.length === 1
+                      ? `Falta: ${d.alimentosPorId.get(disp.faltan[0].food_id)?.name.split(' (')[0]}`
+                      : `Faltan ${disp.faltan.length} de ${total} ingredientes`}
+                  </span>
+                )}
+              </div>
+              <div className="flex items-start gap-2">
+                <p className="flex-1 font-semibold text-[17px] leading-snug">{r.name}</p>
+                <button
+                  onClick={(ev) => favorita(ev, r)}
+                  aria-label={d.favoritas.has(r.id) ? `Quitar ${r.name} de favoritas` : `Marcar ${r.name} como favorita`}
+                  className={`toque w-9 h-9 -mt-1.5 -mr-1.5 rounded-full flex items-center justify-center ${d.favoritas.has(r.id) ? 'text-coral-oscuro' : 'text-gris/80'}`}
+                >
+                  <Icono n="favorite" lleno={d.favoritas.has(r.id)} />
+                </button>
+              </div>
+              <p className="text-xs text-gris mt-0.5">
+                {r.minutes} min · {listaComidas(r.meal_types)}
+                {r.servings > 1 ? ` · rinde ${r.servings}` : ''}
+              </p>
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                <span className="pill bg-verde-suave text-verde-texto">{redondear(m.kcal)} kcal</span>
+                <span className="pill bg-coral-suave text-coral-oscuro">{redondear(m.protein)} g prot.</span>
+                {r.portable && <span className="pill bg-campo text-gris">Se puede llevar</span>}
+              </div>
             </div>
           </Link>
         ))}

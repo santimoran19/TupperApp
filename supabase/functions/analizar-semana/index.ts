@@ -1,10 +1,11 @@
 // Devolución semanal con IA. La llama la app con la sesión del usuario:
-//   POST /functions/v1/analizar-semana   { "semana": "AAAA-MM-DD", "hoy": "AAAA-MM-DD" }
+//   POST /functions/v1/analizar-semana   { "semana": "AAAA-MM-DD", "hoy": "AAAA-MM-DD", "objetivos": [...] (opcional) }
+// `objetivos` es el objetivo de calorías de cada día de la semana y lo entrenado (ver leerObjetivos en logica.ts).
 // Lee la semana desde la base (con los permisos del usuario), se la pasa al modelo y guarda la devolución.
 // Necesita la clave de un proveedor de IA como secreto: GROQ_API_KEY o ANTHROPIC_API_KEY (ver proveedores.ts).
 // Opcionales: IA_PROVEEDOR, GROQ_MODEL, ANTHROPIC_MODEL e IA_LIMITE_DIARIO.
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { armarDatos, encabezadosCors, esFecha, INSTRUCCIONES, interpretar, lunesDe, origenAjeno, origenesPermitidos, sumarDias } from './logica.ts'
+import { armarDatos, encabezadosCors, esFecha, INSTRUCCIONES, interpretar, leerObjetivos, lunesDe, origenAjeno, origenesPermitidos, sumarDias } from './logica.ts'
 import { proveedor } from './proveedores.ts'
 
 const CABECERAS = 'authorization, x-client-info, apikey, content-type'
@@ -81,7 +82,7 @@ async function manejar(req: Request): Promise<Response> {
     const alimentos = ids.length ? await db.from('foods').select('id,unit,category,alcohol').in('id', ids) : { data: [], error: null }
     if (alimentos.error) throw new Error('alimentos: ' + alimentos.error.message)
 
-    const { datos, diasConRegistro } = armarDatos({ perfil: perfil.data, registros: registros.data || [], alimentos: alimentos.data || [], medidas: medidas.data || [], lunes, hoy })
+    const { datos, diasConRegistro } = armarDatos({ perfil: perfil.data, registros: registros.data || [], alimentos: alimentos.data || [], medidas: medidas.data || [], lunes, hoy, objetivos: leerObjetivos(cuerpo.objetivos, lunes) })
     if (diasConRegistro < MINIMO_DIAS) return fallo(422, 'pocos_datos', `Hace falta registrar al menos ${MINIMO_DIAS} días de la semana para poder analizarla.`)
 
     // ---- Consulta al modelo

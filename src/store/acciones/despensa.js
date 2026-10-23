@@ -5,6 +5,7 @@ import { redondear } from '../../lib/nutricion'
 import { aportarAlCatalogo } from '../../lib/catalogo'
 import { ok, supabase } from '../base'
 import { comoCambios, entre, nuevaClave } from '../listas'
+import { borrarFotos } from '../../lib/fotos'
 
 // Lo que gasta una receta: cada ingrediente sale primero del producto vinculado que haya y después del alimento base.
 // Anota en `cambios` (Map alimento -> diferencia de stock).
@@ -40,7 +41,9 @@ export const accionesDeDespensa = (k) => ({
   }),
 
   borrarAlimento: k.accion('borrarAlimento', async (id) => {
+    const foto = k.ver().e.alimentos.find((a) => a.id === id)?.image_path
     ok(await supabase.from('foods').delete().eq('id', id))
+    if (foto) borrarFotos([foto], k.uid).catch(() => {})
     k.setE((s) => ({
       ...s,
       alimentos: s.alimentos.filter((a) => a.id !== id),
@@ -65,6 +68,14 @@ export const accionesDeDespensa = (k) => ({
   ajustarStock: k.accion(
     'ajustarStock',
     (food_id, delta) => k.enFila(`stock|${food_id}`, () => k.operar('ajustarStock', { food_id, delta })),
+    { enCola: true },
+  ),
+
+  // La fecha de vencimiento de lo que hay de un alimento (la de lo que vence primero). Vacía la borra. Solo con stock:
+  // cuando se agota, la base la borra sola.
+  fijarVencimiento: k.accion(
+    'fijarVencimiento',
+    (food_id, fecha) => k.enFila(`stock|${food_id}`, () => k.operar('fijarVencimiento', { food_id, fecha: fecha || null })),
     { enCola: true },
   ),
 
