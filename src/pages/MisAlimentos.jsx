@@ -49,7 +49,7 @@ export default function MisAlimentos() {
             <div className="tarjeta px-4 divide-y divide-linea">
               {propios.map((a) => (
                 <div key={a.id} className="flex items-center gap-1 py-3">
-                  <Foto ruta={a.image_path} categoria={a.category} className="w-11 h-11 rounded-xl mr-2" icono={20} />
+                  <Foto ruta={a.image_path} categoria={a.category} para={a.name} className="w-11 h-11 rounded-xl mr-2" icono={20} />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{a.name}</p>
                     <p className="text-xs text-gris">

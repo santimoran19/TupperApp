@@ -23,7 +23,8 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
   const rango = useMemo(() => {
     if (!(peso > 0) || grasaHoy == null) return null
     const min = Math.max(35, pesoMinimo({ peso, grasa: grasaHoy, sexo }))
-    return [min, Math.min(250, Math.ceil(peso + 25))]
+    // Hasta 50 kilos más que hoy (y al menos 150): hay personas de 120 kilos y más, y ver adónde se llega también sirve
+    return [min, Math.min(250, Math.ceil(Math.max(peso + 50, 150)))]
   }, [peso, grasaHoy, sexo])
   const [elegido, setElegido] = useState(() => meta || (peso ? Math.round(peso - Math.max(2, peso * 0.08)) : null))
   const arrastre = useRef(null)

@@ -149,7 +149,13 @@ export default function Recetas() {
 
       {con && (
         <div className="flex items-center gap-3 rounded-2xl bg-verde-suave px-4 py-3 mb-4">
-          <Foto ruta={conAlimento?.image_path} categoria={conAlimento?.category} className="w-10 h-10 rounded-xl" icono={20} />
+          <Foto
+            ruta={conAlimento?.image_path}
+            categoria={conAlimento?.category}
+            para={conAlimento?.name}
+            className="w-10 h-10 rounded-xl"
+            icono={20}
+          />
           <p className="flex-1 text-sm">
             Recetas con <b>{conAlimento ? conAlimento.name.split(' (')[0] : 'ese alimento'}</b>
           </p>
@@ -166,7 +172,7 @@ export default function Recetas() {
       <div className="grilla-tarjetas">
         {mostradas.map(({ r, m, cocinadas, disp, posibles, total, vence }) => (
           <Link key={r.id} to={`/recetas/${r.id}`} className="tarjeta p-4 flex gap-3.5">
-            <Foto ruta={r.image_path} categoria="receta" className="w-[84px] h-[84px] rounded-2xl" icono={34} />
+            <Foto ruta={r.image_path} categoria="receta" para={r.name} className="w-[84px] h-[84px] rounded-2xl" icono={34} />
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap gap-1.5 mb-2">
                 {vence && (

@@ -18,8 +18,8 @@ import { DIAS_URGENTE, compararVencimiento, consejoDe, distribucion, estadoVenci
 
 const ORDENES = [
   ['vence', 'Vence primero'],
-  ['nombre', 'Nombre'],
-  ['poco', 'Lo que se acaba'],
+  ['nombre', 'A–Z'],
+  ['poco', 'Se acaba'],
 ]
 
 // Colores de cada estado de la fecha (clases enteras para Tailwind)
@@ -270,7 +270,13 @@ export default function Despensa() {
             <Icono n="lightbulb" size={16} /> PARA QUE DURE MÁS
           </p>
           <div className="flex items-start gap-3 mt-2">
-            <Foto ruta={consejo.f.a.image_path} categoria={consejo.f.a.category} className="w-12 h-12 rounded-xl" icono={22} />
+            <Foto
+              ruta={consejo.f.a.image_path}
+              categoria={consejo.f.a.category}
+              para={consejo.f.a.name}
+              className="w-12 h-12 rounded-xl"
+              icono={22}
+            />
             <div className="min-w-0">
               <h3 className="font-semibold">{consejo.f.a.name}</h3>
               <p className="text-sm text-gris mt-0.5">{consejo.texto}</p>
@@ -343,7 +349,13 @@ export default function Despensa() {
               <div className="mt-2 space-y-2">
                 {cocinado.map((p) => (
                   <div key={p.recipe_id} className="flex items-center gap-2 text-sm">
-                    <Foto ruta={d.recetasPorId.get(p.recipe_id).image_path} categoria="receta" className="w-9 h-9 rounded-xl" icono={18} />
+                    <Foto
+                      ruta={d.recetasPorId.get(p.recipe_id).image_path}
+                      categoria="receta"
+                      para={d.recetasPorId.get(p.recipe_id).name}
+                      className="w-9 h-9 rounded-xl"
+                      icono={18}
+                    />
                     <Link to={`/recetas/${p.recipe_id}`} className="flex-1 min-w-0 font-medium">
                       {d.recetasPorId.get(p.recipe_id).name}
                     </Link>
@@ -427,22 +439,36 @@ export default function Despensa() {
                   <Icono n="add" size={20} /> Agregar
                 </button>
               </div>
-              <div className="flex items-center gap-2 mb-3">
-                <label htmlFor="des-orden" className="text-xs font-semibold text-gris shrink-0">
-                  Ordenar por
-                </label>
-                <select
-                  id="des-orden"
-                  className="h-9 rounded-full bg-superficie shadow-tarjeta px-3 text-sm font-semibold outline-none"
-                  value={orden}
-                  onChange={(e) => setOrden(e.target.value)}
+              <div className="mb-3 flex items-center gap-2.5">
+                <span id="des-orden-t" className="text-xs font-semibold text-gris shrink-0">
+                  Ordenar
+                </span>
+                <div
+                  role="radiogroup"
+                  aria-labelledby="des-orden-t"
+                  className="flex flex-1 min-w-0 gap-0.5 rounded-full bg-campo p-0.5"
+                  onKeyDown={(e) => {
+                    const i = ORDENES.findIndex(([k]) => k === orden)
+                    const d = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0
+                    if (!d) return
+                    e.preventDefault()
+                    setOrden(ORDENES[(i + d + ORDENES.length) % ORDENES.length][0])
+                  }}
                 >
                   {ORDENES.map(([k, t]) => (
-                    <option key={k} value={k}>
+                    <button
+                      key={k}
+                      type="button"
+                      role="radio"
+                      aria-checked={orden === k}
+                      tabIndex={orden === k ? 0 : -1}
+                      onClick={() => setOrden(k)}
+                      className={`h-8 flex-1 min-w-0 whitespace-nowrap rounded-full px-1.5 text-[12.5px] font-semibold transition ${orden === k ? 'bg-superficie text-verde-texto shadow-tarjeta' : 'text-gris'}`}
+                    >
                       {t}
-                    </option>
+                    </button>
                   ))}
-                </select>
+                </div>
               </div>
               <div className="chips-hilera sin-scroll mb-4">
                 {categorias.map((c) => (

@@ -248,7 +248,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
           const hay = stockMap.get(a.id) || 0
           return (
             <button key={a.id} onClick={() => onElegir(a)} className="w-full flex items-center gap-3 py-3 text-left">
-              <Foto ruta={a.image_path} categoria={a.category} className="w-10 h-10 rounded-xl" icono={20} />
+              <Foto ruta={a.image_path} categoria={a.category} para={a.name} className="w-10 h-10 rounded-xl" icono={20} />
               <div className="min-w-0 flex-1">
                 <p className="font-medium truncate">{a.name}</p>
                 <p className="text-xs text-gris">

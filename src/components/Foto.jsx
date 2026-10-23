@@ -1,6 +1,8 @@
-// La foto de un alimento o una receta (1.24). Si no tiene, o si no carga (sin conexión, todavía no generada), se ve una
-// ilustración con el ícono y el color de su categoría, así ninguna tarjeta queda vacía.
+// La foto de un alimento o una receta (1.24). Si no tiene, o si no carga (sin conexión, todavía no cargada), se ve un
+// dibujo: el emoji de lo que es (según el nombre, ver lib/emoji.js) sobre el color de su categoría, así ninguna tarjeta queda
+// vacía ni dice otra cosa.
 import { useEffect, useRef, useState } from 'react'
+import { emojiDe } from '../lib/emoji'
 import { urlDeFoto } from '../lib/fotos'
 import { Icono } from './ui'
 
@@ -30,8 +32,9 @@ export const estiloDe = (categoria) => ESTILOS[categoria] || OTROS
 // Las fotos que no cargaron no se vuelven a pedir en esta sesión (una base sin generar daría error en cada tarjeta)
 const fallidas = new Set()
 
-// `ruta`: image_path de la fila. `categoria`: la del alimento, o 'receta'. `className`: tamaño y redondeo.
-export default function Foto({ ruta, categoria, nombre = '', className = 'w-16 h-16 rounded-2xl', icono = 28 }) {
+// `ruta`: image_path de la fila. `categoria`: la del alimento, o 'receta'. `para`: el nombre de lo que se dibuja (elige el
+// emoji). `nombre`: solo para lectores de pantalla. `className`: tamaño y redondeo.
+export default function Foto({ ruta, categoria, para = '', nombre = '', className = 'w-16 h-16 rounded-2xl', icono = 28 }) {
   const url = ruta && !fallidas.has(ruta) ? urlDeFoto(ruta) : null
   const [cargo, setCargo] = useState(false)
   const [fallo, setFallo] = useState(false)
@@ -45,6 +48,7 @@ export default function Foto({ ruta, categoria, nombre = '', className = 'w-16 h
     if (img.current?.complete && img.current.naturalWidth > 0) setCargo(true)
   }, [url])
   const [ic, fondo, color] = estiloDe(categoria)
+  const emoji = para || nombre ? emojiDe(para || nombre, categoria) : null
   return (
     <div
       className={`relative overflow-hidden shrink-0 ${fondo} ${className}`}
@@ -53,7 +57,12 @@ export default function Foto({ ruta, categoria, nombre = '', className = 'w-16 h
     >
       {(!url || fallo || !cargo) && (
         <div className={`absolute inset-0 flex items-center justify-center ${color}`} aria-hidden="true">
-          <Icono n={ic} size={icono} />
+          {emoji ? (
+            // El emoji va como contenido de CSS (data-e): así no entra en el texto de la tarjeta (ni al copiar, ni en las pruebas)
+            <span data-e={emoji} className="before:content-[attr(data-e)]" style={{ fontSize: Math.round(icono * 1.15), lineHeight: 1 }} />
+          ) : (
+            <Icono n={ic} size={icono} />
+          )}
         </div>
       )}
       {url && !fallo && (

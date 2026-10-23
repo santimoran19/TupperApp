@@ -100,7 +100,7 @@ export function medidas(grasa, sexo = 'm', escala = 1) {
   const f = FORMAS[sexo === 'f' ? 'f' : 'm']
   const [g0, g1] = f.grasa
   // La grasa se acumula más rápido en la cintura que en el resto: curva suave en vez de recta
-  const t = entre((grasa - g0) / (g1 - g0), 0, 1.15)
+  const t = entre((grasa - g0) / (g1 - g0), 0, 1.5)
   const m = {}
   for (const [k, [a, b]] of Object.entries(f)) {
     if (k === 'grasa') continue

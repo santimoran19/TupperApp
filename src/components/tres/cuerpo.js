@@ -32,8 +32,28 @@ const PESO_MUJER = [
   [55, 1.2],
 ]
 
-// Del % de grasa, el sexo y la masa magra a los tres controles del modelo (todos de 0 a 1):
-//   sexo (0 mujer, 1 hombre), peso (0 delgado, 0,5 promedio, 1 grande) y músculo (0 promedio, 1 muy musculoso)
+// Kilos de grasa por metro cuadrado (el "índice de masa grasa") -> cuánta gordura se ve. 1 es lo máximo que alcanza a
+// deformar el modelo base; por encima la malla se infla (ver `inflar`). A igual %, quien pesa más tiene más grasa en kilos
+const GORDURA_HOMBRE = [
+  [1.5, 0],
+  [4, 0.5],
+  [7, 1],
+  [11, 1.65],
+  [16, 2.3],
+  [22, 2.6],
+]
+const GORDURA_MUJER = [
+  [3, 0],
+  [6, 0.5],
+  [9, 1],
+  [13, 1.65],
+  [18, 2.3],
+  [24, 2.6],
+]
+
+// Del % de grasa, el sexo y la masa magra a los controles del modelo:
+//   sexo (0 mujer, 1 hombre), peso (0 delgado, 0,5 promedio, 1 grande; la deformación del modelo base), músculo (0 promedio,
+//   1 muy musculoso) y gordura (0 a ~2,6: kilos de grasa por m², para inflar panza, caderas y muslos cuando se pasa del modelo)
 export function parametrosCuerpo({ sexo, grasa, escala = 1 }) {
   const mujer = sexo === 'f'
   const g = Number.isFinite(grasa) ? grasa : mujer ? 25 : 16
@@ -42,9 +62,10 @@ export function parametrosCuerpo({ sexo, grasa, escala = 1 }) {
   // en kilos, pero eso no lo hace "musculoso": recién se nota por encima de un índice alto
   const ffmi = (mujer ? 15 : 18) * (escala || 1) ** 2
   let musculo = Math.max(0, Math.min(1, (ffmi - (mujer ? 16.5 : 19.5)) / 6)) * 0.85
+  const gordura = tabla(mujer ? GORDURA_MUJER : GORDURA_HOMBRE, (ffmi * Math.min(g, 70)) / (100 - Math.min(g, 70)))
   // Con mucha grasa el modelo "musculoso y pesado" se ve como un fisicoculturista, no como alguien que subió de peso
-  musculo *= 1 - 0.9 * Math.max(0, Math.min(1, (peso - 0.55) / 0.45))
-  return { sexo: mujer ? 0 : 1, peso, musculo }
+  musculo *= 1 - 0.9 * Math.max(0, Math.min(1, (Math.min(gordura, 1) - 0.55) / 0.45))
+  return { sexo: mujer ? 0 : 1, peso, musculo, gordura }
 }
 
 // Cuánto vale cada una de las 12 deformaciones (sexo x músculo x peso) para esos tres controles; suman 1
@@ -100,6 +121,88 @@ export function mezclar(modelo, k, salida) {
     if (y > maxY) maxY = y
   }
   return { minY, maxY }
+}
+
+// Normales por punto (promedio de las caras, ponderado por el área), sin WebGL
+export function normales(pos, indices, salida = new Float32Array(pos.length)) {
+  salida.fill(0)
+  for (let t = 0; t < indices.length; t += 3) {
+    const a = indices[t] * 3
+    const b = indices[t + 1] * 3
+    const c = indices[t + 2] * 3
+    const ux = pos[b] - pos[a]
+    const uy = pos[b + 1] - pos[a + 1]
+    const uz = pos[b + 2] - pos[a + 2]
+    const vx = pos[c] - pos[a]
+    const vy = pos[c + 1] - pos[a + 1]
+    const vz = pos[c + 2] - pos[a + 2]
+    const nx = uy * vz - uz * vy
+    const ny = uz * vx - ux * vz
+    const nz = ux * vy - uy * vx
+    for (const i of [a, b, c]) {
+      salida[i] += nx
+      salida[i + 1] += ny
+      salida[i + 2] += nz
+    }
+  }
+  for (let i = 0; i < salida.length; i += 3) {
+    const l = Math.hypot(salida[i], salida[i + 1], salida[i + 2]) || 1
+    salida[i] /= l
+    salida[i + 1] /= l
+    salida[i + 2] /= l
+  }
+  return salida
+}
+
+const suave = (a, b, x) => {
+  const t = Math.min(1, Math.max(0, (x - a) / (b - a)))
+  return t * t * (3 - 2 * t)
+}
+const campana = (x, c, w) => Math.exp(-(((x - c) / w) ** 2))
+
+// Cuánto se infla cada zona (en metros, con gordura 1,0 extra) según el sexo. Los números salen de mirar el modelo:
+// la panza va entre el 50 y el 65 % de la altura; el hombre acumula en la panza y los costados, la mujer en caderas y muslos.
+const INFLADO = {
+  m: { panza: 0.085, pecho: 0.02, cadera: 0.018, muslo: 0.026, brazo: 0.02, cuello: 0.014, pantorrilla: 0.008, cara: 0.006 },
+  f: { panza: 0.06, pecho: 0.022, cadera: 0.034, muslo: 0.03, brazo: 0.022, cuello: 0.012, pantorrilla: 0.012, cara: 0.006 },
+}
+
+// Infla la malla ya mezclada (`pos`) según la gordura: cada punto se corre hacia afuera por su normal, más en las zonas donde
+// el cuerpo acumula. `extra` = cuánto más allá del modelo base (0 = nada). Devuelve true si cambió algo.
+export function inflar(modelo, pos, { sexo, gordura }, minY, maxY, buf = {}) {
+  const extra = Math.min(1.35, Math.max(0, (gordura - 0.5) / 1.5))
+  if (extra < 0.005) return false
+  const k = INFLADO[sexo > 0.5 ? 'm' : 'f']
+  const alto = maxY - minY
+  const nr = (buf.normales = normales(pos, modelo.indices, buf.normales))
+  for (let i = 0; i < pos.length; i += 3) {
+    const x = pos[i]
+    const y = pos[i + 1]
+    const fy = (y - minY) / alto
+    const ax = Math.abs(x)
+    const brazo = fy > 0.5 ? suave(0.2, 0.3, ax) : 0
+    const tronco = 1 - brazo
+    let a = 0
+    // Panza: más abajo que arriba (cuelga), y más al frente que atrás
+    const nz = nr[i + 2]
+    const frente = 0.35 + 0.65 * Math.max(0, nz)
+    a += k.panza * tronco * (fy < 0.565 ? campana(fy, 0.565, 0.06) : campana(fy, 0.565, 0.08)) * frente
+    a += k.pecho * tronco * campana(fy, 0.69, 0.05)
+    a += k.cadera * tronco * campana(fy, 0.47, 0.08)
+    // Piernas: solo por debajo de la entrepierna; los muslos no se inflan hacia adentro (se atravesarían)
+    const pierna = 1 - suave(0.44, 0.54, fy)
+    const afuera = 0.35 + 0.65 * suave(-0.2, 0.5, x > 0 ? nr[i] : -nr[i])
+    a += k.muslo * pierna * campana(fy, 0.35, 0.11) * afuera
+    a += k.pantorrilla * pierna * campana(fy, 0.16, 0.07) * afuera
+    a += k.brazo * brazo * campana(fy, 0.66, 0.1)
+    a += k.cuello * campana(fy, 0.855, 0.025) * tronco
+    a += k.cara * campana(fy, 0.93, 0.04)
+    a *= extra
+    pos[i] += nr[i] * a
+    pos[i + 1] += nr[i + 1] * a * 0.5
+    pos[i + 2] += nr[i + 2] * a
+  }
+  return true
 }
 
 // Vecinos de cada punto (formato comprimido por filas) para suavizar el color entre zonas
@@ -186,6 +289,7 @@ export function crear(THREE, { ancho, alto, props, renderer, onFalla }) {
   let aparece = 0
   let alturaModelo = 1.75
   let sucio = true
+  const bufferInflar = {}
 
   const pintar = () => {
     if (!malla) return
@@ -220,6 +324,7 @@ export function crear(THREE, { ancho, alto, props, renderer, onFalla }) {
 
   const deformar = () => {
     const { minY, maxY } = mezclar(modelo, pesosDeMezcla(vista), posiciones)
+    inflar(modelo, posiciones, vista, minY, maxY, bufferInflar)
     const geo = malla.geometry
     geo.attributes.position.needsUpdate = true
     geo.computeVertexNormals()
@@ -277,13 +382,18 @@ export function crear(THREE, { ancho, alto, props, renderer, onFalla }) {
       sigue = true
     }
     const meta = parametrosCuerpo(actual)
-    const dif = Math.abs(meta.peso - vista.peso) + Math.abs(meta.musculo - vista.musculo) + Math.abs(meta.sexo - vista.sexo)
+    const dif =
+      Math.abs(meta.peso - vista.peso) +
+      Math.abs(meta.musculo - vista.musculo) +
+      Math.abs(meta.sexo - vista.sexo) +
+      Math.abs(meta.gordura - vista.gordura)
     if (dif > 0.002 || sucio) {
       acumulado += dt
       vista = {
         sexo: acercar(vista.sexo, meta.sexo, dt, 9),
         peso: acercar(vista.peso, meta.peso, dt, 7),
         musculo: acercar(vista.musculo, meta.musculo, dt, 7),
+        gordura: acercar(vista.gordura, meta.gordura, dt, 7),
       }
       if (dif < 0.002) vista = meta
       if (acumulado > 1 / 30 || dif < 0.002 || sucio) {

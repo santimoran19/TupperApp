@@ -25,7 +25,7 @@ import {
   zonas,
 } from '../../src/lib/musculos.js'
 import { COLOR_COMIDA, colorLiquido, formaDe, partesDeReceta, tipoDePlato, trozosDeReceta, trozosDelDia } from '../../src/lib/plato.js'
-import { piezasPorAlimento } from '../../src/components/tres/tupper.js'
+import { capasDelDia, nivelDelDia } from '../../src/components/tres/tupper.js'
 import { repartir, sectores } from '../../src/components/tres/plato.js'
 
 vi.mock('../../src/lib/supabase', () => ({ supabase: {} }))
@@ -354,21 +354,28 @@ describe('plato y tupper 3D', () => {
       ['hue', 150],
     ])
   })
-  test('las piezas del tupper: una cada tantas kcal, todas juntas llenan al llegar al objetivo', () => {
-    const q = piezasPorAlimento(
-      [
-        { id: 'a', kcal: 1000 },
-        { id: 'b', kcal: 1000 },
-        { id: 'c', kcal: 1 },
-        { id: 'd', kcal: 8 },
-      ],
-      2000,
-    )
-    expect(q.get('a')).toBe(q.get('b'))
-    expect(q.get('a') + q.get('b')).toBeGreaterThan(250)
-    expect(q.get('a') + q.get('b')).toBeLessThan(350)
-    expect(q.get('c')).toBe(0) // no aporta casi nada
-    expect(q.get('d')).toBe(1) // aporta poco pero se ve
+  test('el nivel del tupper sube parejo hasta la meta, se frena antes del borde y nunca lo pasa', () => {
+    expect(nivelDelDia(0, 2000)).toBe(0)
+    expect(nivelDelDia(1000, 2000)).toBeCloseTo(nivelDelDia(2000, 2000) / 2, 5)
+    expect(nivelDelDia(2000, 2000)).toBeGreaterThan(0.85)
+    expect(nivelDelDia(2600, 2000)).toBeGreaterThan(nivelDelDia(2000, 2000))
+    for (const k of [2400, 3000, 6000, 1e6]) expect(nivelDelDia(k, 2000)).toBeLessThan(0.96)
+    expect(nivelDelDia(500, 0)).toBeGreaterThan(0) // sin objetivo usa uno por defecto
+  })
+  test('las capas del tupper: cada alimento ocupa su parte de las calorías y no hay más de doce', () => {
+    const c = capasDelDia([
+      { color: '#111111', kcal: 500 },
+      { color: '#222222', kcal: 300 },
+      { color: '#333333', kcal: 200 },
+      { color: '#444444', kcal: 0 },
+    ])
+    expect(c.map((x) => x.color)).toEqual(['#111111', '#222222', '#333333'])
+    expect(c.map((x) => x.hasta)).toEqual([0.5, 0.8, 1])
+    expect(capasDelDia([])).toEqual([])
+    const muchas = capasDelDia(Array.from({ length: 30 }, (_, i) => ({ color: '#abcdef', kcal: 10 + i })))
+    expect(muchas.length).toBe(12)
+    expect(muchas.at(-1).hasta).toBeCloseTo(1, 9)
+    for (let i = 1; i < muchas.length; i++) expect(muchas[i].hasta).toBeGreaterThan(muchas[i - 1].hasta)
   })
   test('el plato reparte las piezas según los gramos (con tope y sin líquidos) y da un gajo a cada ingrediente', () => {
     const g = repartir(

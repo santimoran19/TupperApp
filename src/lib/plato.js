@@ -80,7 +80,7 @@ const REGLAS = [
   [/asado|bife|vacio|peceto|lomo|bondiola|carre|costeleta|carne|higado|vacuno|cerdo/, 'trozo', '#9a5535'],
   // Pescados
   [/salmon|trucha/, 'filete', '#f0886a'],
-  [/merluza|filet/, 'filete', '#f0e0c4'],
+  [/merluza|\bfilet(e|es)?\b/, 'filete', '#f0e0c4'],
   [/atun|caballa|sardina/, 'trozo', '#d8a58a'],
   [/calamar|rabas|langostino|camaron/, 'aro', '#f0a070'],
   // Legumbres
@@ -274,7 +274,9 @@ export function tipoDePlato(nombre, trozos = []) {
   if (TOSTADAS.test(n) && !/ensalada/.test(n)) return 'tostadas'
   if (SANDWICH.test(n)) return 'sandwich'
   if (DISCO.test(n)) return 'disco'
-  if (ENSALADA.test(n)) return 'bowl'
+  // "Milanesa con ensalada" es un plato con acompañamiento; "Ensalada de atún" o "Bowl de quinoa" van en bowl
+  if (ENSALADA.test(n) && (/^(ensalada|bowl|poke|wok)\b|\b(bowl|poke|wok)\b/.test(n) || !/\b(con|y)\s+(una\s+)?ensalada/.test(n)))
+    return 'bowl'
   if (POSTRE.test(n)) return 'postre'
   return 'plato'
 }

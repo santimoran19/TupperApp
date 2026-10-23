@@ -99,7 +99,7 @@ export default function Compras() {
 
   const Fila = ({ a, qty, origen, id }) => (
     <div className="flex items-center gap-2 py-3">
-      <Foto ruta={a.image_path} categoria={a.category} className="w-10 h-10 rounded-xl" icono={20} />
+      <Foto ruta={a.image_path} categoria={a.category} para={a.name} className="w-10 h-10 rounded-xl" icono={20} />
       <div className="flex-1 min-w-0">
         <p className="font-medium truncate">{a.name}</p>
         <p className="text-xs text-gris">

@@ -9,6 +9,7 @@ import { colorDe } from './comun'
 import { azar, crearApilador, semillaDe } from './comida'
 import { estudio } from './estudio'
 import { colorLiquido } from '../../lib/plato'
+import { crearEmplatado } from './emplatado'
 
 const sin = (t) =>
   String(t || '')
@@ -271,7 +272,7 @@ function vapor(THREE, D, escena, { x = 0, z = 0, y = 0.6, ancho = 0.8, cuantos =
 // Cada una arma el recipiente y devuelve:
 //   { fov, dir, mira, W, H (mitades del cuadro a mostrar), sombra (radio), caliente: {x,z,y} | null,
 //     apilar: { medio, piso(x,z), dentro(x,z,y,r), escala } | null, llenar(ap) }
-function platoPlayo(THREE, c) {
+function platoPlayo(THREE, c, emplatado = false) {
   const { D, M, raiz, grupos } = c
   const interior = [
     [0, 0.07],
@@ -299,7 +300,7 @@ function platoPlayo(THREE, c) {
   aro.rotation.x = Math.PI / 2
   aro.position.y = 0.217
   raiz.add(aro)
-  return {
+  const base = {
     fov: 30,
     dir: [0, 0.78, 1],
     mira: [0, 0.1, 0],
@@ -307,6 +308,12 @@ function platoPlayo(THREE, c) {
     H: 1.1,
     sombra: 3.2,
     caliente: { x: 0, z: 0, y: 0.5 },
+  }
+  // El plato de una receta (1.26): cada ingrediente es una pieza reconocible (ver emplatado/). Los demás (tostadas, sándwich,
+  // pizza...) parten de este mismo plato y le apilan lo suyo.
+  if (emplatado) return { ...base, W: 1.66, H: 1.02, emplatar: { altura: (x, z) => alturaPerfil(interior, Math.hypot(x, z)), escala: 1 } }
+  return {
+    ...base,
     apilar: {
       medio: 1.6,
       piso: (x, z) => alturaPerfil(interior, Math.hypot(x, z)),
@@ -358,18 +365,7 @@ function bowl(THREE, c, { sopa }) {
     caliente: sopa ? { x: 0, z: 0, y: 0.7 } : null,
     cupo: sopa ? 50 : 150,
   }
-  if (!sopa) {
-    return {
-      ...base,
-      apilar: {
-        medio: 1.4,
-        piso: (x, z) => alturaPerfil(interior, Math.hypot(x, z)),
-        dentro: (x, z, y, r) => limitar(x, z, Ri - 0.04 - r * 0.7),
-        escala: 1.1,
-      },
-      llenar: (ap) => ap.agregar(porSectores(grupos, 0.95), c.opcionesCaida),
-    }
-  }
+  if (!sopa) return { ...base, emplatar: { altura: (x, z) => alturaPerfil(interior, Math.hypot(x, z)), escala: 1, cama: true } }
   // Sopa: el caldo, con gotitas de grasa y hierbitas, y los trozos flotando
   const nivel = 0.64
   const rl = alturaPerfilInv(interior, nivel)
@@ -969,7 +965,7 @@ function postre(THREE, c) {
 }
 
 const ESCENAS = {
-  plato: (T, c) => platoPlayo(T, c),
+  plato: (T, c) => platoPlayo(T, c, true),
   bowl: (T, c) => bowl(T, c, { sopa: false }),
   sopa: (T, c) => bowl(T, c, { sopa: true }),
   vaso,
@@ -997,6 +993,7 @@ export function crear(THREE, { ancho, alto, props, renderer, quieto }) {
   let raiz = null
   let desechos = []
   let apiladores = []
+  let emplatados = []
   let vapores = []
   let cfg = null
   let aparecer = 1
@@ -1024,6 +1021,7 @@ export function crear(THREE, { ancho, alto, props, renderer, quieto }) {
   const limpiar = () => {
     for (const a of apiladores) a.liberar()
     apiladores = []
+    emplatados = []
     for (const s of vapores) escena.remove(s)
     vapores = []
     if (raiz) pivote.remove(raiz)
@@ -1051,6 +1049,19 @@ export function crear(THREE, { ancho, alto, props, renderer, quieto }) {
       raiz.add(ap.grupo)
       apiladores.push(ap)
       cfg.llenar(ap)
+    }
+    if (cfg.emplatar) {
+      const em = crearEmplatado(THREE, {
+        trozos,
+        semilla: semillaDe(c.nombre) % 9973,
+        altura: cfg.emplatar.altura,
+        escala: cfg.emplatar.escala || 1,
+        cama: !!cfg.emplatar.cama,
+        D,
+        quieto: quieto || !c.opcionesCaida.caer,
+      })
+      raiz.add(em.grupo)
+      emplatados.push(em)
     }
     // Adornos: lo que lleva la bebida, puesto al lado como en una foto
     if (cfg.adornos) {
@@ -1107,6 +1118,7 @@ export function crear(THREE, { ancho, alto, props, renderer, quieto }) {
     actualizar: (dt, t) => {
       let sigue = false
       for (const a of apiladores) sigue = a.actualizar(dt) || sigue
+      for (const em of emplatados) sigue = em.actualizar(dt) || sigue
       for (const s of vapores) {
         const k = (t * 0.16 + s.userData.fase) % 1
         s.position.set(s.userData.dx + Math.sin(t + s.userData.fase * 6) * 0.07, s.userData.y + k * 1.2, s.userData.dz)
