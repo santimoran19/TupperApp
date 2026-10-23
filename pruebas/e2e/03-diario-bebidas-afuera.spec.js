@@ -53,7 +53,7 @@ test('no comí, bebidas y extras, comidas afuera y validaciones', async ({ brows
     await captura(pg, 'v10_no_comi')
     await pg.click('button:has-text("Deshacer")')
     await pg.waitForSelector('button[aria-label="No comí merienda"]')
-    expect(await pg.locator('text=sin comer').count()).toBe(0)
+    expect(await pg.locator('text=1 sin comer').count()).toBe(0)
     await pg.click('button[aria-label="No comí merienda"]')
     await pg.waitForSelector('text=No comiste')
     await pg.click('button:has-text("Al final comí")')

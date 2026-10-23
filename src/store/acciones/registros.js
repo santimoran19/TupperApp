@@ -161,4 +161,30 @@ export const accionesDeRegistros = (k) => ({
       return { error: 'No se pudo pedir el análisis. Revisá la conexión y probá de nuevo.' }
     }
   },
+
+  // Carga con IA (1.27): le manda a la función de Supabase una foto, un audio o un texto y devuelve lo que entendió:
+  // { items, texto?, restantes } o { error, codigo }. No anota nada: la persona revisa y confirma en Registrar.
+  leerComidaIA: async (cuerpo) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('registrar-ia', { body: cuerpo })
+      if (error) {
+        const detalle = await error.context?.json?.().catch(() => null)
+        anotarEvento('ia_registro', {
+          tipo: cuerpo.tipo,
+          resultado: 'error',
+          codigo: detalle?.codigo || String(error.context?.status || 'red'),
+        })
+        if (detalle?.mensaje) return { error: detalle.mensaje, codigo: detalle.codigo }
+        return {
+          error:
+            error.context?.status === 404 ? 'Esta función todavía no está disponible.' : 'No se pudo. Revisá la conexión y probá de nuevo.',
+        }
+      }
+      if (!Array.isArray(data?.items)) return { error: 'No se pudo leer. Probá de nuevo.' }
+      anotarEvento('ia_registro', { tipo: cuerpo.tipo, resultado: 'ok', items: data.items.length })
+      return { items: data.items, texto: data.texto, restantes: data.restantes }
+    } catch {
+      return { error: 'No se pudo. Revisá la conexión y probá de nuevo.' }
+    }
+  },
 })

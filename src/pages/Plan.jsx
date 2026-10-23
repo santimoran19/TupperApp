@@ -18,7 +18,8 @@ import {
   textoMedida,
   unidadDe,
 } from '../lib/nutricion'
-import { armarPlan, disponibilidad, macrosDeFila } from '../lib/planificador'
+import { diasParaVencer } from '../lib/despensa'
+import { aprovechado, armarPlan, disponibilidad, macrosDeFila } from '../lib/planificador'
 import { errCantidad, maxPorComida } from '../lib/validar'
 
 const ESTADOS = {
@@ -98,7 +99,29 @@ export default function Plan() {
   const llena = (fila) => !!(fila?.recipe_id || fila?.food_id)
   const huecos = dias.filter((f) => f >= h).some((f) => COMIDAS.some((c) => !llena(filas.get(`${f}|${c}`))))
   const faltan = d.planFuturo.faltantes.size
+  // Lo que vence en los próximos 5 días y el plan todavía no gasta
+  const { plan, recetasPorId, itemsPlan, vencePorBase, alimentoPlan, alimentosPorId } = d
+  const sinPlan = useMemo(() => {
+    const planeadas = plan.filter((p) => p.recipe_id && p.date >= h)
+    const gastadas = new Set(
+      aprovechado(planeadas, { recetas: recetasPorId, itemsDe: itemsPlan, vence: vencePorBase, hoy: h, limite: 5 }).map((a) => a.food_id),
+    )
+    const sueltos = new Set(plan.filter((p) => p.food_id && p.date >= h).flatMap((p) => alimentoPlan(p).map((it) => it.food_id)))
+    return [...vencePorBase]
+      .filter(([id, f]) => f >= h && diasParaVencer(f, h) <= 5 && !gastadas.has(id) && !sueltos.has(id) && alimentosPorId.get(id))
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .slice(0, 4)
+  }, [plan, recetasPorId, itemsPlan, vencePorBase, alimentoPlan, alimentosPorId, h])
 
+  // Cuenta cuánto de lo que vence pronto se aprovecha con lo que se armó
+  const textoArmado = (nuevas) => {
+    const a = aprovechado(nuevas, { recetas: d.recetasPorId, itemsDe: d.itemsPlan, vence: d.vencePorBase, hoy: h })
+    if (a.length === 0) return 'Plan armado con lo que tenés'
+    const nombre = d.alimentosPorId.get(a[0].food_id)?.name
+    return a.length === 1 && nombre
+      ? `Plan armado: gasta ${nombre.toLowerCase()}, que vence pronto`
+      : `Plan armado: aprovecha ${a.length} cosas que vencen pronto`
+  }
   async function armar() {
     setTrabajando(true)
     const fechas = dias.filter((f) => f >= h)
@@ -115,10 +138,15 @@ export default function Plan() {
       ocultas: d.ocultas,
       favoritas: d.favoritas,
       alimentoDe: d.alimentoPlan,
+      vence: d.vencePorBase,
+      hoy: h,
+      objetivoDe: (fecha) => ({ kcal: d.objetivoDe(fecha), protein: Number(d.perfil.protein_target) || 0 }),
+      macrosPorReceta: d.macrosPorReceta,
+      macrosDeExistente: (fila) => macrosDeFila(fila, d),
     })
     const listo = await d.guardarPlan(nuevas)
     setTrabajando(false)
-    if (listo) d.avisar(nuevas.length ? 'Plan armado con lo que tenés' : 'La semana ya estaba completa')
+    if (listo) d.avisar(nuevas.length ? textoArmado(nuevas) : 'La semana ya estaba completa')
   }
   async function rehacer() {
     if (
@@ -147,9 +175,15 @@ export default function Plan() {
       ocultas: d.ocultas,
       favoritas: d.favoritas,
       alimentoDe: d.alimentoPlan,
+      vence: d.vencePorBase,
+      hoy: h,
+      objetivoDe: (fecha) => ({ kcal: d.objetivoDe(fecha), protein: Number(d.perfil.protein_target) || 0 }),
+      macrosPorReceta: d.macrosPorReceta,
+      macrosDeExistente: (fila) => macrosDeFila(fila, d),
     })
     await d.guardarPlan(nuevas)
     setTrabajando(false)
+    if (nuevas.length) d.avisar(textoArmado(nuevas))
   }
 
   // Afuera: lo que diga la fila del plan y, si todavía no hay fila, la regla semanal del perfil
@@ -248,6 +282,19 @@ export default function Plan() {
         )}
       </div>
 
+      {sinPlan.length > 0 && dias[6] >= h && (
+        <div className="rounded-2xl bg-naranja-suave p-4 mb-4 flex items-start gap-3" data-testid="plan-vence">
+          <Icono n="event_busy" className="text-naranja-oscuro mt-0.5" />
+          <div className="flex-1 text-sm">
+            <p>
+              <b>Vence pronto y no está en el plan:</b> {sinPlan.map(([id]) => d.alimentosPorId.get(id).name.toLowerCase()).join(', ')}.
+            </p>
+            <Link to={`/recetas?con=${sinPlan[0][0]}`} className="font-semibold text-naranja-oscuro">
+              Ver recetas que lo usan
+            </Link>
+          </div>
+        </div>
+      )}
       {faltan > 0 && (
         <Link to="/compras" className="rounded-2xl bg-naranja-suave p-4 mb-4 flex items-center gap-3">
           <Icono n="shopping_basket" className="text-naranja-oscuro" />

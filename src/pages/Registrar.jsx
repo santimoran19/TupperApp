@@ -1,4 +1,5 @@
 // Registrar una comida: alimentos sueltos con su cantidad, bebidas o porciones de una receta.
+import RegistroIA from '../components/RegistroIA'
 import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import Marco from '../components/Marco'
@@ -163,6 +164,17 @@ export default function Registrar() {
       return nuevos
     })
   }
+  // Lo que armó la IA (foto, voz o texto): se suma al plato y la persona lo revisa antes de anotar
+  const agregarDeIA = (nuevos) =>
+    setPlatos((p) => {
+      const lista = [...p]
+      for (const n of nuevos) {
+        if (n.food_id) {
+          if (!lista.some((x) => x.food_id === n.food_id)) lista.push(platoDeAlimento(d.alimentosPorId.get(n.food_id), n.qty))
+        } else if (!lista.some((x) => x.recipe_id === n.recipe_id)) lista.push({ recipe_id: n.recipe_id, porciones: String(n.porciones) })
+      }
+      return lista
+    })
   const cambiar = (i, cambios) => setPlatos((p) => p.map((x, j) => (j === i ? { ...x, ...cambios } : x)))
   const quitar = (i) => setPlatos((p) => p.filter((_, j) => j !== i))
 
@@ -248,6 +260,8 @@ export default function Registrar() {
               <p className="text-xs text-gris">Una porción armada</p>
             </button>
           </div>
+
+          <RegistroIA onPlatos={agregarDeIA} />
 
           {platos.length === 0 && deAyer.length > 0 && (
             <button onClick={repetirAyer} className="w-full tarjeta p-3 mb-4 flex items-center gap-3 text-left">

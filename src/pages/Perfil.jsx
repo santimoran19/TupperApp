@@ -1,4 +1,5 @@
 // Perfil: objetivo, progreso de peso y cintura, y comidas que se hacen fuera de casa.
+import Recordatorios from '../components/Recordatorios'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Marco from '../components/Marco'
@@ -281,6 +282,8 @@ export default function Perfil() {
 
         <div className="min-w-0">
           <Hogar />
+
+          <Recordatorios />
 
           <section className="tarjeta p-5 mb-4">
             <h2 className="font-semibold">Apariencia</h2>

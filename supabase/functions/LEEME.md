@@ -74,3 +74,45 @@ https://tupperapp.vercel.app,http://localhost:5173
 ```
 
 Se aplica sin volver a publicar la función. Las previsualizaciones de Vercel (`algo-xxxx.vercel.app`) son otro dominio: si querés probarlas contra el Supabase real, hay que sumarlas ahí.
+
+---
+
+# Cargar comida con foto, voz o texto (`registrar-ia`)
+
+La app tiene un botón "Cargar con IA" en Registrar: sacás una foto del plato, decís lo que comiste o lo escribís, y la función devuelve una lista (`nombre`, `cantidad`, `unidad`, `gramos`). La app la cruza con tus alimentos y recetas y arma el plato; **siempre se revisa antes de anotar**. No se guarda la foto, el audio ni lo dicho: la tabla `ai_usos` solo cuenta cuántos pedidos hizo cada cuenta.
+
+## Pasos para activarla
+
+1. Correr `supabase/actualizacion-20.sql` en el editor SQL (crea `ai_usos`, es aditivo).
+2. Cargar al menos un proveedor de **visión** y uno de **voz** como secretos (más abajo).
+3. Publicar la función: `supabase functions deploy registrar-ia --project-ref bpxxwmcqidoxgmfyzhpc`.
+
+Mientras no haya claves, la app contesta que la función todavía no está activada y se sigue cargando a mano.
+
+## Proveedores gratis (octubre de 2026)
+
+| Para qué | Proveedor | Secretos | Notas |
+| --- | --- | --- | --- |
+| Foto y texto (recomendado primero) | Cloudflare Workers AI (`@cf/meta/llama-4-scout-17b-16e-instruct`) | `CF_ACCOUNT_ID`, `CF_API_TOKEN` | Cupo gratis diario (10.000 neuronas). Cloudflare se compromete a no entrenar con los datos. |
+| Foto y texto (alternativa) | Google Gemini (`gemini-3.1-flash-lite`) | `GEMINI_API_KEY` | Cupo gratis generoso, **pero en el plan gratis Google puede usar lo enviado para mejorar sus productos**: por eso no es el primero. |
+| Foto (opcional) | Groq con modelo de visión | `GROQ_API_KEY`, `GROQ_VISION_MODEL` | Solo si Groq ofrece un modelo de visión vigente. |
+| Voz | Groq Whisper (`whisper-large-v3-turbo`) | `GROQ_API_KEY` | Unos 2.000 pedidos por día gratis. Si falla, cae a Whisper de Cloudflare. |
+
+`VISION_ORDEN` (por ejemplo `cloudflare,gemini`) cambia el orden en que se prueban; si uno falla o se queda sin cupo, se pasa al siguiente.
+
+## Otros secretos
+
+| Secreto | Para qué | Por defecto |
+| --- | --- | --- |
+| `REGISTRO_IA_LIMITE_DIARIO` | Pedidos por cuenta cada 24 horas (foto + voz + texto; tope 200) | `30` |
+| `ORIGENES_PERMITIDOS` | Sitios desde los que se acepta el pedido (CORS) | Los de la app |
+
+Los cupos gratis los comparten todas las cuentas: si se llega al tope, la app avisa que la IA está con mucha demanda.
+
+## Qué se manda y a quién
+
+Solo la foto (achicada a 1024 px), el audio (hasta 30 s) o el texto escrito, para reconocer la comida. No se manda nombre, email ni otros datos. Si cambiás de proveedor, actualizá `src/pages/Legal.jsx`, que dice a quién se le mandan.
+
+## Pruebas
+
+Las pruebas de navegador reemplazan la función por una de mentira (acá no corre Deno). La lógica de la función (`logica.ts`) tiene pruebas unitarias; **lo que no se probó nunca es hablar con los proveedores reales**: la primera vez, probá una foto, un audio y un texto desde el teléfono y mirá los registros de la función en el panel de Supabase.

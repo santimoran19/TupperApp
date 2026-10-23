@@ -6,6 +6,7 @@ import { useDatos } from '../store/Datos'
 import { useAvisar, useAvisos } from '../store/avisos'
 import { hoy } from '../lib/fechas'
 import { useEscritorio } from '../lib/escritorio'
+import { useRecordatorios } from '../lib/useRecordatorios'
 import { redondear, sumar } from '../lib/nutricion'
 
 const PESTANAS = [
@@ -162,9 +163,10 @@ function BarraLateral({ nombre, inicial, conEjercicio }) {
 }
 
 export default function Marco({ titulo, atras = false, children, sinNav = false }) {
-  const { registros, perfil, sinConexion, pendientes, trabada } = useDatos()
+  const { registros, perfil, sinConexion, pendientes, trabada, usuario } = useDatos()
   const { aviso, pregunta } = useAvisos()
-  const { responder } = useAvisar()
+  const { responder, avisar } = useAvisar()
+  useRecordatorios({ uid: usuario?.id, registros, avisar })
   const nav = useNavigate()
   const escritorio = useEscritorio()
   // Cada pantalla le pone su nombre a la pestaña del navegador

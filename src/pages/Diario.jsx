@@ -2,6 +2,7 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import EditarRegistro from '../components/EditarRegistro'
+import Ayuno from '../components/Ayuno'
 import Marco from '../components/Marco'
 import { Anillo, Barra, Icono } from '../components/ui'
 import { useDatos } from '../store/Datos'
@@ -344,6 +345,8 @@ export default function Diario() {
               </div>
             </div>
           </section>
+
+          {esHoy && <Ayuno />}
 
           {gasto.activo && gasto.base && <TarjetaGasto gasto={gasto} comido={redondear(total.kcal)} fecha={fecha} />}
 

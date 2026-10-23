@@ -53,20 +53,21 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 20. F-13 · Categorías editables por el usuario
 21. D-08 · Revisión de los textos
 22. IA-04 · Cargar una receta desde un texto
-23. IA-03 · Foto de un plato
+23. IA-05 · Probar la carga con IA con los proveedores reales (primera vez que se activa)
 24. C-06 · Métricas de uso
 25. T-05 · Partir `sincronizacion.js`
 26. T-07 · Mandar lo cargado sin conexión con la app cerrada
 27. S-06 · Verificación en dos pasos
 28. S-03 · Contraseñas filtradas también del lado de Supabase
-29. F-19b · Seguir con gasto y ejercicio (importar archivos, pulso en reposo, validar con mediciones reales)
+29. F-22 · Sincronizar con relojes y apps de salud (necesita app nativa o servidor)
+30. F-19b · Seguir con gasto y ejercicio (importar archivos, pulso en reposo, validar con mediciones reales)
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-30. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-31. C-02 · Dominio propio y página de presentación (va junto con C-03)
-32. C-01 · Planes y cobro (para empezar a cobrar)
-33. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-34. C-04 · Play Store (cuesta la cuenta de desarrollador)
+31. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+32. C-02 · Dominio propio y página de presentación (va junto con C-03)
+33. C-01 · Planes y cobro (para empezar a cobrar)
+34. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
+35. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -77,12 +78,13 @@ Nada por ahora.
 
 ## 1. Funciones
 
-- [ ] **F-06 · Recordatorios** · P2 · L. Tomar agua, comidas sin registrar y el resumen del domingo.
-  - Necesita notificaciones del navegador y algo del lado del servidor que las mande a la hora.
-  - En iPhone solo funcionan con la app instalada en la pantalla de inicio.
+- [~] **F-06 · Recordatorios con la app cerrada (Web Push)** · P2 · L. La 1.27 trajo los recordatorios que avisan **con la app abierta** (agua, cena sin anotar y más; ver F-21). Falta que lleguen con la app cerrada.
+  - Necesita notificaciones push del navegador y algo del lado del servidor que las mande a la hora (una función programada en Supabase y claves VAPID).
+  - En iPhone solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4 o más).
 - [ ] **F-08 · Copiar un día entero** · P3 · S. Hoy se puede repetir la comida de ayer; falta copiar el día completo (o un día cualquiera) a otra fecha.
 - [ ] **F-09 · Combos frecuentes** · P3 · M. Guardar "mi desayuno de siempre" con varios alimentos y registrarlo con un toque.
 - [ ] **F-18 · Registrarse e iniciar sesión con Google** · P2 · M. Un botón "Continuar con Google" en la pantalla de acceso, para crear la cuenta o entrar sin escribir mail ni contraseña. **Qué hace falta de tu lado:** crear un proyecto en Google Cloud, configurar la pantalla de consentimiento y las credenciales OAuth (cliente web), y activar el proveedor Google en Supabase (Authentication > Providers) con las direcciones de vuelta de la app y de Supabase. Gratis. **Cosas a resolver:** (1) el consentimiento de Google en modo de prueba solo deja entrar a 100 usuarios que vos agregues a mano; para abrirlo a cualquiera hay que publicarlo, y Google pide la Política de privacidad y la página de inicio en un dominio propio (esto se cruza con C-02, dominio propio); (2) si ya existe una cuenta con el mismo mail, Supabase puede unirla con la de Google; hay que dejarlo bien configurado para que nadie tome una cuenta ajena; (3) quien entra con Google no tiene contraseña: la pantalla de "Olvidé mi contraseña" y el Perfil tienen que explicarlo, y se podría ofrecer crear una; (4) igual hay que pasar por el perfil (fecha de nacimiento, para cumplir los 18 años de L-01) y, con F-17, elegir el nombre de usuario; (5) sumar a la Política de privacidad que Google es un proveedor y qué datos se reciben (mail y nombre; la foto no se guarda); (6) probarlo en el navegador del teléfono y en la app instalada (PWA), donde el regreso desde Google a veces se comporta distinto. Va con pruebas (el simulador de las pruebas tiene que fingir el regreso de Google) y los textos del botón. Borrar la cuenta y descargar los datos siguen igual.
+- [ ] **F-22 · Sincronizar con relojes y apps de salud** · P3 · L. Traer pasos, ejercicio y peso desde Apple Salud, Google Fit/Health Connect, Garmin o Strava. Una app web (PWA) no puede leer Apple Salud ni Health Connect: hace falta una app nativa (ver C-04) o conectar Strava/Garmin con un servidor propio. Hoy la alternativa es importar archivos (F-19b).
 - [ ] **F-19b · Seguir con gasto y ejercicio** · P3 · M. Quedó afuera de la 1.23: (1) importar entrenamientos desde archivos (.gpx, .tcx, .fit o la exportación de Apple Salud); conectar Strava o Garmin directo necesita algo del lado del servidor, y leer Apple Salud o Health Connect directo (los pasos incluidos) no se puede desde una PWA; sí se podría con una app instalable (Capacitor), junto con C-04; (2) usar el pulso en reposo (`profiles.resting_hr`, ya existe la columna) en el cálculo; (3) **validar el cálculo contra mediciones de referencia** (calorimetría indirecta, o al menos el seguimiento de varias personas): hoy los márgenes de error son orientativos, no validados; los coeficientes de movimiento según el trabajo y por paso son criterio propio y quedarían ajustados con esos datos; (4) un tope de proteína o cálculo sobre masa magra para obesidad alta (IMC mayor a 35), que los dos nutricionistas sugirieron; se dejó afuera a propósito la proteína configurable por ser confusa para quien no sabe de nutrición.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
 - [ ] **F-11 · Exportar el registro a planilla** · P3 · S. Hoy "Descargar mis datos" baja un JSON; sumar un CSV que abra en Excel, útil para llevarle al nutricionista.
@@ -95,7 +97,7 @@ Nada por ahora.
   - el tope de mensajes por día (propuesta: 20);
   - si más adelante va a poder registrar cosas ("anotame una manzana").
 - [ ] **IA-02 · Proveedor de respaldo** · P2 · S. Si Groq está saturado, probar con otro (NVIDIA tiene API gratis con el mismo formato). Antes, leer sus términos: el acceso gratis parece pensado para pruebas, no para producción.
-- [ ] **IA-03 · Foto de un plato** · P3 · M. Sacarle una foto a la comida y que la IA estime qué es y cuántas calorías tiene. Es bastante menos preciso, sobre todo con las cantidades, y cada foto gasta cupo del proveedor. Plan pago.
+- [ ] **IA-05 · Probar la carga con IA con los proveedores reales** · P2 · S. La carga por foto, voz y texto (1.27) se probó solo con respuestas simuladas, porque donde se desarrolló no hay salida a esos servicios. Pasos: correr `actualizacion-20.sql`, cargar los secretos (ver `supabase/functions/LEEME.md`), publicar `registrar-ia` y probar con el teléfono una foto, un audio y un texto. Mirar qué tan bien reconoce la comida argentina y, si hace falta, ajustar `INSTRUCCIONES_COMIDA` o el orden de proveedores.
 - [ ] **IA-04 · Cargar una receta desde un texto** · P3 · S. Pegar una receta de internet y que la IA la arme con los alimentos de la base.
 
 ## 3. Diseño y uso
@@ -140,6 +142,12 @@ Nada por ahora.
 
 ## Hecho
 
+- **F-20 · Plan que aprovecha lo que vence, ayuno y recordatorios, y carga con foto, voz o texto** (versión 1.27.0; hay que correr `supabase/actualizacion-20.sql` y, para la IA, publicar la función `registrar-ia` con sus claves; ver `supabase/functions/LEEME.md`). Salió de comparar con Fitia (su ventaja es la carga con IA; la de Tupper, que el plan sale de la despensa y es gratis).
+  - *Plan inteligente (F-20):* `armarPlan` suma un puntaje por aprovechar lo que vence (≤3 días +16, ≤7 +9, ≤14 +3, tope 30, solo si el alimento sigue bueno ese día y queda en el stock simulado) y reparte las calorías del día por comida (`PESO_COMIDA`: desayuno 22 %, almuerzo 34 %, merienda 14 %, cena 30 %) con una pequeña preferencia por la proteína. Al armar, el aviso cuenta cuántos alimentos que vencen se aprovecharon y el Plan muestra una tarjeta con los que quedaron sin plan (`plan-vence`) que lleva a Recetas filtradas por ese alimento.
+  - *Ayuno intermitente y recordatorios (F-21):* en el Diario (solo hoy) el ayuno con esquemas 12:12, 14:10, 16:8, 18:6 y 20:4, hora de inicio editable, cuánto pasó, cuánto falta y el cumplimiento semanal. En el Perfil, recordatorios de agua, comidas sin anotar y fin del ayuno, con horas editables; avisan **con la app abierta** (sin servidor no se puede con la app cerrada: ver F-06). Todo se guarda en el teléfono (`tupper:ayuno:`, `tupper:recordatorios:`).
+  - *Cargar con IA (IA-03):* en Registrar, la tarjeta "Cargar con IA" con Foto, Voz (hasta 30 s) y Escribir. La función `registrar-ia` usa proveedores gratis: Cloudflare Workers AI (Llama 4 Scout) para foto y texto, Groq Whisper para la voz, Gemini como opción (avisa en la Política de privacidad que Google puede usar lo recibido en el plan gratis). `src/lib/registroIA.js` cruza lo que entendió con los alimentos y recetas (con sinónimos) y calcula las cantidades; lo que no encuentra se lista para buscarlo a mano. Se avisa la primera vez, hay un tope diario por cuenta (`ai_usos`) y no se guarda la foto, el audio ni lo dicho. **Sin probar contra los servicios reales**: ver IA-05.
+  - *No se hizo:* la sincronización con relojes (F-22) porque una PWA no puede leer Apple Salud ni Health Connect; las fotos de recetas siguen en pausa (la ruta local con GPU y `scripts/pedidos-fotos.mjs` está en F-04c).
+  - *Pruebas:* `plan-inteligente.test.js` (7), `ayuno.test.js` (10), `registrar-ia.test.js` (7, la lógica de la función), `registro-ia.test.js` (14) y las de navegador 28 (plan, ayuno, recordatorios) y 29 (carga con IA con la función simulada).
 - **F-04c · Pulido del 3D, íconos y fotos propias** (versión 1.26.0; no hay actualización de esquema ni datos nuevos: solo la app y dos scripts). Salió de probar la 1.25: el tupper y los platos eran "grumos separados", había íconos que no coincidían con el alimento, el selector de "Vence primero" se veía raro, el muñeco casi no cambiaba entre 72 y 109 kilos y la barra de peso se cortaba.
   - *Tupper del día:* ahora es una sola masa, como arena o agua que sube, con una capa por alimento en su color (por porción de calorías) y olas suaves en la superficie; ya no hay trocitos que se pasen del tupper (`tupper.js`: `nivelDelDia`, `capasDelDia`).
   - *Platos:* se arman con una composición por alimento (`emplatado/`: `componer.js` reparte, `piezas.js` modela: milanesa con empanado, bifes, pechuga, pescado, rodajas, hojas, arroz y fideos como "cama", salsas que se derraman, montoncitos que caen y se acomodan). Una milanesa se ve como milanesa. Los fondos (arroz, hojas) apoyan en el borde del recipiente y lo de encima, sobre ellos. Tostadas, pizzas, tartas y sopas siguen con el apilador de siempre (`comida.js`).
