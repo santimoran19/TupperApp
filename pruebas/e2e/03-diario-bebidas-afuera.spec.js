@@ -79,7 +79,12 @@ test('no comí, bebidas y extras, comidas afuera y validaciones', async ({ brows
     await pg.click('button:has-text("Con alcohol")')
     await pg.waitForTimeout(200)
     const con = (await pg.locator('div.divide-y > button').allInnerTexts()).map((t) => t.split('\n')[0])
-    expect(!con.includes('Agua') && con.includes('Cerveza') && con.length === 17 && todas === 54).toBe(true)
+    expect({ sinAgua: !con.includes('Agua'), cerveza: con.includes('Cerveza'), conAlcohol: con.length, todas }).toEqual({
+      sinAgua: true,
+      cerveza: true,
+      conAlcohol: 17,
+      todas: 63,
+    })
     await captura(pg, 'v11_bebidas', false)
     await pg.click('button:has-text("Sin alcohol")')
     await pg.waitForTimeout(200)
@@ -215,14 +220,21 @@ test('no comí, bebidas y extras, comidas afuera y validaciones', async ({ brows
   await test.step('recetas: buscador y filtro', async () => {
     await pg.goto(APP + '/recetas')
     await pg.waitForSelector('text=para cocinar')
-    const total = await pg.locator('a.tarjeta').count()
+    // La lista se muestra de a 60: la cantidad de recetas está en el pie ("60 de 1603 recetas" o "12 recetas")
+    const cuantas = async () => {
+      const t = await pg.locator('p.text-center:has-text(" receta")').last().innerText()
+      const m = t.match(/(\d+)(?: de (\d+))? recetas?/)
+      return Number(m[2] || m[1])
+    }
+    const total = await cuantas()
     await pg.fill('input[placeholder^="Buscar receta"]', 'atun')
     await pg.waitForTimeout(200)
-    const conAtun = await pg.locator('a.tarjeta').count()
+    const conAtun = await cuantas()
     await pg.fill('input[placeholder^="Buscar receta"]', '')
     await pg.click('button:has-text("Para llevar")')
     await pg.waitForTimeout(200)
-    const llevar = await pg.locator('a.tarjeta').count()
+    const llevar = await cuantas()
+    expect(await pg.locator('a.tarjeta').count()).toBeLessThanOrEqual(60)
     expect(total >= 62 && 0 < conAtun && conAtun < total && 0 < llevar && llevar < total).toBe(true)
     await captura(pg, 'v30_recetas', false)
   })

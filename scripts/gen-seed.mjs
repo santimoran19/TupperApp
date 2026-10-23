@@ -7,13 +7,16 @@
 import { foods, recipes, conAlcohol, alimentosQuinta, recetasQuinta } from './seed-data.mjs'
 import { actividades } from './ejercicio-data.mjs'
 import { ejercicios, GRUPOS, EQUIPOS } from './gym-data.mjs'
+import { alimentosSexta, recetasSexta, foodsTodos } from './seed-sexta.mjs'
 import { writeFileSync } from 'node:fs'
 const q = (v) => (v === null || v === undefined ? 'null' : typeof v === 'number' ? String(v) : `'${String(v).replace(/'/g, "''")}'`)
 function generar(alimentos, recetas, titulo) {
   let sql = `-- ${titulo}. Generado con scripts/gen-seed.mjs\n\n`
-  sql += 'insert into public.foods (slug, name, unit, unit_grams, unit_label, kcal, protein, carbs, fat, category, alcohol) values\n'
-  sql +=
-    alimentos.map((f) => `  (${f.map(q).join(', ')}, ${conAlcohol.includes(f[0])})`).join(',\n') + '\non conflict (slug) do nothing;\n\n'
+  if (alimentos.length) {
+    sql += 'insert into public.foods (slug, name, unit, unit_grams, unit_label, kcal, protein, carbs, fat, category, alcohol) values\n'
+    sql +=
+      alimentos.map((f) => `  (${f.map(q).join(', ')}, ${conAlcohol.includes(f[0])})`).join(',\n') + '\non conflict (slug) do nothing;\n\n'
+  }
   sql += 'insert into public.recipes (slug, name, minutes, servings, meal_types, portable, steps) values\n'
   sql += recetas
     .map((r) => `  (${q(r.slug)}, ${q(r.name)}, ${r.minutes}, ${r.servings}, '{${r.meal_types.join(',')}}', ${r.portable}, ${q(r.steps)})`)
@@ -76,6 +79,38 @@ gym +=
   '\non conflict (slug) do update set name = excluded.name, grupo = excluded.grupo, equipo = excluded.equipo, peso_corporal = excluded.peso_corporal;\n'
 writeFileSync(new URL('../supabase/seed-7.sql', import.meta.url), gym)
 console.log('ok', ejercicios.length, 'ejercicios de gimnasio')
+
+// ---------- Sexta tanda (1.25): alimentos y recetas, en archivos chicos para pegarlos en el SQL Editor ----------
+// supabase/seed-8-alimentos.sql primero; después supabase/seed-8-recetas-1.sql, -2.sql, etc. (cada uno se puede correr más de
+// una vez: agrega solo lo que falta). La base de arranque (seed.sql) no los incluye.
+const TANDA = 200
+const todos = new Set(foodsTodos.map((f) => f[0]))
+if (todos.size !== foodsTodos.length) throw new Error('hay alimentos repetidos en la sexta tanda')
+const recetasPrevias = new Set(recipes.map((r) => r.slug))
+for (const r of recetasSexta) {
+  if (recetasPrevias.has(r.slug)) throw new Error('receta repetida: ' + r.slug)
+  recetasPrevias.add(r.slug)
+  for (const [slug] of r.items) if (!todos.has(slug)) throw new Error('falta alimento ' + slug)
+}
+let sexta =
+  '-- Sexta tanda de la base (1.25): alimentos nuevos. Va primero. Generado con scripts/gen-seed.mjs. Se puede correr de nuevo: agrega solo lo que falta.\n\n'
+sexta += 'insert into public.foods (slug, name, unit, unit_grams, unit_label, kcal, protein, carbs, fat, category, alcohol) values\n'
+sexta +=
+  alimentosSexta.map((f) => `  (${f.map(q).join(', ')}, ${conAlcohol.includes(f[0])})`).join(',\n') + '\non conflict (slug) do nothing;\n'
+writeFileSync(new URL('../supabase/seed-8-alimentos.sql', import.meta.url), sexta)
+const tandas = Math.ceil(recetasSexta.length / TANDA)
+for (let i = 0; i < tandas; i++) {
+  const parte = recetasSexta.slice(i * TANDA, (i + 1) * TANDA)
+  writeFileSync(
+    new URL(`../supabase/seed-8-recetas-${i + 1}.sql`, import.meta.url),
+    generar(
+      [],
+      parte,
+      `Sexta tanda de la base (1.25): recetas, parte ${i + 1} de ${tandas}. Después de seed-8-alimentos.sql. Se puede correr de nuevo: agrega solo lo que falta`,
+    ),
+  )
+}
+console.log('ok sexta tanda:', alimentosSexta.length, 'alimentos y', recetasSexta.length, 'recetas en', tandas, 'archivos')
 
 // los ingredientes de la última tanda tienen que estar en la base completa (pueden ser de tandas anteriores)
 console.log(

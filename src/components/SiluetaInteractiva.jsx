@@ -101,7 +101,7 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
         <div className="flex flex-col items-center">
           <Vista3D
             tipo="cuerpo"
-            props={{ sexo, grasa: grasaNueva, escala: escalaNueva, modo: 'silueta' }}
+            props={{ sexo, grasa: grasaNueva, escala: escalaNueva, altura, modo: 'silueta' }}
             etiqueta={`Tu cuerpo en 3D con ${redondear(kg, 1)} kilos`}
             className="w-full max-w-[280px]"
             lienzo="w-full h-80"

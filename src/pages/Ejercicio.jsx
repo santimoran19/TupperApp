@@ -236,8 +236,17 @@ function SemanaPorMusculo() {
     [d.series, d.entrenamientos, ejerciciosPorId, lunes, fin],
   )
   const props3D = useMemo(
-    () => ({ sexo: d.perfil?.sex, grasa: d.perfil?.sex === 'f' ? 22 : 14, escala: 1, modo: 'musculos', trabajo, activo, onTocar: tocar }),
-    [d.perfil?.sex, trabajo, activo, tocar],
+    () => ({
+      sexo: d.perfil?.sex,
+      grasa: d.perfil?.sex === 'f' ? 22 : 14,
+      escala: 1.1,
+      altura: Number(d.perfil?.height_cm) || undefined,
+      modo: 'musculos',
+      trabajo,
+      activo,
+      onTocar: tocar,
+    }),
+    [d.perfil?.sex, d.perfil?.height_cm, trabajo, activo, tocar],
   )
   const lista = GRUPOS_MUSCULARES.map(([g, t]) => ({ g, t, ...trabajo.get(g), i: intensidad(trabajo.get(g)) })).sort((x, y) => y.i - x.i)
   if (!lista.some((x) => x.i > 0)) return null

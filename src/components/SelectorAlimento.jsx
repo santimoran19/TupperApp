@@ -34,7 +34,7 @@ export default function SelectorAlimento({ onElegir, soloConStock = false, categ
     if (categoria) l = l.filter((a) => a.category === categoria)
     if (bebidas && alcohol !== 'todas') l = l.filter((a) => tieneAlcohol(a) === (alcohol === 'con'))
     if (soloConStock) l = l.filter((a) => (stockMap.get(a.id) || 0) > 0)
-    return l.slice(0, 60)
+    return l.slice(0, categoria ? 120 : 60) // dentro de una categoría (bebidas) entran todas
   }, [alimentos, texto, soloConStock, stockMap, categoria, bebidas, alcohol])
 
   const pedido = useRef(0) // para descartar la respuesta de una búsqueda que ya no es la que se está mirando

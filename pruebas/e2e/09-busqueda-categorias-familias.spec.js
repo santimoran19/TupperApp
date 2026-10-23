@@ -1,6 +1,6 @@
 // v1.6: Open Food Facts con dos buscadores y reintentos, categorías nuevas y editables, sinónimos, familias y recetas nuevas. Usa la sesión de las pruebas anteriores.
 import { expect, test } from '@playwright/test'
-import { API, APP, captura, contexto, escuchar, IPHONE, sinErrores } from './apoyo.js'
+import { API, APP, captura, contexto, cuantasRecetas, escuchar, IPHONE, sinErrores } from './apoyo.js'
 
 // Un pedido a la base simulada con la sesión de la página ('UID' se cambia por el id del usuario)
 const PEDIDO = async ([api, metodo, ruta, cuerpo, prefer]) => {
@@ -283,8 +283,7 @@ test('buscador con sinónimos, Open Food Facts, categorías, familias y recetas 
     await pg.goto(APP + '/recetas')
     await pg.waitForSelector('text=para cocinar')
     await pg.waitForTimeout(300)
-    const total = await pg.locator('p.text-xs.text-gris.text-center').last().innerText()
-    expect(Number(total.trim().split(/\s+/)[0])).toBeGreaterThanOrEqual(86)
+    expect(await cuantasRecetas(pg)).toBeGreaterThanOrEqual(86)
     await pg.fill('input[placeholder="Buscar receta..."]', 'jardinera')
     await pg.waitForTimeout(300)
     const nJar = await pg.locator('a.tarjeta').count()

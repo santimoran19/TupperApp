@@ -15,7 +15,7 @@
 //   --limite 20     cuántas hacer en esta tanda
 //   --slug huevo    rehace una sola (aunque ya estuviera hecha); se puede repetir
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { foods, recipes } from './seed-data.mjs'
+import { foodsTodos as foods, recipesTodas as recipes } from './seed-sexta.mjs'
 
 const args = process.argv.slice(2)
 const opcion = (n) => {

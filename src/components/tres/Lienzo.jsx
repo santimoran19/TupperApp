@@ -3,6 +3,7 @@
 // aparte, solo cuando una pantalla muestra algo en 3D (ver ../Vista3D.jsx).
 //
 // `crear(THREE, { ancho, alto })` arma la escena y devuelve:
+//   (también recibe `renderer` y `onFalla`, por si la escena necesita bajar algo)
 //   { escena, camara, pivote (lo que gira al arrastrar), actualizar(dt, t) → true si sigue animando, tocar?(objetos, rayo),
 //     cambiar?(props) para recibir datos nuevos sin rearmar todo, liberar?() }
 import { useEffect, useRef } from 'react'
@@ -39,7 +40,7 @@ export default function Lienzo({ crear, props, className = 'w-full h-64', etique
     const medir = () => ({ ancho: Math.max(1, el.clientWidth), alto: Math.max(1, el.clientHeight) })
     let { ancho, alto } = medir()
     renderer.setSize(ancho, alto, false)
-    const e = crear(THREE, { ancho, alto, props: propsRef.current, quieto: reducirMovimiento() })
+    const e = crear(THREE, { ancho, alto, props: propsRef.current, quieto: reducirMovimiento(), renderer, onFalla })
     escenaRef.current = e
     const quieto = reducirMovimiento()
 
@@ -95,6 +96,10 @@ export default function Lienzo({ crear, props, className = 'w-full h-64', etique
     let visible = true
     let corriendo = false
     let anterior = 0
+    // Si el teléfono va lento (más de 55 ms por cuadro en los primeros cuadros) se bajan los detalles: sin sombras y a menor resolución
+    let medidos = 0
+    let lentos = 0
+    let bajada = false
     let id = 0
     const cuadro = (t) => {
       const dt = Math.min(0.05, (t - (anterior || t)) / 1000)
@@ -107,7 +112,19 @@ export default function Lienzo({ crear, props, className = 'w-full h-64', etique
       }
       if (e.pivote) e.pivote.rotation.y = giro
       const sigue = e.actualizar ? e.actualizar(dt, t / 1000) : false
+      const antes = performance.now()
       renderer.render(e.escena, e.camara)
+      if (!bajada && medidos < 24) {
+        medidos++
+        if (medidos > 3 && performance.now() - antes > 55) lentos++
+        if (lentos >= 5) {
+          bajada = true
+          renderer.setPixelRatio(1)
+          renderer.setSize(ancho, alto, false)
+          renderer.shadowMap.enabled = false
+          e.bajarCalidad?.()
+        }
+      }
       const girando = !!arrastre || Math.abs(velocidad) > 0.00002 || (giroSolo && !quieto)
       if (visible && (sigue || girando)) id = requestAnimationFrame(cuadro)
       else {

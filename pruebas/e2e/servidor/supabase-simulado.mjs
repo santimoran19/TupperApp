@@ -5,7 +5,8 @@ import http from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { foods, recipes, conAlcohol } from '../../../scripts/seed-data.mjs'
+import { conAlcohol } from '../../../scripts/seed-data.mjs'
+import { foodsTodos as foods, recipesTodas as recipes } from '../../../scripts/seed-sexta.mjs'
 import { actividades } from '../../../scripts/ejercicio-data.mjs'
 import { ejercicios as ejerciciosGym } from '../../../scripts/gym-data.mjs'
 
@@ -958,7 +959,8 @@ const server = http.createServer(async (req, res) => {
     const pideCaptcha =
       ['/auth/v1/signup', '/auth/v1/resend', '/auth/v1/recover'].includes(url.pathname) ||
       (url.pathname === '/auth/v1/token' && url.searchParams.get('grant_type') === 'password')
-    if (pideCaptcha) {
+    // Para probar la app a mano (sin el Turnstile): CAPTCHA_LIBRE=1 node pruebas/e2e/servidor/supabase-simulado.mjs
+    if (pideCaptcha && !process.env.CAPTCHA_LIBRE) {
       const captcha = String(body?.gotrue_meta_security?.captcha_token || '')
       if (!captcha.startsWith('captcha-de-prueba-') || captchasUsados.has(captcha))
         return send(400, { code: 400, error_code: 'captcha_failed', msg: 'captcha protection: request disallowed (timeout-or-duplicate)' })

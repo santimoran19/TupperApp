@@ -6,6 +6,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PGlite } from '@electric-sql/pglite'
 import { alimentosQuinta, conAlcohol, foods, recetasQuinta, recipes } from '../../scripts/seed-data.mjs'
+import { foodsTodos } from '../../scripts/seed-sexta.mjs'
 import { ALIAS, FAMILIA } from '../../src/lib/alias.js'
 import { buscarAlimentos } from '../../src/lib/buscar.js'
 import { conFamilia, itemsEnBase, sugerirBase } from '../../src/lib/equivalencias.js'
@@ -177,7 +178,8 @@ describe('recetas de la base', () => {
 
 describe('búsqueda, familias y medidas', () => {
   const base = conFamilia(foods.map(aAlimento))
-  const slugs = new Set(foods.map((f) => f[0]))
+  // La base completa, con la sexta tanda (1.25): hay familias de arroz que apuntan a alimentos nuevos
+  const slugs = new Set(foodsTodos.map((f) => f[0]))
 
   test('los alias, las familias y las medidas rápidas apuntan a alimentos que existen', () => {
     for (const s of Object.keys(ALIAS)) expect(slugs.has(s), 'alias de ' + s).toBe(true)

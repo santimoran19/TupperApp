@@ -1,7 +1,7 @@
 // Lo nuevo de la 1.24: vencimientos en la despensa, fotos propias, la silueta para elegir la meta, el mapa de músculos y
 // los dibujos 3D (o su versión 2D si el navegador no tiene WebGL). Usa la sesión de las anteriores.
 import { expect, test } from '@playwright/test'
-import { API, APP, captura, contexto, escuchar, rest, sinErrores } from './apoyo.js'
+import { API, APP, captura, contexto, cuantasRecetas, escuchar, rest, sinErrores } from './apoyo.js'
 
 // Pide algo a la base simulada con la sesión de la página y devuelve la respuesta
 const llamar = (pg, metodo, ruta, cuerpo, cabeceras = {}) =>
@@ -52,12 +52,12 @@ test('despensa con vencimientos, fotos, silueta, músculos y 3D', async ({ brows
     const tarjetas = pg.locator('a.tarjeta')
     await expect(tarjetas.first()).toBeVisible()
     // Todas usan huevo
-    const n = await tarjetas.count()
+    const n = await cuantasRecetas(pg)
     expect(n).toBeGreaterThan(0)
     await expect(pg.getByText(/Usa algo que vence mañana/).first()).toBeVisible()
     await pg.click('button[aria-label="Ver todas las recetas"]')
     await expect(pg.getByText('Recetas con')).toHaveCount(0)
-    expect(await pg.locator('a.tarjeta').count()).toBeGreaterThan(n)
+    expect(await cuantasRecetas(pg)).toBeGreaterThan(n)
   })
 
   await test.step('al agotarse, la fecha se borra sola', async () => {

@@ -1,160 +1,186 @@
-// El tupper del día en 3D (1.24): se va llenando con lo que se come. Cada capa es un macronutriente (hidratos abajo,
-// proteína en el medio, grasas arriba), con alto según las calorías que aportó; el total llega al borde con el objetivo
-// del día. Si se pasa, la tapa queda torcida arriba; si se llega justo, se cierra.
-//   props: { proteina, hidratos, grasas (kcal de cada uno), objetivo (kcal) }
+// El tupper del día en 3D (1.25): un tupper de vidrio que se va llenando con trocitos de lo que comiste (arroz en granitos,
+// rodajas de tomate, trozos de carne, hojas...), tantos como calorías, hasta llegar al objetivo. Si te pasás, asoman por
+// arriba. La tapa queda abierta atrás.
+//   props: { trozos: [{ id, nombre, kcal, forma, color }] (lib/plato.js, trozosDelDia), objetivo (kcal) }
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
-import { acercar, colorDe, luces, sombra } from './comun'
+import { colorDe } from './comun'
+import { crearApilador } from './comida'
+import { estudio } from './estudio'
 
-const ANCHO = 2.4
-const ALTO = 1.35
-const FONDO = 1.65
-const PARED = 0.07
-const ALTO_UTIL = ALTO - 0.16
-const MAX_LLENO = 1.12 // hasta dónde se dibuja si se pasó del objetivo
+const HX = 1.2 // mitad del ancho interior
+const HZ = 0.8 // mitad del fondo interior
+const ALTO = 0.9
+const FONDO = 0.05
+const PIEZAS_LLENO = 300 // piezas cuando se llegó al objetivo
 
-// Cuánto ocupa cada capa (fracción del alto útil). Pura, para poder probarla.
-export function capas({ proteina = 0, hidratos = 0, grasas = 0, objetivo = 0 } = {}) {
-  const total = Math.max(0, proteina) + Math.max(0, hidratos) + Math.max(0, grasas)
-  const lleno = objetivo > 0 ? Math.min(MAX_LLENO, total / objetivo) : 0
-  const parte = (x) => (total > 0 ? (Math.max(0, x) / total) * lleno : 0)
-  return { hidratos: parte(hidratos), proteina: parte(proteina), grasas: parte(grasas), lleno }
-}
-
-// La superficie de arriba de una capa, un poco despareja (parece comida y no un bloque)
-function despareja(geo, alto, semilla) {
-  const pos = geo.attributes.position
-  for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i)
-    if (y > alto / 2 - 0.02) {
-      const x = pos.getX(i)
-      const z = pos.getZ(i)
-      pos.setY(i, y + 0.035 * Math.sin(x * 5.1 + semilla) * Math.cos(z * 4.3 - semilla) + 0.02 * Math.sin(x * 11 + z * 7))
-    }
+// Cuántas piezas le tocan a cada alimento: una cada tanta kcal (al menos una si aporta algo). Pura, para probarla.
+export function piezasPorAlimento(trozos, objetivo) {
+  const porPieza = Math.max(1, objetivo || 2000) / PIEZAS_LLENO
+  const r = new Map()
+  for (const t of trozos || []) {
+    const n = Math.round(t.kcal / porPieza)
+    r.set(t.id, n > 0 ? n : t.kcal >= porPieza * 0.3 ? 1 : 0)
   }
-  pos.needsUpdate = true
-  geo.computeVertexNormals()
-  return geo
+  return r
 }
 
-export function crear(THREE, { ancho, alto, props, quieto }) {
+function contorno(THREE, hx, hz, radio) {
+  const s = new THREE.Shape()
+  s.moveTo(-hx + radio, -hz)
+  s.lineTo(hx - radio, -hz)
+  s.quadraticCurveTo(hx, -hz, hx, -hz + radio)
+  s.lineTo(hx, hz - radio)
+  s.quadraticCurveTo(hx, hz, hx - radio, hz)
+  s.lineTo(-hx + radio, hz)
+  s.quadraticCurveTo(-hx, hz, -hx, hz - radio)
+  s.lineTo(-hx, -hz + radio)
+  s.quadraticCurveTo(-hx, -hz, -hx + radio, -hz)
+  return s
+}
+
+export function crear(THREE, { ancho, alto, props, renderer, quieto }) {
   const escena = new THREE.Scene()
-  const camara = new THREE.PerspectiveCamera(32, ancho / alto, 0.1, 50)
-  camara.position.set(0, 3.1, 7.4)
-  camara.lookAt(0, 0.95, 0)
-  luces(THREE, escena)
-
+  const camara = new THREE.PerspectiveCamera(27, ancho / alto, 0.1, 50)
+  camara.position.set(0, 2.3, 4.7)
+  camara.lookAt(0, 0.38, 0)
   const pivote = new THREE.Group()
-  pivote.rotation.x = 0.06
   escena.add(pivote)
-  const piso = sombra(THREE, 4, 3)
-  piso.position.y = -0.02
-  escena.add(piso)
-
-  // Las paredes: plástico transparente. Primero las de atrás, después la comida, después las de adelante.
-  const caja = new RoundedBoxGeometry(ANCHO, ALTO, FONDO, 6, 0.24)
-  caja.translate(0, ALTO / 2, 0)
-  const plastico = (lado, opacidad) =>
-    new THREE.MeshStandardMaterial({
-      color: 0xffffff,
-      roughness: 0.12,
-      metalness: 0,
-      transparent: true,
-      opacity: opacidad,
-      side: lado,
-      depthWrite: false,
-    })
-  const atras = new THREE.Mesh(caja, plastico(THREE.BackSide, 0.32))
-  atras.renderOrder = 0
-  const adelante = new THREE.Mesh(caja, plastico(THREE.FrontSide, 0.2))
-  adelante.renderOrder = 3
-  pivote.add(atras, adelante)
-  // Un borde un poco más marcado arriba, como el de un tupper de verdad
-  const borde = new THREE.Mesh(
-    new RoundedBoxGeometry(ANCHO + 0.06, 0.08, FONDO + 0.06, 3, 0.04),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2, transparent: true, opacity: 0.55, depthWrite: false }),
-  )
-  borde.position.y = ALTO - 0.04
-  borde.renderOrder = 4
-  pivote.add(borde)
-
-  // La comida: una capa por macronutriente
-  const colores = {
-    hidratos: colorDe(THREE, '--c-naranja', '#e67e22'),
-    proteina: colorDe(THREE, '--c-coral', '#e76f51'),
-    grasas: colorDe(THREE, '--c-teal', '#408a9b'),
-  }
-  const orden = ['hidratos', 'proteina', 'grasas']
-  const capa = {}
-  orden.forEach((k, i) => {
-    const geo = despareja(new RoundedBoxGeometry(ANCHO - PARED * 2 - 0.08, 1, FONDO - PARED * 2 - 0.08, 4, 0.12), 1, i * 1.7)
-    const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: colores[k], roughness: 0.78, metalness: 0 }))
-    m.renderOrder = 1
-    m.scale.y = 0.0001
-    m.visible = false
-    pivote.add(m)
-    capa[k] = { malla: m, alto: 0, meta: 0 }
+  const luz = estudio(THREE, escena, renderer, {
+    sol: [-1.8, 5.5, 2.6],
+    alcance: 2.2,
+    piso: 3,
+    objetivo: [0, 0.4, 0],
+    opacidadPiso: 0.2,
+    alDespertar: () => e.despertar?.(),
   })
 
-  // La tapa (verde, como el logo), flotando arriba
+  // El tupper: paredes de vidrio (un anillo extruido), fondo y un borde de color
   const verde = colorDe(THREE, '--c-verde', '#206140')
-  const tapa = new THREE.Group()
-  const placa = new THREE.Mesh(
-    new RoundedBoxGeometry(ANCHO + 0.14, 0.16, FONDO + 0.14, 5, 0.07),
-    new THREE.MeshStandardMaterial({ color: verde, roughness: 0.42 }),
+  const vidrio = new THREE.MeshPhysicalMaterial({
+    color: 0xf2fbff,
+    roughness: 0.06,
+    metalness: 0,
+    transparent: true,
+    opacity: 0.2,
+    clearcoat: 1,
+    clearcoatRoughness: 0.04,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    envMapIntensity: 1.8,
+  })
+  const grosor = 0.06
+  const forma = contorno(THREE, HX + grosor, HZ + grosor, 0.22)
+  forma.holes.push(contorno(THREE, HX, HZ, 0.16))
+  const paredes = new THREE.Mesh(new THREE.ExtrudeGeometry(forma, { depth: ALTO, bevelEnabled: false, curveSegments: 10 }), vidrio)
+  paredes.rotation.x = -Math.PI / 2
+  paredes.position.y = FONDO
+  paredes.renderOrder = 3
+  pivote.add(paredes)
+  const fondo = new THREE.Mesh(new RoundedBoxGeometry(2 * (HX + grosor), FONDO * 1.6, 2 * (HZ + grosor), 3, 0.05), vidrio)
+  fondo.position.y = FONDO * 0.8
+  fondo.renderOrder = 3
+  pivote.add(fondo)
+  const borde = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(
+      (() => {
+        const s = contorno(THREE, HX + grosor + 0.045, HZ + grosor + 0.045, 0.25)
+        s.holes.push(contorno(THREE, HX - 0.01, HZ - 0.01, 0.15))
+        return s
+      })(),
+      { depth: 0.07, bevelEnabled: true, bevelSize: 0.012, bevelThickness: 0.012, bevelSegments: 2, curveSegments: 10 },
+    ),
+    new THREE.MeshPhysicalMaterial({ color: verde, roughness: 0.35, metalness: 0, clearcoat: 0.5, clearcoatRoughness: 0.3 }),
   )
-  const traba = new THREE.MeshStandardMaterial({ color: verde.clone().multiplyScalar(0.8), roughness: 0.45 })
-  for (const x of [-1, 1]) {
-    const t = new THREE.Mesh(new RoundedBoxGeometry(0.5, 0.1, 0.16, 3, 0.04), traba)
-    t.position.set(x * 0.5, -0.06, (FONDO + 0.14) / 2)
-    tapa.add(t)
-    const t2 = t.clone()
-    t2.position.z *= -1
-    tapa.add(t2)
-  }
-  tapa.add(placa)
-  pivote.add(tapa)
+  borde.rotation.x = -Math.PI / 2
+  borde.position.y = FONDO + ALTO - 0.02
+  borde.castShadow = true
+  pivote.add(borde)
 
-  let lleno = 0
-  let llenoMeta = 0
-  let alturaTapa = ALTO + 0.9
-  const cambiar = (p) => {
-    const c = capas(p)
-    llenoMeta = c.lleno
-    for (const k of orden) capa[k].meta = c[k]
-  }
-  cambiar(props)
-  if (quieto) {
-    for (const k of orden) capa[k].alto = capa[k].meta
-    lleno = llenoMeta
-  }
+  // La tapa: se cierra cuando se llega al objetivo del día (y se abre de nuevo si baja o si te pasás bastante)
+  const bisagra = new THREE.Group()
+  bisagra.position.set(0, FONDO + ALTO + 0.045, -HZ - grosor - 0.05)
+  const tapa = new THREE.Mesh(
+    new RoundedBoxGeometry(2 * (HX + grosor + 0.06), 0.07, 2 * (HZ + grosor + 0.06), 3, 0.05),
+    new THREE.MeshPhysicalMaterial({ color: verde, roughness: 0.3, metalness: 0, clearcoat: 0.7, clearcoatRoughness: 0.25 }),
+  )
+  tapa.position.set(0, 0, HZ + grosor + 0.06)
+  tapa.castShadow = true
+  bisagra.add(tapa)
+  bisagra.visible = false
+  bisagra.rotation.x = -1.4
+  pivote.add(bisagra)
+  let tapaMeta = -1.4
 
-  const actualizar = (dt, t) => {
-    let moviendo = false
-    // Las capas suben de a poco, una arriba de la otra
-    let base = PARED + 0.02
-    for (const k of orden) {
-      const c = capa[k]
-      const antes = c.alto
-      c.alto = quieto ? c.meta : acercar(c.alto, c.meta, dt, 5)
-      if (Math.abs(c.alto - antes) > 0.0003) moviendo = true
-      const h = c.alto * ALTO_UTIL
-      c.malla.visible = h > 0.004
-      c.malla.scale.y = Math.max(0.0001, h)
-      c.malla.position.y = base + h / 2
-      base += h
+  // La comida
+  const apilador = crearApilador(THREE, {
+    medio: 1.6,
+    piso: () => FONDO * 1.6,
+    dentro: (x, z, y, r) => {
+      const mx = HX - r * 0.85
+      const mz = HZ - r * 0.85
+      return [Math.max(-mx, Math.min(mx, x)), Math.max(-mz, Math.min(mz, z))]
+    },
+    capacidad: 800,
+    semilla: 11,
+    escala: 1.15,
+  })
+  pivote.add(apilador.grupo)
+  const zona = (az) => [(az() * 2 - 1) * HX * 0.95, (az() * 2 - 1) * HZ * 0.95]
+
+  let actual = { trozos: [], objetivo: 2000 }
+  let hay = new Map() // id -> piezas ya puestas
+  let objetivoBase = null
+  let primera = true
+
+  const llenar = (p) => {
+    const nuevo = { trozos: p?.trozos || [], objetivo: p?.objetivo || 2000 }
+    if (objetivoBase == null || Math.abs(nuevo.objetivo - objetivoBase) / objetivoBase > 0.1) objetivoBase = nuevo.objetivo
+    const quiere = piezasPorAlimento(nuevo.trozos, objetivoBase)
+    let achico = objetivoBase !== (actual.objetivoBase ?? objetivoBase)
+    for (const [id, n] of hay) if ((quiere.get(id) || 0) < n) achico = true
+    let caer = true
+    if (achico) {
+      apilador.borrar()
+      hay = new Map()
+      caer = false
     }
-    lleno = quieto ? llenoMeta : acercar(lleno, llenoMeta, dt, 5)
-    // La tapa: arriba y flotando mientras falta; se cierra al llegar; torcida si se pasó
-    const pasado = lleno > 1.02
-    const justo = lleno >= 0.97 && !pasado
-    const metaTapa = justo ? ALTO + 0.08 : pasado ? ALTO + 0.12 + (lleno - 1) * ALTO_UTIL + 0.25 : ALTO + 0.9
-    alturaTapa = quieto ? metaTapa : acercar(alturaTapa, metaTapa, dt, 4)
-    const flota = justo || quieto ? 0 : Math.sin(t * 1.6) * 0.05
-    tapa.position.y = alturaTapa + flota
-    tapa.rotation.z = pasado ? -0.22 : acercar(tapa.rotation.z, 0, dt, 4)
-    tapa.rotation.x = justo ? 0 : Math.sin(t * 1.1) * (quieto ? 0 : 0.03)
-    return moviendo || !justo
+    const suma = []
+    for (const t of nuevo.trozos) {
+      const ya = hay.get(t.id) || 0
+      const n = (quiere.get(t.id) || 0) - ya
+      if (n > 0) suma.push({ forma: t.forma, color: t.color, cantidad: n, zona })
+      hay.set(t.id, (quiere.get(t.id) || 0) > 0 ? quiere.get(t.id) : ya)
+    }
+    if (suma.length) apilador.agregar(suma, { caer: caer && !quieto, duracion: primera ? 2.2 : 0.9 })
+    primera = false
+    actual = { ...nuevo, objetivoBase }
+    const kcal = nuevo.trozos.reduce((t, x) => t + x.kcal, 0)
+    tapaMeta = kcal >= objetivoBase * 0.98 && kcal <= objetivoBase * 1.12 ? 0 : -1.4
+    if (quieto) bisagra.rotation.x = tapaMeta
   }
+  llenar(props)
 
-  return { escena, camara, pivote, actualizar, cambiar }
+  const e = {
+    escena,
+    camara,
+    pivote,
+    actualizar: (dt) => {
+      const cae = apilador.actualizar(dt)
+      const dif = tapaMeta - bisagra.rotation.x
+      if (Math.abs(dif) > 0.002) {
+        bisagra.rotation.x += dif * Math.min(1, dt * 4)
+        bisagra.visible = bisagra.rotation.x > -1.39 || tapaMeta === 0
+        return true
+      }
+      bisagra.visible = tapaMeta === 0
+      return cae
+    },
+    cambiar: (p) => llenar(p),
+    bajarCalidad: () => luz.bajar(),
+    liberar: () => {
+      luz.liberar()
+      apilador.liberar()
+    },
+  }
+  return e
 }

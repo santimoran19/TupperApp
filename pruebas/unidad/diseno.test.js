@@ -24,9 +24,9 @@ import {
   trabajoPorMusculo,
   zonas,
 } from '../../src/lib/musculos.js'
-import { COLOR_COMIDA, partesDeReceta } from '../../src/lib/plato.js'
-import { capas } from '../../src/components/tres/tupper.js'
-import { porciones } from '../../src/components/tres/plato.js'
+import { COLOR_COMIDA, colorLiquido, formaDe, partesDeReceta, tipoDePlato, trozosDeReceta, trozosDelDia } from '../../src/lib/plato.js'
+import { piezasPorAlimento } from '../../src/components/tres/tupper.js'
+import { repartir, sectores } from '../../src/components/tres/plato.js'
 
 vi.mock('../../src/lib/supabase', () => ({ supabase: {} }))
 const { recorteCuadrado, rutaNueva } = await import('../../src/lib/fotos.js')
@@ -266,27 +266,129 @@ describe('plato y tupper 3D', () => {
     expect(p[0].color).toBe(COLOR_COMIDA['Carnes y huevos'])
     expect(partesDeReceta([], porId)).toEqual([])
   })
-  test('las porciones del plato dan la vuelta entera, proporcionales a los gramos', () => {
-    const p = porciones([
-      { nombre: 'a', gramos: 300 },
-      { nombre: 'b', gramos: 100 },
-      { nombre: 'c', gramos: 0 },
-    ])
-    expect(p).toHaveLength(2)
-    expect(p[0].desde).toBe(0)
-    expect(p[0].hasta).toBeCloseTo(Math.PI * 1.5)
-    expect(p[1].hasta).toBeCloseTo(Math.PI * 2)
-    expect(porciones([])).toEqual([])
+  test('cada ingrediente tiene la forma y el color que le tocan por su nombre (y por su categoría si no dice nada)', () => {
+    expect(formaDe('Arroz blanco', 'Pastas y arroz').forma).toBe('grano')
+    expect(formaDe('Tomate', 'Verduras').forma).toBe('rodaja')
+    expect(formaDe('Brócoli', 'Verduras').forma).toBe('floret')
+    expect(formaDe('Leche descremada', 'Lácteos').forma).toBe('gota')
+    expect(formaDe('Algo raro', 'Carnes y huevos').forma).toBe('trozo')
+    expect(formaDe('Algo raro', 'No existe').forma).toBe('cubo')
+    // Palabras que contienen a otras: ni el tomate es mate, ni el chocolate cola, ni el dulce de leche leche
+    expect(formaDe('Tomate perita', 'Verduras').forma).toBe('rodaja')
+    expect(formaDe('Salsa de tomate', 'Salsas y aderezos').forma).toBe('mancha')
+    expect(formaDe('Dulce de leche', 'Despensa').forma).toBe('mancha')
+    expect(formaDe('Chocolate amargo', 'Snacks y dulces').forma).toBe('cubito')
+    expect(formaDe('Paté de hígado', 'Enlatados').forma).toBe('migaja')
+    expect(formaDe('Papaya', 'Frutas').forma).toBe('cubo')
+    expect(formaDe('Té verde', 'Bebidas').forma).toBe('gota')
+    expect(formaDe('Mate cebado', 'Bebidas').forma).toBe('gota')
   })
-  test('el tupper se llena hasta el borde con el objetivo, cada capa según sus calorías', () => {
-    const c = capas({ proteina: 400, hidratos: 800, grasas: 300, objetivo: 2000 })
-    expect(c.lleno).toBeCloseTo(0.75)
-    expect(c.hidratos).toBeCloseTo(0.4)
-    expect(c.proteina).toBeCloseTo(0.2)
-    expect(c.grasas).toBeCloseTo(0.15)
-    // Pasado: hasta un 12 % más arriba del borde
-    expect(capas({ proteina: 3000, objetivo: 2000 }).lleno).toBe(1.12)
-    expect(capas({ objetivo: 0 }).lleno).toBe(0)
+  test('los ingredientes visibles de una receta, en gramos, sin aceite ni sal ni agua', () => {
+    const t = trozosDeReceta(
+      [
+        { food_id: 'arroz', qty: 70 },
+        { food_id: 'pollo', qty: 1 },
+        { food_id: 'aceite', qty: 15 },
+        { food_id: 'sal', qty: 5 },
+        { food_id: 'agua', qty: 500 },
+      ],
+      porId,
+    )
+    expect(t.map((x) => [x.nombre, x.gramos, x.forma])).toEqual([
+      ['Pata muslo', 150, 'trozo'],
+      ['Arroz', 70, 'grano'],
+    ])
+  })
+  test('en qué se sirve cada cosa: vaso, taza, sopa, sándwich, tostadas, pizza, postre, bowl o plato', () => {
+    const t = (nombre) => tipoDePlato(nombre, [])
+    expect(t('Licuado de banana y frutilla')).toBe('vaso')
+    expect(t('Café con leche')).toBe('taza')
+    expect(t('Té con limón')).toBe('taza')
+    expect(t('Sopa de zapallo')).toBe('sopa')
+    expect(t('Lentejas con arroz')).toBe('sopa')
+    expect(t('Tostado de jamón y queso con café con leche')).toBe('sandwich')
+    expect(t('Tostadas con palta y huevo')).toBe('tostadas')
+    expect(t('Café con tostadas')).toBe('tostadas')
+    expect(t('Pizza de muzzarella')).toBe('disco')
+    expect(t('Tarta de verduras')).toBe('disco')
+    expect(t('Yogur con granola y fruta')).toBe('postre')
+    expect(t('Arroz con leche')).toBe('postre')
+    expect(t('Ensalada de rúcula')).toBe('bowl')
+    expect(t('Milanesa con puré')).toBe('plato')
+    // Si casi todo es líquido, es un vaso aunque el nombre no lo diga
+    expect(
+      tipoDePlato('Algo', [
+        { forma: 'gota', gramos: 90 },
+        { forma: 'cubo', gramos: 10 },
+      ]),
+    ).toBe('vaso')
+  })
+  test('el color de una bebida mezcla el de sus ingredientes según los gramos', () => {
+    expect(colorLiquido([{ nombre: 'Leche', gramos: 200 }], 'vaso')).toBe('#f6efe0')
+    const mezcla = colorLiquido(
+      [
+        { nombre: 'Leche', gramos: 200 },
+        { nombre: 'Frutilla', gramos: 100 },
+      ],
+      'vaso',
+    )
+    expect(mezcla).not.toBe('#f6efe0')
+    expect(colorLiquido([], 'sopa')).toBe('#e0b86a')
+  })
+  test('la comida del día: kcal por alimento, de más a menos, sumando los repetidos', () => {
+    const por = new Map([
+      ['pan', { id: 'pan', name: 'Pan francés', unit: 'g', category: 'Panadería', kcal: 270 }],
+      ['hue', { id: 'hue', name: 'Huevo', unit: 'u', unit_grams: 50, category: 'Carnes y huevos', kcal: 150 }],
+    ])
+    const t = trozosDelDia(
+      [
+        { food_id: 'pan', qty: 100 },
+        { food_id: 'pan', qty: 100 },
+        { food_id: 'hue', qty: 2 },
+        { food_id: 'nada', qty: 5 },
+      ],
+      por,
+    )
+    expect(t.map((x) => [x.id, x.kcal])).toEqual([
+      ['pan', 540],
+      ['hue', 150],
+    ])
+  })
+  test('las piezas del tupper: una cada tantas kcal, todas juntas llenan al llegar al objetivo', () => {
+    const q = piezasPorAlimento(
+      [
+        { id: 'a', kcal: 1000 },
+        { id: 'b', kcal: 1000 },
+        { id: 'c', kcal: 1 },
+        { id: 'd', kcal: 8 },
+      ],
+      2000,
+    )
+    expect(q.get('a')).toBe(q.get('b'))
+    expect(q.get('a') + q.get('b')).toBeGreaterThan(250)
+    expect(q.get('a') + q.get('b')).toBeLessThan(350)
+    expect(q.get('c')).toBe(0) // no aporta casi nada
+    expect(q.get('d')).toBe(1) // aporta poco pero se ve
+  })
+  test('el plato reparte las piezas según los gramos (con tope y sin líquidos) y da un gajo a cada ingrediente', () => {
+    const g = repartir(
+      [
+        { nombre: 'Pollo', forma: 'trozo', gramos: 300, color: '#d8a566' },
+        { nombre: 'Arroz', forma: 'grano', gramos: 150, color: '#f3ead2' },
+        { nombre: 'Salsa', forma: 'mancha', gramos: 5, color: '#c43d2a' },
+        { nombre: 'Leche', forma: 'gota', gramos: 200, color: '#f7f1e6' },
+      ],
+      100,
+    )
+    expect(g.map((x) => x.nombre)).toEqual(['Pollo', 'Arroz', 'Salsa'])
+    expect(g[0].cantidad).toBeGreaterThan(g[1].cantidad)
+    expect(g[2].cantidad).toBe(1)
+    const s = sectores(g)
+    expect(s).toHaveLength(3)
+    expect(s[0].hasta).toBeCloseTo(s[1].desde)
+    expect(s[2].hasta - s[0].desde).toBeCloseTo(Math.PI * 2)
+    expect(s.every((x) => x.hasta - x.desde >= 0.4)).toBe(true)
+    expect(repartir([], 50)).toEqual([])
   })
 })
 

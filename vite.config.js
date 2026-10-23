@@ -57,6 +57,11 @@ export default defineConfig({
             urlPattern: ({ url }) => url.pathname.startsWith('/assets/tres-'),
             handler: 'CacheFirst',
             options: { cacheName: 'tres', expiration: { maxEntries: 4 } },
+          }, // La malla del cuerpo en 3D (~800 KB, MakeHuman CC0): se baja la primera vez que se abre el cuerpo y queda guardada
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/modelos/'),
+            handler: 'CacheFirst',
+            options: { cacheName: 'modelos', expiration: { maxEntries: 4 }, cacheableResponse: { statuses: [200] } },
           },
           // Las fotos de alimentos y recetas (Supabase Storage): una vez vistas, se guardan para verlas sin conexión
           {

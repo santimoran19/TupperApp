@@ -213,3 +213,11 @@ export function pedir(pg, metodo, tabla, filtro = '', filas = null, cabeceras = 
     [API, metodo, tabla, filtro, filas, cabeceras],
   )
 }
+
+// Cuántas recetas tiene la lista de /recetas. Se muestran de a 60, así que no se pueden contar las tarjetas: la cantidad
+// está en el pie de la lista ("60 de 1603 recetas" o "12 recetas").
+export async function cuantasRecetas(pg) {
+  const t = await pg.locator('p.text-center:has-text(" receta")').last().innerText()
+  const m = t.match(/(\d+)(?: de (\d+))? recetas?/)
+  return Number(m[2] || m[1])
+}

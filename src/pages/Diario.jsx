@@ -22,7 +22,8 @@ import {
 } from '../lib/nutricion'
 import { disponibilidad, macrosDeFila } from '../lib/planificador'
 import { rangoDiario } from '../lib/validar'
-import Vista3D from '../components/Vista3D'
+import Vista3D, { hayWebGL, tresDPrendido } from '../components/Vista3D'
+import { trozosDelDia } from '../lib/plato'
 
 const TONOS = {
   info: { caja: 'bg-verde-claro', titulo: 'text-verde-texto', icono: 'eco', rotulo: 'TU DÍA' },
@@ -108,14 +109,30 @@ export default function Diario() {
   // El objetivo del día: el fijo, o el que sale del gasto si la persona prendió el cálculo dinámico (F-19)
   const gasto = d.gastoDe(fecha)
   const kcalObj = gasto.objetivo.kcal
-  // El tupper 3D se llena con las calorías de cada macronutriente (1.24)
-  const tupper = useMemo(
-    () => ({ proteina: total.protein * 4, hidratos: total.carbs * 4, grasas: total.fat * 9, objetivo: kcalObj }),
-    [total.protein, total.carbs, total.fat, kcalObj],
-  )
+  // El tupper 3D se llena con trocitos de lo que se comió (1.25)
+  const trozos = useMemo(() => trozosDelDia(delDia, d.alimentosPorId), [delDia, d.alimentosPorId])
+  const tupper = useMemo(() => ({ trozos, objetivo: kcalObj }), [trozos, kcalObj])
   const consejo = consejoDelDia({ objetivoKcal: kcalObj, objetivoProt: d.perfil.protein_target, total, registradas, planHoy })
   const tono = TONOS[consejo.tono]
   const restante = kcalObj - redondear(total.kcal)
+  const con3D = tresDPrendido() && hayWebGL()
+  const tarjetasDelDia = (
+    <>
+      <div className={`rounded-2xl p-3 ${restante < 0 ? 'bg-naranja-suave' : 'bg-verde-claro'}`}>
+        <p className="text-xs font-semibold text-gris">{restante < 0 ? 'Te pasaste' : 'Restante'}</p>
+        <p className={`text-lg font-bold ${restante < 0 ? 'text-naranja-oscuro' : 'text-verde-texto'}`}>
+          {Math.abs(restante).toLocaleString('es-AR')} kcal
+        </p>
+      </div>
+      <div className="rounded-2xl p-3 bg-campo">
+        <p className="text-xs font-semibold text-gris">Comidas</p>
+        <p className="text-lg font-bold">
+          {registradas.size - salteadas.size} de 4
+          {salteadas.size > 0 && <span className="text-xs font-medium text-gris"> · {salteadas.size} sin comer</span>}
+        </p>
+      </div>
+    </>
+  )
 
   // Recetas que entran en lo que queda para la próxima comida
   const ideas = useMemo(() => {
@@ -267,39 +284,32 @@ export default function Diario() {
       <div className="con-lateral [--lat:24rem]">
         <div>
           <section className="tarjeta rounded-3xl p-5 mb-4" data-tour="diario-resumen">
-            <div className="flex items-center gap-5">
-              <Vista3D
-                tipo="tupper"
-                props={tupper}
-                etiqueta={`Tupper del día: ${redondear(total.kcal)} de ${kcalObj} calorías`}
-                className="w-[140px] shrink-0"
-                lienzo="w-full h-[104px]"
-                sinTresD={
-                  <Anillo valor={total.kcal} total={kcalObj}>
-                    <span className="text-2xl font-bold leading-none">{redondear(total.kcal).toLocaleString('es-AR')}</span>
-                    <span className="text-[11px] text-gris mt-1">kcal de {kcalObj.toLocaleString('es-AR')}</span>
-                  </Anillo>
-                }
-              >
-                <span className="text-2xl font-bold leading-none">{redondear(total.kcal).toLocaleString('es-AR')}</span>
-                <span className="text-[11px] text-gris mt-1">kcal de {kcalObj.toLocaleString('es-AR')}</span>
-              </Vista3D>
-              <div className="flex-1 space-y-2">
-                <div className={`rounded-2xl p-3 ${restante < 0 ? 'bg-naranja-suave' : 'bg-verde-claro'}`}>
-                  <p className="text-xs font-semibold text-gris">{restante < 0 ? 'Te pasaste' : 'Restante'}</p>
-                  <p className={`text-lg font-bold ${restante < 0 ? 'text-naranja-oscuro' : 'text-verde-texto'}`}>
-                    {Math.abs(restante).toLocaleString('es-AR')} kcal
-                  </p>
+            {con3D ? (
+              <>
+                <div className="relative -mx-2 -mt-2">
+                  <Vista3D
+                    tipo="tupper"
+                    props={tupper}
+                    etiqueta={`Tupper del día: ${redondear(total.kcal)} de ${kcalObj} calorías`}
+                    lienzo="w-full h-[220px]"
+                    sinTresD={<div className="h-[220px]" />}
+                  />
+                  <div className="absolute left-2 top-1 pointer-events-none">
+                    <p className="text-3xl font-bold leading-none tabular-nums">{redondear(total.kcal).toLocaleString('es-AR')}</p>
+                    <p className="text-xs text-gris mt-1">kcal de {kcalObj.toLocaleString('es-AR')}</p>
+                  </div>
                 </div>
-                <div className="rounded-2xl p-3 bg-campo">
-                  <p className="text-xs font-semibold text-gris">Comidas</p>
-                  <p className="text-lg font-bold">
-                    {registradas.size - salteadas.size} de 4
-                    {salteadas.size > 0 && <span className="text-xs font-medium text-gris"> · {salteadas.size} sin comer</span>}
-                  </p>
-                </div>
+                <div className="grid grid-cols-2 gap-2 mt-2">{tarjetasDelDia}</div>
+              </>
+            ) : (
+              <div className="flex items-center gap-5">
+                <Anillo valor={total.kcal} total={kcalObj}>
+                  <span className="text-2xl font-bold leading-none">{redondear(total.kcal).toLocaleString('es-AR')}</span>
+                  <span className="text-[11px] text-gris mt-1">kcal de {kcalObj.toLocaleString('es-AR')}</span>
+                </Anillo>
+                <div className="flex-1 space-y-2">{tarjetasDelDia}</div>
               </div>
-            </div>
+            )}
             <div className="mt-5 space-y-3">
               <Barra nombre="Proteína" valor={total.protein} total={d.perfil.protein_target} color="bg-coral" />
               <div className="flex gap-2">

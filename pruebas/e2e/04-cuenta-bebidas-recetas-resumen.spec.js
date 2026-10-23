@@ -419,7 +419,9 @@ test('cuenta con código, bebidas, recetas y resumen', async ({ browser }) => {
     await pg.waitForSelector('text=Receta oculta')
     await aviso(pg)
     await pg.waitForSelector('text=para cocinar')
-    expect(await pg.locator('a.tarjeta').count()).toBe(total - 1)
+    // la lista se muestra de a 60: al ocultar una entra la siguiente, y la oculta ya no está
+    expect(await pg.locator('a.tarjeta').count()).toBe(total)
+    expect(await pg.locator(`a.tarjeta:has-text("${nombre}")`).count()).toBe(0)
     const vacias = (await rest(pg, 'plan')).filter((r) => r.date >= hoy && r.recipe_id === ultima)
     expect(vacias).toEqual([])
     await pg.click('button:has-text("Ocultas")')

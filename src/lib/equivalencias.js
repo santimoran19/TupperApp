@@ -172,8 +172,14 @@ export function sugerirBase(producto, candidatos, todos = candidatos) {
   }
   // Si no, solo cuando hay un único candidato que empieza con la misma palabra
   const primera = palabras(producto.name)[0]
-  const posibles = primera ? candidatos.filter((c) => sirve(c) && palabras(c.name)[0] === primera) : []
-  return posibles.length === 1 ? posibles[0] : null
+  let posibles = primera ? candidatos.filter((c) => sirve(c) && palabras(c.name)[0] === primera) : []
+  // Un producto de góndola viene crudo: si no dice "hervido" o "cocido", no vale por lo ya cocinado
+  const cocido = (nombre) => /hervid|cocid|\((plato|postre)\)/i.test(nombre)
+  if (!cocido(producto.name) && posibles.some((c) => !cocido(c.name))) posibles = posibles.filter((c) => !cocido(c.name))
+  // Si hay varios pero todos valen por el mismo ("Arroz integral", "Arroz basmati" y "Arroz largo fino"), se propone ese
+  const raiz = (c) => (FAMILIA[c.slug] ? candidatos.find((x) => x.slug === FAMILIA[c.slug]) || c : c)
+  const raices = [...new Map(posibles.map((c) => [raiz(c).id, raiz(c)])).values()]
+  return raices.length === 1 ? raices[0] : null
 }
 
 // "No" a una sugerencia: se recuerda en el dispositivo para no volver a preguntar

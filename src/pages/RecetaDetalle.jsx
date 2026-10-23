@@ -11,13 +11,16 @@ import { disponibilidad } from '../lib/planificador'
 import { convertir, nombreCorto } from '../lib/equivalencias'
 import { LIM, errNumero } from '../lib/validar'
 import Vista3D, { hayWebGL, tresDPrendido } from '../components/Vista3D'
-import { partesDeReceta } from '../lib/plato'
+import { partesDeReceta, tipoDePlato, trozosDeReceta } from '../lib/plato'
 
 // Arriba de todo: la foto o, si no tiene (o si se elige), el plato en 3D con la comida repartida según de qué está hecha
 function Portada({ receta }) {
   const d = useDatos()
   const partes = useMemo(() => partesDeReceta(d.itemsDe(receta.id), d.alimentosPorId), [d, receta.id])
-  const props = useMemo(() => ({ partes }), [partes])
+  const props = useMemo(() => {
+    const trozos = trozosDeReceta(d.itemsDe(receta.id), d.alimentosPorId)
+    return { nombre: receta.name, trozos, tipo: tipoDePlato(receta.name, trozos) }
+  }, [d, receta.id, receta.name])
   const [vista, setVista] = useState(receta.image_path ? 'foto' : 'plato')
   const total = partes.reduce((s, p) => s + p.gramos, 0)
   const foto = (

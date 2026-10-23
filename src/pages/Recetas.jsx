@@ -10,6 +10,9 @@ import { useDatos } from '../store/Datos'
 import { listaComidas, redondear } from '../lib/nutricion'
 import { disponibilidad, porcionesPosibles } from '../lib/planificador'
 
+// Con más de mil recetas en la base no se dibujan todas juntas: se muestran de a tandas
+const PAGINA = 60
+
 const FILTROS = [
   ['todas', 'Todas'],
   ['vence', 'Salvá lo que vence'],
@@ -99,6 +102,12 @@ export default function Recetas() {
     return true
   })
 
+  // Cuántas se muestran: arranca en una página y vuelve a empezar cuando cambia el filtro, la búsqueda o el alimento
+  const clave = `${filtro}|${texto}|${con || ''}`
+  const [mas, setMas] = useState({ clave, n: PAGINA })
+  const tope = mas.clave === clave ? mas.n : PAGINA
+  const mostradas = visibles.slice(0, tope)
+
   return (
     <Marco titulo="Recetas">
       <div className="lg:flex lg:gap-6 lg:items-start lg:mb-2">
@@ -155,7 +164,7 @@ export default function Recetas() {
       )}
 
       <div className="grilla-tarjetas">
-        {visibles.map(({ r, m, cocinadas, disp, posibles, total, vence }) => (
+        {mostradas.map(({ r, m, cocinadas, disp, posibles, total, vence }) => (
           <Link key={r.id} to={`/recetas/${r.id}`} className="tarjeta p-4 flex gap-3.5">
             <Foto ruta={r.image_path} categoria="receta" className="w-[84px] h-[84px] rounded-2xl" icono={34} />
             <div className="flex-1 min-w-0">
@@ -230,9 +239,16 @@ export default function Recetas() {
         {!['ocultas', 'favoritas'].includes(filtro) && visibles.length === 0 && (
           <p className="text-sm text-gris text-center py-6">No hay recetas con ese filtro.</p>
         )}
+        {visibles.length > mostradas.length && (
+          <button onClick={() => setMas({ clave, n: tope + PAGINA })} className="btn-suave w-full">
+            Ver más recetas ({visibles.length - mostradas.length} más)
+          </button>
+        )}
         {visibles.length > 0 && (
           <p className="text-xs text-gris text-center pt-1">
-            {visibles.length} {visibles.length === 1 ? 'receta' : 'recetas'}
+            {mostradas.length < visibles.length
+              ? `${mostradas.length} de ${visibles.length} recetas`
+              : `${visibles.length} ${visibles.length === 1 ? 'receta' : 'recetas'}`}
           </p>
         )}
       </div>
