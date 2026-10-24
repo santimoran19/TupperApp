@@ -203,7 +203,6 @@ El plan gratis de Supabase no deja bajar copias. Hay una por día, cifrada, en e
 - Prendé el captcha (ver "Seguridad de las cuentas").
 - Si la vas a vender, pasá el repo de GitHub a privado (*Settings > General > Change repository visibility*). Vercel sigue publicando igual.
 - Si querés el análisis con IA, cargá la clave en Supabase (ver `supabase/functions/LEEME.md`).
-- Activá Web Analytics en el proyecto de Vercel (pestaña *Analytics*): la app ya manda las visitas, sin cookies, pero Vercel las cuenta recién cuando está activado.
 - Si pasás a un dominio propio, cambiá `tupperapp.vercel.app` en `index.html`, `public/robots.txt`, `public/sitemap.xml` y `src/lib/marca.js`.
 
 ## Qué trae para la web

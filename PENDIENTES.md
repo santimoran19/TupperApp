@@ -27,7 +27,7 @@ Si se agrega o cambia una tarea, se actualizan las dos.
 Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junto está indicado.
 
 **Primero (P1)**
-1. V-07 · Poner en marcha la 1.32 (actualización 25, séptima tanda, publicar dos funciones, Web Analytics)
+1. V-07 · Publicar la 1.32 en Vercel (lo de Supabase ya está)
 2. V-06 · Probar en el teléfono lo de la 1.29 a la 1.32 (lo del servidor ya está en marcha)
 3. L-03 · Registro de la base de datos (preparado: falta el trámite en TAD)
 4. S-04 · Repo privado (al terminar)
@@ -37,28 +37,27 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 6. T-03b · Hacer andar las pruebas en WebKit (Safari) y sumar más
 7. F-18 · Registrarse e iniciar sesión con Google
 8. D-07b · Accesibilidad: probarla con TalkBack y VoiceOver de verdad
-9. T-04 · Base de pruebas aparte (decisión tuya: el plan gratis deja 2 proyectos activos)
 
 **Cuando haya tiempo (P3)**
-10. F-12b · Seguir sumando a la base común
-11. F-22b · Más relojes: Garmin Connect directo y Health Connect (Strava quedó afuera: su API es paga)
-12. T-01b · Playwright al día
-13. T-14 · La prueba 03 a veces falla en la corrida completa (se cierra sola la hoja del buscador)
-14. S-03 · Contraseñas filtradas también del lado de Supabase
-15. F-19b · Seguir con gasto y ejercicio (pulso en reposo, validar con mediciones reales)
+9. F-12b · Seguir sumando a la base común
+10. F-22b · Más relojes: Garmin Connect directo y Health Connect (Strava quedó afuera: su API es paga)
+11. T-01b · Playwright al día
+12. T-14 · La prueba 03 a veces falla en la corrida completa (se cierra sola la hoja del buscador)
+13. S-03 · Contraseñas filtradas también del lado de Supabase
+14. F-19b · Seguir con gasto y ejercicio (pulso en reposo, validar con mediciones reales)
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-16. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-17. C-02 · Dominio propio y página de presentación (va junto con C-03)
-18. C-01 · Planes y cobro (para empezar a cobrar)
-19. C-04 · Play Store (cuesta la cuenta de desarrollador)
+15. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+16. C-02 · Dominio propio y página de presentación (va junto con C-03)
+17. C-01 · Planes y cobro (para empezar a cobrar)
+18. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
 
 ## 0. Para verificar ahora
 
-- [ ] **V-07 · Poner en marcha la 1.32** · P1 · S. (1) Correr `supabase/actualizacion-25.sql` (aditiva) y `supabase/seed-9-alimentos.sql` (10 alimentos; se puede correr de nuevo). (2) Publicar la función nueva `dos-pasos` (con verificación de JWT) y volver a publicar `recordatorios-push` (sin verificación de JWT, como antes): avisame y las publico. Sin `dos-pasos` la verificación en dos pasos anda igual pero no muestra códigos de recuperación; sin la nueva `recordatorios-push` las notificaciones no traen botones. (3) En Vercel: Project → Analytics → Enable (Web Analytics, gratis en el plan Hobby). La app ya manda las visitas, pero el proyecto lo tiene apagado: sin eso no se ve qué pantallas se usan (C-06). (4) Publicar el sitio.
+- [ ] **V-07 · Publicar la 1.32** · P1 · S. Lo de Supabase quedó en marcha el 24/10/2026 (revisado): actualización 25 y `seed-9-alimentos.sql` corridas (los 10 alimentos están), `dos-pasos` publicada (con verificación de JWT) y `recordatorios-push` publicada de nuevo (sin verificación de JWT, versión con botones). Falta subir la 1.32 al repo para que Vercel la publique; hasta entonces la app publicada es la 1.31.1, que anda igual con todo esto (no usa lo nuevo).
 
 - [ ] **V-06 · Probar en el teléfono lo de la 1.29 a la 1.32** · P1 · S. Lo del servidor quedó en marcha el 24/10/2026 (revisado): actualizaciones 22, 23, 23b y 24 corridas; `asistente-ia`, `registrar-ia` y `recordatorios-push` publicadas; el reloj de los recordatorios corre cada 15 minutos y la función contesta bien (claves VAPID y del reloj correctas); administrador cargado; la 1.31 publicada en Vercel. Falta probar a mano: (1) un recordatorio con la app cerrada (Perfil → Recordatorios → "Aunque la app esté cerrada"; en iPhone, con la app agregada a la pantalla de inicio); (2) la voz en "Anotá rápido", "Revisar y anotar" del asistente y "Pegá la receta"; (3) activar y desactivar la verificación en dos pasos; (4) que todo se vea como antes (primera versión con Vite 8, React 19 y Tailwind 4); (5) el carrusel de consejos, sacar algo de la lista de compras y verlo sacado en otro teléfono, una categoría propia, subir un GPX, TCX o FIT de tu reloj y el panel de administración (al final del Perfil); (6) de la 1.32: activar la verificación en dos pasos y guardar los códigos de recuperación, sumar un segundo dispositivo, entrar con un código de recuperación (después la volvés a activar), los botones "Tomé un vaso" y "Más tarde" de una notificación (en Android; en iPhone no aparecen) y, en Android, anotar algo sin conexión, cerrar la app del todo, volver a tener señal y ver que llegó sin abrirla.
 
@@ -101,7 +100,6 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 - [ ] **T-14 · La prueba 03 a veces falla en la corrida completa** · P3 · S. En el paso "Open Food Facts (respuesta simulada)", mientras espera el aviso de que Open Food Facts no responde, la hoja del buscador se cierra sola (en la captura de la falla está la pantalla de Registrar sin la hoja). Pasó 3 veces en unas 8 corridas completas desde la 1.31 (con Deno andando); sola, la 03 pasa siempre. Sospecha: una recarga del servidor de desarrollo de Vite al terminar de preparar dependencias, o algo que cierra la hoja al llegar datos nuevos. Para investigarlo: anotar en `apoyo.js` las navegaciones de la página (`framenavigated`) y la consola de Vite en el log de las pruebas.
 - [ ] **T-01b · Playwright al día** · P3 · S. La 1.32 pasó a ESLint 10 (sin `eslint-plugin-react`, que todavía no lo acepta: ESLint 10 ya reconoce los componentes usados en JSX, y las listas sin `key` las agarran las pruebas porque React lo avisa en la consola) y `@vitejs/plugin-react` 6 (con un `overrides` en `package.json` para que no traiga Babel 8). Queda Playwright 1.56 → 1.64: en la compu donde trabajo no se pueden bajar los navegadores nuevos; en GitHub sí (subir la versión en `package.json` y mirar que el trabajo de Actions pase). Cada tanto, `npm outdated`.
 - [ ] **T-03b · Hacer andar las pruebas en WebKit y sumar más** · P2 · S. La 1.29 dejó armado el trabajo "safari" en GitHub (solo a mano: Actions → Pruebas → Run workflow) con 6 pruebas (`EN_SAFARI` en `playwright.config.js`). No se pudo correr acá (no está WebKit instalado, y desde acá no hay acceso a tu GitHub para lanzar el trabajo): la primera corrida seguramente pida ajustes. Para lanzarlo: GitHub → Actions → Pruebas → Run workflow, y mandame el resultado si falla. Después, sumar las que dependen de datos de pruebas anteriores y, cuando ande estable, correrlo en cada subida a `main`.
-- [ ] **T-04 · Base de pruebas aparte** · P2 · M. Un segundo proyecto de Supabase para probar cambios de la base antes de tocar la de producción. **Decisión tuya:** el plan gratis deja 2 proyectos activos; hoy está Tupper y hay dos pausados (`laposta`, `MVP-SaaS`): con uno de pruebas no se puede reactivar ninguno de esos sin pausar otro. Cuando lo decidas: crear `tupper-pruebas` (São Paulo), correr `supabase/schema.sql`, las actualizaciones de la 2 a la última y los `seed` en el orden del README, y publicar las funciones ahí. Las pruebas automáticas no lo necesitan (usan el Supabase simulado).
 
 ---
 
@@ -112,7 +110,7 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
   - *F-06b:* las notificaciones traen botones: "Más tarde" (en comidas y agua; vuelve a llegar en el siguiente turno del reloj pasados 15 minutos) y "Tomé un vaso" (anota 250 ml de agua sin abrir la app). Los atiende `recordatorios-push` con una firma que va en el aviso (sin la sesión); cada botón de cada aviso, una sola vez. En iPhone no hay botones.
   - *T-07b:* con la app cerrada del todo (Android/Chrome), al volver la conexión el service worker manda la cola él solo, con el permiso que la app le deja mientras hay cambios sin mandar (solo el de una hora: nunca renueva la sesión). Usa el mismo candado que las pestañas, va en orden y se frena en lo que no se puede repetir sin contar doble (el + y el - de la despensa) o en lo que la base rechace: eso queda para la app, como antes.
   - *T-05:* `store/sincronizacion.js` quedó en partes: `sincro/anotaciones.js`, `sincro/candado.js`, `sincro/copia.js`, `sincro/cola.js` y `sincro/sesionSW.js`; los envíos los arma `store/envios-base.js` (para la app y para el service worker) y las respuestas de la base, `store/respuestas.js`. Sin cambios de comportamiento: pasan todas las pruebas de siempre.
-  - *T-13 y C-06:* el aviso diario de errores (tarea programada de T-06) ahora también revisa el reloj de los recordatorios y avisa al teléfono si no corrió en 40 minutos, si alguna corrida falló o si la función contestó con error; la revisión mensual mira que estén activas todas las funciones. Además, el panel de administración muestra si el reloj de los recordatorios anda (si corrió en los últimos 40 minutos, corridas fallidas y respuestas con error de la función en 24 horas) y la vuelta semanal (de las últimas 8 semanas: cuentas que anotaron algo, cuántas también la semana anterior y cuántas nuevas). Qué pantallas se usan lo cuenta Vercel Web Analytics (hay que prenderlo, ver V-07). No se anota nada nuevo de las personas.
+  - *T-13 y C-06:* el aviso diario de errores (tarea programada de T-06) ahora también revisa el reloj de los recordatorios y avisa al teléfono si no corrió en 40 minutos, si alguna corrida falló o si la función contestó con error; la revisión mensual mira que estén activas todas las funciones. Además, el panel de administración muestra si el reloj de los recordatorios anda (si corrió en los últimos 40 minutos, corridas fallidas y respuestas con error de la función en 24 horas) y la vuelta semanal (de las últimas 8 semanas: cuentas que anotaron algo, cuántas también la semana anterior y cuántas nuevas). Qué pantallas se usan lo cuenta Vercel Web Analytics (Project → Analytics). No se anota nada nuevo de las personas.
   - *F-12b:* séptima tanda con 10 alimentos que la gente tuvo que cargar a mano (torrejas, empanada árabe, pizzeta, sándwich de pata, pata de cerdo, zapallo hervido, té o infusión, yogur con cereales, galletitas agridulces), con sus sinónimos para el buscador (manzanilla, Savora, Bon o Bon, 9 de Oro...). Las recetas no cambian.
   - *T-09:* de los 17 índices sin uso, casi todos son de claves que se usan al borrar (una cuenta, un alimento, una receta): se quedan. `hogar_intentos` ganó un identificador.
   - *T-01b:* ESLint 10 (sin `eslint-plugin-react`), `@vitejs/plugin-react` 6, `fit-file-parser` 6 y los arreglos de `npm audit` (quedó en 0). Playwright sigue en 1.56.

@@ -241,7 +241,7 @@ No hay funciones nuevas ni cambios en las que ya están. Solo hay que correr `su
 
 # Novedades de la 1.32
 
-Antes que nada, correr `supabase/actualizacion-25.sql` (aditiva) y `supabase/seed-9-alimentos.sql`.
+Antes que nada, correr `supabase/actualizacion-25.sql` (aditiva) y `supabase/seed-9-alimentos.sql`. En producción ya está todo: la actualización, los alimentos y las dos funciones de abajo quedaron publicados el 24/10/2026.
 
 ## Códigos de recuperación (`dos-pasos`, S-08)
 
