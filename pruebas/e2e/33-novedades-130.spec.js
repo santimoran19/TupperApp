@@ -56,6 +56,9 @@ test('consejos, lista de compras, categorías, esqueletos y entrenamientos impor
     await pg.getByTestId('aviso-accion').click()
     await expect(fila).toBeVisible()
     await fila.click()
+    // Desde la 1.31 se guarda en la base: se espera la respuesta antes de salir de la pantalla
+    await expect(fila).toHaveCount(0)
+    await expect.poll(async () => (await rest(pg, 'compras_quitadas')).length).toBe(1)
     // Sigue sacado al volver a la pantalla, y se puede devolver
     await pg.goto(APP + '/compras')
     await expect(fila).toHaveCount(0)

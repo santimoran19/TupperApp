@@ -16,6 +16,7 @@ import { nombreCorto, sugerirBase } from '../lib/equivalencias'
 import { hoy, sumarDias } from '../lib/fechas'
 import { DIAS_URGENTE, compararVencimiento, distribucion, estadoVencimiento, nivelDeStock } from '../lib/despensa'
 import { consejosPara } from '../lib/consejos'
+import { consejoDeTemporada, recetaParaLoQueVence } from '../lib/temporada'
 import CarruselConsejos from '../components/CarruselConsejos'
 
 const ORDENES = [
@@ -168,8 +169,33 @@ export default function Despensa() {
     if (bien > 0) d.avisar(bien === 1 ? 'Anotado en la lista de compras' : `${bien} anotados en la lista de compras`)
   }
 
-  // Consejos para la despensa (1.30): primero lo que vence antes, después uno por alimento, rotando cada día
-  const consejos = useMemo(() => consejosPara(ordenadas, { hoy: hoyTexto, maximo: 10 }), [ordenadas, hoyTexto])
+  // Consejos para la despensa (1.30): primero lo que vence antes, después uno por alimento, rotando cada día. Desde la 1.31
+  // (F-24), si hay dos o más cosas por vencer que entran en una misma receta, esa receta va primero; y uno de estación.
+  const { recetas: recetasVisibles, itemsPlan, base: baseDe } = d
+  const consejos = useMemo(() => {
+    const lista = consejosPara(ordenadas, { hoy: hoyTexto, maximo: 9 })
+    const urgentes = ordenadas.filter((f) => f.qty > 0 && f.estado && f.estado.nivel !== 'bien' && f.estado.nivel !== 'vencido')
+    const idea = recetaParaLoQueVence(
+      recetasVisibles,
+      itemsPlan,
+      urgentes.map((f) => baseDe(f.a).id),
+    )
+    const extras = []
+    if (idea) {
+      const nombres = urgentes.filter((f) => idea.usa.has(baseDe(f.a).id)).map((f) => f.a.name.toLowerCase())
+      extras.push({
+        id: `receta-${idea.receta.id}`,
+        alimento: null,
+        tipo: 'receta',
+        texto: `Tenés ${nombres.slice(0, -1).join(', ')} y ${nombres.at(-1)} por vencer: usalos juntos en "${idea.receta.name}".`,
+        enlace: `/recetas/${idea.receta.id}`,
+        enlaceTexto: 'Ver la receta',
+      })
+    }
+    const temporada = consejoDeTemporada(hoyTexto, ordenadas)
+    const conTemporada = temporada ? [...lista.slice(0, 2), temporada, ...lista.slice(2)] : lista
+    return [...extras, ...conTemporada].slice(0, 10)
+  }, [ordenadas, hoyTexto, recetasVisibles, itemsPlan, baseDe])
   const dist = useMemo(() => distribucion(filas), [filas])
 
   // El alimento de la hoja, al día (la hoja guarda una copia de cuando se abrió)

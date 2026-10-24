@@ -5,6 +5,7 @@ import EditarRegistro from '../components/EditarRegistro'
 import Ayuno from '../components/Ayuno'
 import CopiarDia from '../components/CopiarDia'
 import RegistroIA from '../components/RegistroIA'
+import ConsejoDespensa from '../components/ConsejoDespensa'
 import Marco from '../components/Marco'
 import { Anillo, Barra, Icono } from '../components/ui'
 import { useDatos } from '../store/Datos'
@@ -419,6 +420,8 @@ export default function Diario() {
               )}
             </section>
           )}
+
+          {esHoy && <ConsejoDespensa hoy={fecha} />}
 
           {paraLlevar.length > 0 && (
             <section className="rounded-2xl p-4 mb-4 bg-naranja-suave">

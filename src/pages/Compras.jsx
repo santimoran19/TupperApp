@@ -34,19 +34,24 @@ export default function Compras() {
         .sort((x, y) => ordenCategoria(x.a.category) - ordenCategoria(y.a.category) || x.a.name.localeCompare(y.a.name, 'es')),
     [d.planFuturo, d.alimentosPorId, d.lista, ordenCategoria],
   )
-  // Lo del plan que se sacó a mano (1.30): se guarda en el teléfono, por cuenta o por hogar
+  // Lo del plan que se sacó a mano: en la base (1.31, F-25), así en un hogar lo ve todo el mundo. Lo que se había sacado en
+  // la 1.30 (guardado en el teléfono) se pasa a la base la primera vez.
   const ambito = d.hogar?.id || d.usuario.id
-  const [quitadas, setQuitadas] = useState(() => leerQuitadas(ambito))
   const [verQuitados, setVerQuitados] = useState(false)
-  const { visibles: delPlan, quitados, vigentes } = useMemo(() => aplicarQuitadas(faltaPlan, quitadas), [faltaPlan, quitadas])
-  // Las que ya no faltan se olvidan (si el plan las vuelve a pedir, aparecen)
+  const quitadas = useMemo(() => Object.fromEntries((d.comprasQuitadas || []).map((q) => [q.food_id, Number(q.qty)])), [d.comprasQuitadas])
+  const { visibles: delPlan, quitados } = useMemo(() => aplicarQuitadas(faltaPlan, quitadas), [faltaPlan, quitadas])
+  const { quitarDelPlan: sacar, devolverAlPlan } = d
   useEffect(() => {
-    if (Object.keys(vigentes).length !== Object.keys(quitadas).length) guardarQuitadas(ambito, vigentes)
-  }, [ambito, vigentes, quitadas])
-  const cambiarQuitadas = (nuevas) => {
-    setQuitadas(nuevas)
-    guardarQuitadas(ambito, nuevas)
-  }
+    const viejas = leerQuitadas(ambito)
+    if (Object.keys(viejas).length === 0) return
+    guardarQuitadas(ambito, {})
+    for (const [food_id, qty] of Object.entries(viejas)) sacar(food_id, qty)
+  }, [ambito, sacar])
+  // Lo sacado hace más de 3 semanas se olvida (si el plan lo vuelve a pedir, aparece)
+  useEffect(() => {
+    const limite = Date.now() - 21 * 86400000
+    for (const q of d.comprasQuitadas || []) if (q.created_at && Date.parse(q.created_at) < limite) devolverAlPlan(q.food_id)
+  }, [d.comprasQuitadas, devolverAlPlan])
   const manuales = d.lista
     .filter((l) => d.alimentosPorId.has(l.food_id))
     .map((l) => ({ id: l.id, a: d.alimentosPorId.get(l.food_id), qty: Number(l.qty) }))
@@ -124,18 +129,14 @@ export default function Compras() {
   }
 
   // Sacar algo que falta para el plan (ya lo tenés, o no lo vas a comprar), con Deshacer
-  function quitarDelPlan(a, qty) {
-    const antes = quitadas
-    cambiarQuitadas({ ...quitadas, [a.id]: qty })
+  async function quitarDelPlan(a, qty) {
+    if (!(await d.quitarDelPlan(a.id, qty))) return
     d.avisar(`Sacaste ${a.name} de la lista`, 'ok', {
       texto: 'Deshacer',
-      hacer: () => cambiarQuitadas(antes),
+      hacer: () => d.devolverAlPlan(a.id),
     })
   }
-  const devolver = (a) => {
-    const { [a.id]: _sale, ...resto } = quitadas
-    cambiarQuitadas(resto)
-  }
+  const devolver = (a) => d.devolverAlPlan(a.id)
 
   const Fila = ({ a, qty, origen, id, delPlan: esDelPlan }) => (
     <div className="flex items-center gap-2 py-3">

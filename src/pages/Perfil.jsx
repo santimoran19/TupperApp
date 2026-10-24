@@ -5,7 +5,8 @@ import { faltaParaMeta } from '../lib/peso'
 import Opinion from '../components/Opinion'
 import DosPasos from '../components/DosPasos'
 import ExportarPlanilla from '../components/ExportarPlanilla'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { supabase } from '../lib/supabase'
 import { Link, useNavigate } from 'react-router-dom'
 import Marco from '../components/Marco'
 import FormularioPerfil from '../components/FormularioPerfil'
@@ -66,6 +67,18 @@ export default function Perfil() {
   const [tema, setTema] = useState(temaGuardado)
   const [tresD, setTresD] = useState(tresDPrendido)
   const [nueva, setNueva] = useState(null)
+  // El enlace al panel de administración, solo si la base dice que esta cuenta lo es (1.31)
+  const [admin, setAdmin] = useState(false)
+  useEffect(() => {
+    let vivo = true
+    supabase
+      .rpc('es_admin')
+      .then(({ data }) => vivo && setAdmin(data === true))
+      .catch(() => {})
+    return () => {
+      vivo = false
+    }
+  }, [usuario?.id])
 
   const ordenadas = useMemo(() => [...medidas].sort((a, b) => a.date.localeCompare(b.date)), [medidas])
   const pesos = ordenadas.filter((m) => m.weight_kg).map((m) => ({ f: m.date, v: Number(m.weight_kg) }))
@@ -339,6 +352,11 @@ export default function Perfil() {
           <button onClick={() => setBorrando('')} className="mx-auto mt-5 text-sm text-gris underline flex items-center gap-1.5">
             <Icono n="person_remove" size={16} /> Borrar mi cuenta
           </button>
+          {admin && (
+            <Link to="/admin" className="mx-auto mt-5 text-sm text-gris underline flex items-center justify-center gap-1.5">
+              <Icono n="admin_panel_settings" size={16} /> Administración
+            </Link>
+          )}
           {VERSION && <p className="mt-6 text-center text-xs text-gris">Tupper {VERSION}</p>}
         </div>
       </div>

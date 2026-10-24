@@ -1,6 +1,7 @@
 // Lo que falta para el plan que la persona sacó de la lista de compras a mano (1.30): "ya tengo", "no lo voy a comprar".
-// Antes solo se podía sacar comprándolo. Se guarda en el teléfono, con la cantidad que faltaba al sacarlo: si después el
-// plan necesita más (se suma una receta que lo usa), vuelve a aparecer. Lo que ya no falta se olvida solo.
+// Antes solo se podía sacar comprándolo. Se guarda con la cantidad que faltaba al sacarlo: si después el plan necesita
+// más (se suma una receta que lo usa), vuelve a aparecer. Desde la 1.31 va en la base (compras_quitadas, F-25); lo de
+// leer y guardar en el teléfono queda para pasar a la base lo que se había sacado con la 1.30.
 
 export const claveQuitadas = (ambito) => `tupper:compras-quitadas:${ambito}`
 

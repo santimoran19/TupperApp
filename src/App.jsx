@@ -29,6 +29,7 @@ const Resumen = lazy(() => import('./pages/Resumen'))
 const Gasto = lazy(() => import('./pages/Gasto'))
 const Ejercicio = lazy(() => import('./pages/Ejercicio'))
 const Legal = lazy(() => import('./pages/Legal'))
+const Admin = lazy(() => import('./pages/Admin'))
 const NoEncontrada = lazy(() => import('./pages/NoEncontrada'))
 // Solo lo bajan las cuentas que están haciendo el recorrido inicial
 // (si no se puede bajar, por ejemplo sin conexión, el recorrido espera: no tiene que romper la app)
@@ -122,6 +123,7 @@ function Pantallas() {
         <Route path="/ejercicio" element={<Ejercicio />} />
         <Route path="/perfil" element={<Perfil />} />
         <Route path="/asistente" element={<Asistente />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<NoEncontrada />} />
       </Routes>
       {leerRecorrido(usuario.id) !== null && (

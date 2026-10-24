@@ -29,39 +29,37 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 **Primero (P1)**
 1. V-03 · Poner en marcha la 1.29 (actualización 22, funciones y recordatorios push)
 2. V-04 · Poner en marcha la 1.30 (actualización 23, Strava)
-3. L-03 · Registro de la base de datos (preparado: falta el trámite en TAD)
-4. S-04 · Repo privado (al terminar)
+3. V-05 · Poner en marcha la 1.31 (actualización 24 y cargarte como administrador)
+4. L-03 · Registro de la base de datos (preparado: falta el trámite en TAD)
+5. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-5. S-08 · Códigos de recuperación de la verificación en dos pasos
-6. IA-05 · Mejorar la carga con foto (probar Gemini primero) y probar el asistente con los proveedores reales
-7. T-03b · Hacer andar las pruebas en WebKit (Safari) y sumar más
-8. F-18 · Registrarse e iniciar sesión con Google
-9. D-07b · Accesibilidad: probarla con TalkBack y VoiceOver de verdad
-10. T-04 · Base de pruebas aparte
-11. F-25 · Lo que se saca de la lista de compras, compartido en el hogar
+6. S-08 · Códigos de recuperación de la verificación en dos pasos
+7. IA-05 · Mejorar la carga con foto (probar Gemini primero) y probar el asistente con los proveedores reales
+8. T-03b · Hacer andar las pruebas en WebKit (Safari) y sumar más
+9. F-18 · Registrarse e iniciar sesión con Google
+10. D-07b · Accesibilidad: probarla con TalkBack y VoiceOver de verdad
+11. T-04 · Base de pruebas aparte
 12. T-01b · Lo que quedó de actualizar (ESLint 10, Playwright, plugin de React 6)
 
 **Cuando haya tiempo (P3)**
 13. F-06b · Notificaciones con botones ("Tomé un vaso", "Posponer 15 min")
 14. F-12b · Seguir sumando a la base común
 15. F-22b · Más relojes: Garmin Connect directo, Health Connect y Strava automático
-16. F-24 · Más consejos (de temporada, combinando lo que vence) y uno en el Diario
-17. D-08 · Revisión de los textos
-18. C-07 · Panel de administración mínimo (opiniones, uso de la IA)
-19. T-13 · Aviso si el reloj de los recordatorios deja de andar
-20. C-06 · Métricas de uso
-21. T-05 · Partir `sincronizacion.js`
-22. T-07b · Mandar lo cargado sin conexión con la app cerrada del todo
-23. T-09 · Revisar índices sin uso
-24. S-03 · Contraseñas filtradas también del lado de Supabase
-25. F-19b · Seguir con gasto y ejercicio (pulso en reposo, validar con mediciones reales)
+16. D-08 · Revisión de los textos
+17. T-13 · Aviso si el reloj de los recordatorios deja de andar
+18. C-06 · Métricas de uso
+19. T-05 · Partir `sincronizacion.js`
+20. T-07b · Mandar lo cargado sin conexión con la app cerrada del todo
+21. T-09 · Revisar índices sin uso
+22. S-03 · Contraseñas filtradas también del lado de Supabase
+23. F-19b · Seguir con gasto y ejercicio (pulso en reposo, validar con mediciones reales)
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-26. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-27. C-02 · Dominio propio y página de presentación (va junto con C-03)
-28. C-01 · Planes y cobro (para empezar a cobrar)
-29. C-04 · Play Store (cuesta la cuenta de desarrollador)
+24. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+25. C-02 · Dominio propio y página de presentación (va junto con C-03)
+26. C-01 · Planes y cobro (para empezar a cobrar)
+27. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -72,12 +70,12 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 - [ ] **V-04 · Poner en marcha la 1.30** · P1 · S. (1) Correr `supabase/actualizacion-23.sql` (aditiva: categorías propias, la tabla de Strava y la versión de los textos legales vista). (2) Opcional pero recomendado: `supabase/actualizacion-23b-dos-pasos.sql` (S-07: la verificación en dos pasos también para las funciones `rpc`); si después de correrla la app no carga para nadie, se deshace con las dos líneas que dice el archivo. (3) Strava, si lo querés: crear la aplicación en strava.com/settings/api, cargar `STRAVA_CLIENT_ID` y `STRAVA_CLIENT_SECRET`, publicar la función `strava` y poner `VITE_STRAVA_CLIENT_ID` en Vercel (pasos en `supabase/functions/LEEME.md`). Ojo: Strava arranca con 1 atleta (vos) hasta que revisa la app. (4) Publicar el sitio: es la primera versión con Vite 8, React 19 y Tailwind 4; mirar en el teléfono que todo se vea como antes. (5) Probar en el teléfono: el carrusel de consejos de la Despensa, sacar algo de la lista de compras, una categoría propia, subir un GPX o TCX de tu reloj y, en una cuenta vieja, el aviso de la Política (una vez).
 
+- [ ] **V-05 · Poner en marcha la 1.31** · P1 · S. (1) Correr `supabase/actualizacion-24.sql` (aditiva) **antes** de publicar: sin ella, lo que se saca de la lista de compras vuelve a aparecer al recargar. (2) Para ver el panel de administración: corré en el SQL Editor `insert into public.administradores (user_id) select id from auth.users where email = 'TU-MAIL' on conflict do nothing;`. Al final del Perfil aparece "Administración" (si tenés la verificación en dos pasos, solo después de poner el código). (3) Publicar y probar: sacar algo de la lista de compras en un teléfono y verlo sacado en otro (o en el de la otra persona del hogar), el consejo de estación del carrusel y el consejo del día en el Diario.
+
 ## 1. Funciones
 
 - [ ] **F-18 · Registrarse e iniciar sesión con Google** · P2 · M. Un botón "Continuar con Google" en la pantalla de acceso, para crear la cuenta o entrar sin escribir mail ni contraseña. **Qué hace falta de tu lado:** crear un proyecto en Google Cloud, configurar la pantalla de consentimiento y las credenciales OAuth (cliente web), y activar el proveedor Google en Supabase (Authentication > Providers) con las direcciones de vuelta de la app y de Supabase. Gratis. **Cosas a resolver:** (1) el consentimiento de Google en modo de prueba solo deja entrar a 100 usuarios que vos agregues a mano; para abrirlo a cualquiera hay que publicarlo, y Google pide la Política de privacidad y la página de inicio en un dominio propio (esto se cruza con C-02, dominio propio); (2) si ya existe una cuenta con el mismo mail, Supabase puede unirla con la de Google; hay que dejarlo bien configurado para que nadie tome una cuenta ajena; (3) quien entra con Google no tiene contraseña: la pantalla de "Olvidé mi contraseña" y el Perfil tienen que explicarlo, y se podría ofrecer crear una; (4) igual hay que pasar por el perfil (fecha de nacimiento, para cumplir los 18 años de L-01) y, con F-17, elegir el nombre de usuario; (5) sumar a la Política de privacidad que Google es un proveedor y qué datos se reciben (mail y nombre; la foto no se guarda); (6) probarlo en el navegador del teléfono y en la app instalada (PWA), donde el regreso desde Google a veces se comporta distinto. Va con pruebas (el simulador de las pruebas tiene que fingir el regreso de Google) y los textos del botón. Borrar la cuenta y descargar los datos siguen igual.
 - [ ] **F-22b · Más relojes** · P3 · M. La 1.30 trae GPX, TCX, FIT y Strava. Falta: (2) Garmin Connect directo (su API pide ser socio de Garmin: aplicación y aprobación); (3) Apple Salud y Health Connect (pasos, peso, entrenamientos) solo con una app instalable (Capacitor), junto con C-04; (4) Strava automático (con su aviso de actividad nueva, *webhook*) en vez de tocar "Traer".
-- [ ] **F-25 · Lo que se saca de la lista de compras, compartido en el hogar** · P2 · S. En la 1.30 se puede sacar de la lista algo que falta para el plan ("ya lo tengo"), pero se guarda en el teléfono: en un hogar, la otra persona lo sigue viendo. Pasarlo a una tabla del ámbito (como `shopping_items`) con la cantidad que faltaba, para que vuelva a aparecer si el plan pide más.
-- [ ] **F-24 · Más consejos** · P3 · S. El carrusel de la Despensa (1.30) tiene consejos por alimento y por categoría. Sumar: ideas para usar juntas varias cosas que vencen (una receta con dos de ellas), consejos de temporada (qué fruta y verdura conviene cada mes en Argentina) y uno por día en el Diario.
 - [ ] **F-19b · Seguir con gasto y ejercicio** · P3 · M. Quedó afuera de la 1.23 (la importación de archivos y Strava se hizo en la 1.30, ver F-22b): (2) usar el pulso en reposo (`profiles.resting_hr`, ya existe la columna) en el cálculo; (3) **validar el cálculo contra mediciones de referencia** (calorimetría indirecta, o al menos el seguimiento de varias personas): hoy los márgenes de error son orientativos, no validados; los coeficientes de movimiento según el trabajo y por paso son criterio propio y quedarían ajustados con esos datos; (4) un tope de proteína o cálculo sobre masa magra para obesidad alta (IMC mayor a 35), que los dos nutricionistas sugirieron; se dejó afuera a propósito la proteína configurable por ser confusa para quien no sabe de nutrición.
 - [ ] **F-12b · Seguir sumando a la base común** · P3 · S (continuo). Después de la sexta tanda (1.25: 227 alimentos y 1.471 recetas), sumar alimentos y recetas cuando aparezcan faltantes: mirar los alimentos propios que repiten varios usuarios y lo que la gente busca y no encuentra. Los alimentos se agregan en `scripts/datos/alimentos-sexta.mjs` (o en `seed-data.mjs` si es una tanda nueva) y las recetas en una familia de `scripts/datos/f-*.mjs`; se corre `npm run seed`. Ver también F-04b (lista de recetas con más de mil).
 - [ ] **F-06b · Notificaciones con botones** · P3 · S. Desde la 1.30, tocar el aviso de una comida abre Registrar con esa comida. Falta "Posponer 15 min" (la función tendría que volver a mandarlo) y, en el del agua, "Tomé un vaso" (anotarlo sin abrir la app: necesita mandar el registro desde el service worker, ver T-07b).
@@ -110,7 +108,6 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 - [ ] **C-02 · Dominio propio y página de presentación** · P2 · M. Una página para quien todavía no tiene cuenta: qué hace la app, capturas y el botón para crear la cuenta. Con dominio nuevo hay que actualizar el captcha de Cloudflare, Supabase y los archivos que nombra el README. Es la base de C-03 (mails propios) y de F-18 (Google pide la Política de privacidad y la página de inicio en un dominio propio para publicarse). Conviene comprarlo primero.
 - [ ] **C-03 · Mails propios (SMTP)** · P1 · S. El servidor de mails que trae Supabase solo manda a direcciones del equipo del proyecto y a 2 mensajes por hora, sin garantía de entrega: sirve para probar, no para que se registre gente de afuera. Con un SMTP propio llegan a cualquier dirección y el límite arranca en 30 por hora (se puede subir). **Va después de comprar el dominio y junto con C-02:** hace falta un dominio propio para mandar desde `no-responder@tudominio` (una casilla de Gmail no sirve: límites, spam y no deja autenticar el dominio); el mismo dominio se usa para la página de presentación y para publicar el acceso con Google (F-18). **Servicio de envío** (verifica el dominio con SPF, DKIM y DMARC): Resend (gratis: 3.000 mails por mes, 100 por día; recomendado por simple) o Brevo (gratis: hasta 300 por día, con su logo probablemente). Cada registro usa 1 o 2 mails. **Pasos:** (1) comprar el dominio; (2) crear la cuenta del servicio, agregar el dominio y cargar los registros DNS que pida; (3) cargar el SMTP en Supabase (Authentication > SMTP); (4) cambiar el remitente y los links de las plantillas de `supabase/emails/`; (5) probar que el código de confirmación y el de recuperar contraseña lleguen a una casilla ajena. Si se quiere recibir respuestas en `soporte@tudominio`, se reenvía a Gmail con un servicio de reenvío gratuito (aparte del envío). Pasos en `supabase/emails/LEEME.md`.
 - [ ] **C-04 · Play Store** · P3 · M. Empaquetar la app para Android (USD 25, una vez). Pide una prueba cerrada con 12 testers durante 14 días. App Store después: USD 99 por año, hace falta una Mac y Apple suele rechazar las apps que son solo una web.
-- [ ] **C-07 · Panel de administración mínimo** · P3 · M. Hoy las opiniones y el uso de la IA se miran en el Table Editor de Supabase. Una página solo para vos (rol de administrador guardado en la base, no en la app) con las opiniones nuevas, cuántos pedidos de IA hubo por día y por proveedor (para ver si se acerca al tope gratis) y cuántas cuentas activas hay, sin ver datos de salud de nadie.
 - [ ] **C-06 · Métricas de uso** · P3 · S. Cuántos vuelven a la semana y qué pantallas usan, sin datos personales: Vercel Analytics ya cuenta visitas, falta mirar el recorrido.
 
 ## 7. Técnico y calidad
@@ -127,10 +124,15 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 ## Hecho
 
+- **1.31.0 · Lista de compras compartida, consejos de estación, uno por día en el Diario y panel de administración** (hay que correr `supabase/actualizacion-24.sql`; ver V-05).
+  - *F-25:* lo que se saca de la lista de compras (lo que falta para el plan) se guarda en la base, en la despensa del hogar si hay uno: la otra persona también lo ve sacado. Guarda la cantidad que faltaba, así vuelve a aparecer si el plan pide más. Anda sin conexión (va por la cola), lo sacado en la 1.30 (en el teléfono) se pasa solo a la base y lo sacado hace más de 3 semanas se olvida. Se borra con la cuenta o con el hogar.
+  - *F-24:* el carrusel de la Despensa suma un consejo de estación (fruta y verdura de cada mes en Argentina, nombrando lo que ya tenés si es de estación) y, si hay dos o más cosas por vencer que entran en una misma receta, esa receta primero, con el enlace. En el Diario, un consejo por día de tu despensa (lo que vence primero o, si no, uno distinto cada día) que lleva a la Despensa.
+  - *C-07:* panel de administración en `/admin`: cuentas (nuevas y activas), hogares, pedidos a la IA por día de los últimos 14 días, errores de la semana y las últimas 50 opiniones. Solo para quien esté en la tabla `administradores` (se carga a mano en Supabase; desde la app nadie se puede sumar) y con la verificación en dos pasos si la tenés activada. Los números los arma la base: nada de lo que come, pesa o registra cada persona, ni nombres de usuario. Las cuentas por proveedor de IA no están: la base no guarda qué proveedor contestó (se ven en los registros de las funciones).
+  - *Pruebas:* `pruebas/unidad/novedades-131.test.js` (la tabla nueva en un Postgres de verdad con hogares y borrado de cuenta, el panel con y sin permiso, estación y receta) y `pruebas/e2e/35-novedades-131.spec.js`.
 - **1.30.0 · Herramientas al día, consejos en carrusel, categorías propias, entrenamientos de relojes y Strava** (hay que correr `supabase/actualizacion-23.sql` y, opcional, `23b`; para Strava, los pasos de V-04).
   - *T-01:* Vite 5 → 8 (Rolldown; `manualChunks` pasó a función y se prepararon de entrada las dependencias que se cargan tarde, para que el modo desarrollo no recargue la página), React 18 → 19, Tailwind 3 → 4 (configuración en `src/index.css` con `@theme` y `@utility`, plugin `@tailwindcss/vite`; se mantuvieron el color de borde y la manito en los botones de antes) y Vitest 3 → 5. Las 224 capturas de las pruebas, comparadas una por una con las de la 1.29: iguales salvo lo que cambió a propósito.
   - *Consejos (pedido de Santi):* el consejo "Para que dure más" de la Despensa pasó a ser un carrusel con hasta 10, según lo que hay: primero lo que vence pronto (con una idea para aprovecharlo), después uno por alimento, rotando cada día y sin repetir (`lib/consejos.js`, unos 40 grupos de alimentos con consejos para guardar y para aprovechar, más uno por categoría). Se arreglaron cruces engañosos ("chocolate" no es té, "empanada" no es pan, "jugo de naranja" no se guarda como la naranja).
-  - *Lista de compras (pedido de Santi):* lo que falta para el plan se puede sacar con la ✕ (con Deshacer); vuelve si el plan pide más, y "Sacaste N cosas" deja devolverlas. Se guarda en el teléfono (ver F-25). La lista ahora va ordenada por góndola (como las categorías) y no alfabética.
+  - *Lista de compras (pedido de Santi):* lo que falta para el plan se puede sacar con la ✕ (con Deshacer); vuelve si el plan pide más, y "Sacaste N cosas" deja devolverlas. Se guardaba en el teléfono (en la 1.31 pasó a la base, F-25). La lista ahora va ordenada por góndola (como las categorías) y no alfabética.
   - *F-13 Categorías propias:* en Mis alimentos se crean, renombran y borran; cualquier alimento se mueve desde la Despensa (los de la base cambian solo para vos). Tablas `categorias` y `categoria_alimento`; renombrar y borrar se llevan los alimentos.
   - *F-22 Relojes y apps:* en Ejercicio, "Traer": archivos GPX, TCX y FIT (se leen en el teléfono: duración, distancia, desnivel, pulso y calorías del reloj; el lector de FIT, `lib/fit.js`, es propio y da lo mismo que la librería `fit-file-parser`) y Strava (función `strava`; el permiso queda en el servidor). Se elige qué anotar, la actividad se reconoce sola y lo ya anotado viene destildado.
   - *D-04 Esqueletos:* la primera carga y las pantallas que se bajan muestran la forma de la pantalla en vez de "Cargando...".

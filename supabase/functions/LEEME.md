@@ -239,3 +239,16 @@ Los archivos GPX, TCX y FIT no necesitan nada de esto: se leen en el teléfono.
 ### Pruebas
 
 `pruebas/unidad/novedades-130.test.js` prueba la lógica (`logica.ts`) y la lectura de GPX/TCX; la prueba de navegador 33 hace el viaje completo (ida a Strava y vuelta con el código) con la función y Strava de mentira. Nunca se probó contra Strava de verdad: la primera vez, conectá tu cuenta y mirá los registros de la función.
+
+# Novedades de la 1.31
+
+No hay funciones nuevas ni cambios en las que ya están. Solo hay que correr `supabase/actualizacion-24.sql` (aditiva):
+
+- `compras_quitadas`: lo que se saca de la lista de compras, en la despensa (o en la del hogar). Misma regla de acceso que `shopping_items` (`despensa_de()`), con la verificación en dos pasos y un tope de 500 filas por despensa.
+- El panel de administración: la tabla `administradores` (la app no la puede leer ni escribir) y las funciones `es_admin()` y `admin_resumen()`. Para entrar al panel, cargate a mano:
+
+  ```sql
+  insert into public.administradores (user_id) select id from auth.users where email = 'TU-MAIL' on conflict do nothing;
+  ```
+
+  Para sacarte: `delete from public.administradores where user_id = (select id from auth.users where email = 'TU-MAIL');`. El panel no muestra los pedidos a la IA por proveedor porque `ai_usos` no lo guarda: eso se ve en los registros de `registrar-ia` y `asistente-ia`.

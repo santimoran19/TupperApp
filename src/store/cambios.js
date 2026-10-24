@@ -103,6 +103,8 @@ export const GUARDADO = {
   fijarVencimiento: (s, filas) => ({ ...s, stock: conFilas(s.stock, filas, 'food_id') }),
   agregarALista: (s, [fila]) => ({ ...s, lista: reemplazar(s.lista, fila, (x) => x.food_id === fila.food_id) }),
   quitarDeLista: (s, _r, d) => ({ ...s, lista: sinFila(s.lista, 'food_id', d.food_id) }),
+  quitarDelPlan: (s, [fila]) => ({ ...s, comprasQuitadas: reemplazar(s.comprasQuitadas || [], fila, (x) => x.food_id === fila.food_id) }),
+  devolverAlPlan: (s, _r, d) => ({ ...s, comprasQuitadas: sinFila(s.comprasQuitadas || [], 'food_id', d.food_id) }),
   comprar: (s, r) => ({
     ...s,
     compras: [...s.compras, r.compra],
@@ -207,6 +209,11 @@ export const LOCAL = {
     return { ...s, lista: reemplazar(s.lista, fila, (x) => x.food_id === d.food_id) }
   },
   quitarDeLista: (s, d) => GUARDADO.quitarDeLista(s, null, d),
+  quitarDelPlan: (s, d, uid) => {
+    const fila = { user_id: ambito(s, uid), food_id: d.food_id, qty: d.qty, created_at: d.cuando, pendiente: true }
+    return { ...s, comprasQuitadas: reemplazar(s.comprasQuitadas || [], fila, (x) => x.food_id === d.food_id) }
+  },
+  devolverAlPlan: (s, d) => GUARDADO.devolverAlPlan(s, null, d),
   comprar: (s, d, uid) => {
     // De la lista se saca lo que estaba anotado: primero el alimento que figuraba y, si no, el producto que se compró
     const anotada = s.lista.find((x) => x.food_id === d.anotado) || s.lista.find((x) => x.food_id === d.alimento)

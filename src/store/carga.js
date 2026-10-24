@@ -34,6 +34,7 @@ export const VACIO = {
   combos: [], // "mi desayuno de siempre" (F-09, supabase/actualizacion-21.sql)
   categoriasPropias: [], // las categorías propias (F-13, supabase/actualizacion-23.sql)
   categoriaAlimento: [], // la categoría que eligió la persona para un alimento de la base (o de otro del hogar)
+  comprasQuitadas: [], // lo que falta para el plan y se sacó de la lista (F-25, actualizacion-24.sql), de la despensa
   ...EJERCICIO_VACIO,
 }
 
@@ -132,11 +133,12 @@ export async function traer(uid) {
     opcional(() => traerTodo(() => supabase.from('categoria_alimento').select('*').eq('user_id', uid).order('food_id'))),
   ])
   const ambito = hogar?.id ?? uid
-  const [stock, preparado, lista, compras] = await Promise.all([
+  const [stock, preparado, lista, compras, comprasQuitadas] = await Promise.all([
     supabase.from('stock').select('*').eq('user_id', ambito).then(ok),
     supabase.from('prepared').select('*').eq('user_id', ambito).then(ok),
     supabase.from('shopping_items').select('*').eq('user_id', ambito).then(ok),
     traerTodo(() => supabase.from('purchases').select('*').eq('user_id', ambito).gte('date', desde).order('id')),
+    opcional(() => supabase.from('compras_quitadas').select('*').eq('user_id', ambito).then(ok)),
   ])
   // Ejercicio y gimnasio, solo para quien prendió el cálculo de gasto (el resto no paga ese viaje)
   const perfil = perfiles[0] || null
@@ -163,5 +165,6 @@ export async function traer(uid) {
     combos,
     categoriasPropias,
     categoriaAlimento,
+    comprasQuitadas,
   }
 }

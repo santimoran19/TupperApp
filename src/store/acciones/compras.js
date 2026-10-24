@@ -19,6 +19,14 @@ export const accionesDeCompras = (k) => ({
     { enCola: true },
   ),
 
+  // Sacar de la lista algo que falta para el plan ("ya lo tengo") o devolverlo (1.31, F-25). Se puede sin conexión.
+  quitarDelPlan: k.accion(
+    'quitarDelPlan',
+    (food_id, qty) => k.operar('quitarDelPlan', { food_id, qty: Math.max(0.01, Number(qty) || 0), cuando: new Date().toISOString() }),
+    { enCola: true },
+  ),
+  devolverAlPlan: k.accion('devolverAlPlan', (food_id) => k.operar('devolverAlPlan', { food_id }), { enCola: true }),
+
   // Comprar: guarda el gasto, suma al stock y saca el producto de la lista, todo en un solo pedido.
   // `anotado` es el alimento que figuraba en la lista, cuando se compró un producto que vale por ese
   comprar: k.accion(

@@ -57,9 +57,13 @@ const db = {
   push_suscripciones: [],
   recordatorios: [],
   recordatorios_enviados: [],
+  // Lo que se sacó de la lista de compras (actualizacion-24.sql), de la despensa
+  compras_quitadas: [],
   opiniones: [],
 }
 let numeroDeEvento = 0
+// Administradores (actualizacion-24.sql): no se lee ni se escribe desde la app; las pruebas suman con /_pruebas/admin
+const administradores = new Set()
 // IA simulada: lo que recibió el "modelo" y cómo tiene que responder (ok | texto | error | saturado)
 const ia = { pedidos: [], modo: 'ok' }
 const RESPUESTA_IA = {
@@ -83,6 +87,10 @@ const SIN_ID = new Set([
   'recipe_prefs',
   'routine_exercises',
   'categoria_alimento',
+  'strava_conexiones',
+  'recordatorios',
+  'recordatorios_enviados',
+  'compras_quitadas',
 ])
 const bySlug = new Map()
 for (const f of foods) {
@@ -157,7 +165,7 @@ const companeros = (uid) => {
   return m ? db.hogar_miembros.filter((x) => x.hogar_id === m.hogar_id).map((x) => x.user_id) : [uid]
 }
 const puedeVer = (dueno, uid) => dueno === null || companeros(uid).includes(dueno)
-const DEL_AMBITO = ['stock', 'prepared', 'shopping_items', 'purchases']
+const DEL_AMBITO = ['stock', 'prepared', 'shopping_items', 'purchases', 'compras_quitadas']
 
 function codigoNuevo() {
   const alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'
@@ -840,6 +848,44 @@ const FUNCIONES = {
     return null
   },
 
+  // Panel de administración (actualizacion-24.sql)
+  es_admin(uid) {
+    return administradores.has(uid)
+  },
+  admin_resumen(uid) {
+    if (!administradores.has(uid)) throw errorPg('42501', 'Solo para administradores.')
+    const hace = (dias) => Date.now() - dias * 86400000
+    const desde = (filas, dias) => filas.filter((f) => new Date(f.created_at || 0).getTime() > hace(dias))
+    const distintas = (filas) => new Set(filas.map((f) => f.user_id)).size
+    const dia = (f) => new Date(new Date(f.created_at).getTime() - 3 * 3600000).toISOString().slice(0, 10)
+    const ia = new Map()
+    for (const u of desde(db.ai_usos || [], 14)) {
+      const k = dia(u) + '|' + u.kind
+      ia.set(k, (ia.get(k) || 0) + 1)
+    }
+    const errores = new Map()
+    for (const e of desde(db.eventos, 7).filter((e) => e.tipo === 'error'))
+      errores.set(e.nombre, { nombre: e.nombre, version: e.version || '', veces: (errores.get(e.nombre)?.veces || 0) + 1 })
+    return {
+      cuentas: db.profiles.length,
+      nuevas_7: desde(db.profiles, 7).length,
+      nuevas_30: desde(db.profiles, 30).length,
+      activas_1: distintas(desde(db.log_entries, 1)),
+      activas_7: distintas(desde(db.log_entries, 7)),
+      activas_30: distintas(desde(db.log_entries, 30)),
+      registros_7: desde(db.log_entries, 7).length,
+      hogares: db.hogares.length,
+      ia_por_dia: [...ia]
+        .map(([k, n]) => ({ dia: k.split('|')[0], tipo: k.split('|')[1], pedidos: n }))
+        .sort((a, b) => (a.dia < b.dia ? 1 : -1)),
+      errores_7: [...errores.values()].sort((a, b) => b.veces - a.veces),
+      opiniones: [...db.opiniones]
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
+        .slice(0, 50)
+        .map((o) => ({ fecha: o.created_at, tipo: o.tipo, texto: o.texto, version: o.version, pantalla: o.pantalla })),
+    }
+  },
+
   renombrar_hogar(uid, a) {
     const yo = miembroDe(uid)
     if (yo?.rol !== 'creador') throw errorPg('P0001', 'Solo quien armó el hogar puede cambiarle el nombre.')
@@ -1116,6 +1162,11 @@ const server = http.createServer(async (req, res) => {
       return send(200, {})
     }
     // Para las pruebas: deja a una cuenta sin nombre de usuario, como las que ya existían antes de que hubiera usuarios
+    if (url.pathname === '/_pruebas/admin') {
+      const u = users.get(body.email)
+      if (u) administradores.add(u.id)
+      return send(200, { ok: !!u })
+    }
     if (url.pathname === '/_pruebas/sin-usuario') {
       const perfil = db.profiles.find((p) => p.id === users.get(body.email)?.id)
       if (perfil) perfil.username = null
@@ -1422,7 +1473,11 @@ const server = http.createServer(async (req, res) => {
           out.push(existente)
         } else {
           const fila = { ...(SIN_ID.has(tabla) ? {} : { id: randomUUID() }), ...f }
-          if (['log_entries', 'shopping_items', 'profiles', 'ai_analyses', 'combos', 'opiniones', 'categorias'].includes(tabla))
+          if (
+            ['log_entries', 'shopping_items', 'profiles', 'ai_analyses', 'combos', 'opiniones', 'categorias', 'compras_quitadas'].includes(
+              tabla,
+            )
+          )
             fila.created_at = new Date().toISOString()
           if (tabla === 'log_entries' && fila.skipped === undefined) fila.skipped = false
           if (tabla === 'profiles')

@@ -22,6 +22,8 @@ async function ambito(uid) {
   }
 }
 
+const FALTA_TABLA = new Set(['PGRST205', '42P01'])
+
 export const ENVIOS = {
   registrar: async (d) =>
     ok(
@@ -105,6 +107,26 @@ export const ENVIOS = {
         .eq('user_id', await ambito(uid))
         .eq('food_id', d.food_id),
     ),
+
+  // Lo que falta para el plan y se sacó de la lista (1.31, F-25). Es de la despensa (persona u hogar), como la lista.
+  // Con una base sin la actualización 24 la tabla no existe: no se manda (queda solo en el teléfono hasta recargar).
+  quitarDelPlan: async (d, uid) => {
+    const r = await supabase
+      .from('compras_quitadas')
+      .upsert({ user_id: await ambito(uid), food_id: d.food_id, qty: d.qty }, { onConflict: 'user_id,food_id' })
+      .select()
+    if (FALTA_TABLA.has(r.error?.code)) return [{ user_id: uid, food_id: d.food_id, qty: d.qty, created_at: new Date().toISOString() }]
+    return ok(r)
+  },
+  devolverAlPlan: async (d, uid) => {
+    const r = await supabase
+      .from('compras_quitadas')
+      .delete()
+      .eq('user_id', await ambito(uid))
+      .eq('food_id', d.food_id)
+    if (FALTA_TABLA.has(r.error?.code)) return null
+    return ok(r)
+  },
 
   // Entrenamiento (y sus series, si es de gimnasio). Con el mismo identificador lo pisa: mandarlo dos veces da lo mismo.
   // Sin series (una sesión común) no se manda el parámetro, así sigue andando con una base que solo tiene actualizacion-16.sql.

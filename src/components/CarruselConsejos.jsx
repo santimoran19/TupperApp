@@ -1,6 +1,7 @@
 // Carrusel de consejos de la despensa (1.30): cómo guardar lo que tenés para que dure más y cómo aprovechar lo que está
 // por vencer. Se desliza con el dedo (o con las flechas en la compu); no pasa solo, así da tiempo a leer.
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Icono } from './ui'
 import Foto from './Foto'
 
@@ -9,6 +10,8 @@ const TIPOS = {
   guardar: { titulo: 'PARA QUE DURE MÁS', icono: 'lightbulb', clase: 'text-verde-texto' },
   aprovechar: { titulo: 'PARA APROVECHARLO', icono: 'restaurant', clase: 'text-teal-oscuro' },
   general: { titulo: 'UN TIP', icono: 'lightbulb', clase: 'text-verde-texto' },
+  temporada: { titulo: 'DE ESTACIÓN', icono: 'eco', clase: 'text-verde-texto' },
+  receta: { titulo: 'UNA IDEA PARA LO QUE VENCE', icono: 'skillet', clase: 'text-naranja-oscuro' },
 }
 
 export default function CarruselConsejos({ consejos }) {
@@ -108,12 +111,17 @@ export default function CarruselConsejos({ consejos }) {
                   />
                 ) : (
                   <span className="w-12 h-12 rounded-xl bg-superficie text-verde-texto flex items-center justify-center shrink-0">
-                    <Icono n="kitchen" size={24} />
+                    <Icono n={tipo.icono === 'lightbulb' ? 'kitchen' : tipo.icono} size={24} />
                   </span>
                 )}
                 <div className="min-w-0">
                   {c.alimento && <h3 className="font-semibold leading-snug">{c.alimento.name}</h3>}
                   <p className="text-sm text-gris mt-0.5 leading-snug">{c.texto}</p>
+                  {c.enlace && (
+                    <Link to={c.enlace} className="inline-block text-sm font-semibold text-verde-texto mt-1.5 underline">
+                      {c.enlaceTexto || 'Ver'}
+                    </Link>
+                  )}
                 </div>
               </div>
             </article>
