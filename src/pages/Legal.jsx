@@ -110,6 +110,7 @@ const TEXTOS = {
           'Para saber qué pantallas se usan, contamos las visitas de forma anónima con Vercel Web Analytics: no usa cookies y no permite identificarte.',
           'Para frenar a los programas que crean cuentas falsas, la pantalla de acceso puede usar Turnstile, un servicio de Cloudflare que comprueba que del otro lado hay una persona. Para eso recibe datos técnicos de tu navegador, como la dirección IP. No recibe tu contraseña ni lo que cargás en la app.',
           'Cuando elegís una contraseña, se consulta un servicio público (Have I Been Pwned) para saber si apareció en filtraciones de otros sitios. La contraseña no sale de tu dispositivo: se manda solo un fragmento de su huella, que no alcanza para reconstruirla.',
+          'Si activás la verificación en dos pasos, te damos códigos de recuperación para entrar si perdés el teléfono. De cada código guardamos solo una huella que no permite saber cuál era; cada uno sirve una vez.',
         ],
       ],
       [

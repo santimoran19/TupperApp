@@ -83,7 +83,7 @@ test('no comí, bebidas y extras, comidas afuera y validaciones', async ({ brows
       sinAgua: true,
       cerveza: true,
       conAlcohol: 17,
-      todas: 63,
+      todas: 64,
     })
     await captura(pg, 'v11_bebidas', false)
     await pg.click('button:has-text("Sin alcohol")')

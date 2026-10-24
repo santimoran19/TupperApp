@@ -110,8 +110,8 @@ export function calcularEntrenamiento(tipo, datos, persona) {
   const distancia = numero(datos.distancia)
   const desnivel = numero(datos.desnivel) || 0
   const categoria = tipo?.category || null
-  let bruto = null
-  let metodo = null
+  let bruto
+  let metodo
   let aviso = null
 
   if (reloj != null && reloj > 0) {

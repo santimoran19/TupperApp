@@ -238,3 +238,33 @@ No hay funciones nuevas ni cambios en las que ya están. Solo hay que correr `su
   ```
 
   Para sacarte: `delete from public.administradores where user_id = (select id from auth.users where email = 'TU-MAIL');`. El panel no muestra los pedidos a la IA por proveedor porque `ai_usos` no lo guarda: eso se ve en los registros de `registrar-ia` y `asistente-ia`.
+
+# Novedades de la 1.32
+
+Antes que nada, correr `supabase/actualizacion-25.sql` (aditiva) y `supabase/seed-9-alimentos.sql`.
+
+## Códigos de recuperación (`dos-pasos`, S-08)
+
+Función nueva, **con verificación de JWT** (la llama la app con la sesión de la persona):
+
+```
+supabase functions deploy dos-pasos --project-ref bpxxwmcqidoxgmfyzhpc
+```
+
+No necesita secretos nuevos (usa la clave de servicio que Supabase ya le da). Hace tres cosas: `generar` (10 códigos nuevos; pide haber entrado con el código de la app autenticadora), `estado` (cuántos quedan) y `usar` (con la contraseña ya puesta y un código válido, le saca a la persona todos los factores de la verificación en dos pasos con la API de administración). En la base queda solo la huella de cada código; se corta a quien prueba más de 5 por hora (`recuperacion_intentos`). Sin la función la verificación en dos pasos anda igual: al activarla avisa que no se pudieron crear los códigos.
+
+Si alguien perdió el teléfono y no tiene los códigos, sigue siendo a mano: Authentication → Users → la persona → borrar el factor.
+
+## Botones en las notificaciones (`recordatorios-push`, F-06b)
+
+Hay que **volver a publicarla, sin verificación de JWT como antes**:
+
+```
+supabase functions deploy recordatorios-push --no-verify-jwt --project-ref bpxxwmcqidoxgmfyzhpc
+```
+
+Ahora los avisos de comidas y agua traen botones ("Más tarde" y, en el del agua, "Tomé un vaso"). El service worker del teléfono manda el botón tocado a esta misma función, sin la sesión, con una firma que la función puso en el aviso (HMAC con `CRON_CLAVE`, vale 6 horas): así nadie puede anotar en una cuenta ajena. Lo pospuesto se manda en el siguiente turno del reloj pasados 15 minutos (`recordatorios_pospuestos`); el vaso lo anota `anotar_vaso()` (solo con la clave de servicio). Los botones llegan desde la página de la app: si algún día cambia la dirección, cargar el secreto `ORIGENES_PERMITIDOS` (como en las otras funciones). En iPhone no hay botones (Safari no los muestra): queda el toque, que abre la app.
+
+## Cómo anda el reloj (T-13)
+
+El panel de administración (`/admin`) muestra si el reloj de los recordatorios corrió en los últimos 40 minutos, cuántas corridas fallaron y cuántas veces la función contestó con error en las últimas 24 horas (lo lee `estado_del_reloj()` de `cron.job_run_details` y `net._http_response`).

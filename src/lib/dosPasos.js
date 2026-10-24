@@ -69,3 +69,57 @@ export async function desactivar(factorId) {
     return { error: mensaje() }
   }
 }
+
+// ---------- Códigos de recuperación y más de un dispositivo (1.32, S-08) ----------
+// La función `dos-pasos` los genera y los canjea; en la base solo queda su huella (actualizacion-25.sql).
+async function pedirFuncion(cuerpo) {
+  try {
+    const { data, error } = await supabase.functions.invoke('dos-pasos', { body: cuerpo })
+    if (error) {
+      const detalle = await error.context?.json?.().catch(() => null)
+      return { error: detalle?.mensaje || 'No se pudo. Revisá la conexión y probá de nuevo.', codigo: detalle?.codigo || 'red' }
+    }
+    return data || {}
+  } catch {
+    return { error: 'No se pudo. Revisá la conexión y probá de nuevo.', codigo: 'red' }
+  }
+}
+
+// Genera códigos nuevos (reemplazan a los anteriores). Devuelve { codigos } o { error }.
+export const generarCodigosRecuperacion = () => pedirFuncion({ accion: 'generar' })
+
+// Cuántos le quedan sin usar, o null si no se sabe (sin conexión o sin la actualización 25)
+export async function codigosQueQuedan() {
+  try {
+    const { data, error } = await supabase.rpc('codigos_que_quedan')
+    return error ? null : Number(data)
+  } catch {
+    return null
+  }
+}
+
+// Entrar con un código de recuperación: la función saca la verificación en dos pasos y la sesión se renueva sin ella
+export async function usarCodigoRecuperacion(codigo) {
+  const r = await pedirFuncion({ accion: 'usar', codigo })
+  if (r.error) return r
+  try {
+    sessionStorage.setItem('tupper:recuperada', '1')
+  } catch {
+    // sin almacenamiento no se muestra el aviso, nada más
+  }
+  await supabase.auth.refreshSession()
+  return { ok: true }
+}
+
+// Un código de recuperación bien escrito: 8 letras y números, con o sin guion
+export const codigoRecuperacionValido = (c) => /^[A-HJKMNP-Z2-9]{8}$/i.test(String(c || '').replace(/[\s-]/g, ''))
+
+// Con más de un dispositivo, el código puede ser de cualquiera: se prueba con cada uno
+export async function verificarConCualquiera(factores, codigo) {
+  let ultimo = { error: mensaje() }
+  for (const f of factores) {
+    ultimo = await verificarCodigo(f.id, codigo)
+    if (ultimo.ok) return ultimo
+  }
+  return ultimo
+}

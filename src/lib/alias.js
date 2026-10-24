@@ -3,6 +3,14 @@
 // proponer por qué alimento de las recetas vale un producto ("Tirabuzón Matarazzo" cuenta como fideos).
 // Van por slug, en minúscula y sin tildes.
 export const ALIAS = {
+  // Séptima tanda (1.32, F-12b)
+  'te-infusion': ['manzanilla', 'tilo', 'boldo', 'cedron', 'peperina', 'te verde', 'te negro', 'te de hierbas', 'infusion'],
+  'yogur-cereales': ['yogur con cereal', 'yogurt con cereal'],
+  agridulces: ['9 de oro', 'agridulce'],
+  'torreja-arroz': ['torreja de arroz'],
+  'torreja-verduras': ['torreja de verdura', 'torreja de acelga'],
+  'sandwich-pata': ['sanguche de pata', 'pata en pan'],
+  bombon: ['bon o bon', 'bonobon'],
   fideos: [
     'fideo',
     'spaghetti',

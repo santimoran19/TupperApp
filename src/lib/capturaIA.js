@@ -20,7 +20,7 @@ export async function achicarParaIA(archivo) {
   lienzo.getContext('2d').drawImage(imagen, 0, 0, ancho, alto)
   imagen.close?.()
   const blob = await new Promise((ok) => lienzo.toBlob(ok, 'image/jpeg', 0.82))
-  if (!blob) throw new Error('No se pudo preparar la foto.')
+  if (!blob) throw new Error('No se pudo preparar la foto. Probá con otra.')
   return { base64: await aBase64(blob), mime: 'image/jpeg' }
 }
 
@@ -34,7 +34,7 @@ export function aBase64(blob) {
   return new Promise((ok, mal) => {
     const lector = new FileReader()
     lector.onload = () => ok(String(lector.result).split(',')[1] || '')
-    lector.onerror = () => mal(new Error('No se pudo leer el archivo.'))
+    lector.onerror = () => mal(new Error('No se pudo leer el archivo. Probá con otro.'))
     lector.readAsDataURL(blob)
   })
 }

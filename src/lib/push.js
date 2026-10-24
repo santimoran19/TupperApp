@@ -103,7 +103,7 @@ export async function prenderPush(uid) {
     await copiarRecordatorios(uid, { forzar: true })
     return { ok: true }
   } catch {
-    return { error: 'No se pudo activar en este navegador.' }
+    return { error: 'No se pudo activar en este navegador. Probá con Chrome, o con la app agregada a la pantalla de inicio.' }
   }
 }
 

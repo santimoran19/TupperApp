@@ -6,7 +6,7 @@ import Marco from '../components/Marco'
 import { Err, Icono, Vacio } from '../components/ui'
 import { supabase } from '../lib/supabase'
 import { fechaCorta } from '../lib/fechas'
-import { iaPorDia } from '../lib/admin'
+import { estadoReloj, iaPorDia } from '../lib/admin'
 
 // Tope gratis aproximado de pedidos de IA por día (para ver si se acerca); ajustalo si cambia el plan del proveedor
 const TOPE_IA_DIA = 1000
@@ -85,6 +85,54 @@ export default function Admin() {
             </div>
             <p className="text-xs text-gris mt-2">{datos.registros_7} registros en los últimos 7 días.</p>
           </section>
+
+          {(() => {
+            const r = estadoReloj(datos.reloj)
+            return (
+              <section
+                className={`rounded-2xl p-4 mb-4 ${r.nivel === 'bien' ? 'bg-verde-claro' : 'bg-naranja-suave'}`}
+                aria-label="Reloj de los recordatorios"
+                data-testid="estado-reloj"
+              >
+                <p className="font-semibold text-sm flex items-center gap-1.5">
+                  <Icono n={r.nivel === 'bien' ? 'schedule' : 'warning'} size={18} /> Recordatorios con la app cerrada
+                </p>
+                <p className="text-sm mt-1">{r.texto}</p>
+              </section>
+            )
+          })()}
+
+          {datos.semanas?.length > 0 && (
+            <section className="tarjeta p-5 mb-4" aria-label="Vuelta semanal">
+              <h2 className="font-semibold">Vuelta semanal</h2>
+              <p className="text-xs text-gris mb-3">
+                Cuentas que anotaron algo cada semana, cuántas de esas también habían anotado la anterior y cuántas se crearon.
+              </p>
+              <table className="w-full text-sm tabular-nums">
+                <thead>
+                  <tr className="text-xs text-gris text-right">
+                    <th className="text-left font-medium py-1">Semana del</th>
+                    <th className="font-medium">Activas</th>
+                    <th className="font-medium">Volvieron</th>
+                    <th className="font-medium">Nuevas</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-linea">
+                  {datos.semanas.map((w) => (
+                    <tr key={w.semana} className="text-right">
+                      <td className="text-left py-1.5 text-gris">{fechaCorta(w.semana)}</td>
+                      <td>{w.activas}</td>
+                      <td>
+                        {w.volvieron}
+                        {w.activas > 0 && <span className="text-xs text-gris"> ({Math.round((100 * w.volvieron) / w.activas)}%)</span>}
+                      </td>
+                      <td>{w.nuevas}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )}
 
           <section className="tarjeta p-5 mb-4" aria-label="Pedidos a la IA">
             <h2 className="font-semibold">Pedidos a la IA por día</h2>

@@ -7,7 +7,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { PGlite } from '@electric-sql/pglite'
 import { conAlcohol, foods, recipes } from '../../scripts/seed-data.mjs'
-import { alimentosSexta, foodsTodos, recetasSexta, recipesTodas } from '../../scripts/seed-sexta.mjs'
+import { alimentosSeptima, alimentosSexta, foodsTodos, recetasSexta, recipesTodas } from '../../scripts/seed-sexta.mjs'
 import { conFamilia, sugerirBase } from '../../src/lib/equivalencias.js'
 import { CATEGORIAS, COMIDAS, macrosDe } from '../../src/lib/nutricion.js'
 import { LIM } from '../../src/lib/validar.js'
@@ -37,7 +37,7 @@ describe('alimentos de la sexta tanda', () => {
     expect(alimentosSexta).toHaveLength(227)
     expect(new Set(foodsTodos.map((f) => f[0])).size).toBe(foodsTodos.length)
     expect(new Set(foodsTodos.map((f) => normal(f[1]))).size).toBe(foodsTodos.length)
-    expect(foodsTodos).toHaveLength(foods.length + 227)
+    expect(foodsTodos).toHaveLength(foods.length + 227 + alimentosSeptima.length)
   })
 
   test('cada alimento tiene los campos completos, categoría válida y valores posibles', () => {
@@ -219,4 +219,24 @@ describe('seed-8-*.sql', () => {
     expect(await cuenta()).toEqual(despues)
     await db.close()
   }, 240000)
+})
+
+describe('alimentos de la séptima tanda (1.32, F-12b)', () => {
+  test('no repiten slug ni nombre, tienen categoría válida y las calorías cierran con los macros', () => {
+    const categorias = new Set(foodsTodos.map((f) => f[9]))
+    expect(alimentosSeptima.length).toBeGreaterThan(5)
+    for (const [slug, name, unit, gu, , kcal, p, c, g, cat] of alimentosSeptima) {
+      expect(slug, name).toMatch(/^[a-z0-9-]+$/)
+      expect(['g', 'ml', 'u']).toContain(unit)
+      if (unit === 'u') expect(gu, name).toBeGreaterThan(0)
+      expect(categorias.has(cat), name).toBe(true)
+      const calculadas = 4 * p + 4 * c + 9 * g
+      if (kcal > 10) expect(Math.abs(calculadas - kcal) / kcal, name).toBeLessThan(0.15)
+    }
+  })
+  test('seed-9-alimentos.sql los suma sin duplicar', () => {
+    const sql = fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), '../../supabase/seed-9-alimentos.sql'), 'utf8')
+    for (const [slug] of alimentosSeptima) expect(sql).toContain(`'${slug}'`)
+    expect(sql).toContain('on conflict (slug) do nothing')
+  })
 })

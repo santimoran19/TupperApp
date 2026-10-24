@@ -145,3 +145,51 @@ export function claveCorrecta(recibida: string | null, esperada: string | undefi
   for (let i = 0; i < esperada.length; i++) dif |= recibida.charCodeAt(i) ^ esperada.charCodeAt(i)
   return dif === 0
 }
+
+// ---------- Botones en la notificación (1.32, F-06b) ----------
+// "Más tarde" vuelve a mandar el aviso en el próximo turno del reloj después de 15 minutos; "Tomé un vaso" anota 250 ml de
+// agua sin abrir la app. El service worker manda el botón tocado con una firma (HMAC con CRON_CLAVE) que la función
+// puso en el aviso: así no hace falta la sesión de la persona, y nadie puede anotar en una cuenta ajena.
+export const POSPONER_MIN = 15
+export const VIGENCIA_FIRMA_MS = 6 * 3600000 // los botones sirven hasta 6 horas después del aviso
+
+export type Boton = 'posponer' | 'vaso'
+export function botonesDe(aviso: string): Boton[] {
+  if (/^agua-\d+$/.test(aviso)) return ['vaso', 'posponer']
+  if (/^comida-(desayuno|almuerzo|merienda|cena)$/.test(aviso)) return ['posponer']
+  return []
+}
+
+// El aviso de nuevo a partir de su id (para "Más tarde": el texto no viaja en el pedido, se arma acá)
+export function avisoPorId(id: string): Aviso | null {
+  const comida = /^comida-(desayuno|almuerzo|merienda|cena)$/.exec(id)?.[1]
+  if (comida) return { id, titulo: `Es hora de ${NOMBRES[comida]}`, texto: 'Anotala cuando termines.', ruta: `/registrar?comida=${comida}` }
+  if (/^agua-\d+$/.test(id)) return { id, titulo: 'Tomá un vaso de agua', texto: 'Un trago ahora te suma.', ruta: '/' }
+  return null
+}
+
+const hex = (b: ArrayBuffer) => [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('')
+async function hmac(clave: string, texto: string) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(clave), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  return hex(await crypto.subtle.sign('HMAC', k, new TextEncoder().encode(texto)))
+}
+
+export type Firma = { u: string; f: string; a: string; e: number; t: string }
+// Lo que va en el aviso para los botones
+export async function firmar(clave: string, usuario: string, fecha: string, aviso: string, ahora = Date.now()): Promise<Firma> {
+  const e = ahora + VIGENCIA_FIRMA_MS
+  return { u: usuario, f: fecha, a: aviso, e, t: await hmac(clave, `${usuario}|${fecha}|${aviso}|${e}`) }
+}
+
+// El pedido de un botón: { accion, u, f, a, e, t }. Devuelve la firma si vale y no venció, o null.
+export async function leerBoton(cuerpo: unknown, clave: string | undefined, ahora = Date.now()): Promise<(Firma & { accion: Boton }) | null> {
+  if (!clave || !cuerpo || typeof cuerpo !== 'object') return null
+  const { accion, u, f, a, e, t } = cuerpo as Record<string, unknown>
+  if (accion !== 'posponer' && accion !== 'vaso') return null
+  if (typeof u !== 'string' || !/^[0-9a-f-]{36}$/.test(u)) return null
+  if (typeof f !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(f)) return null
+  if (typeof a !== 'string' || !botonesDe(a).includes(accion)) return null
+  if (typeof e !== 'number' || !(e > ahora) || e > ahora + VIGENCIA_FIRMA_MS + 60000) return null
+  if (typeof t !== 'string' || !claveCorrecta(t, await hmac(clave, `${u}|${f}|${a}|${e}`))) return null
+  return { accion, u, f, a, e, t }
+}

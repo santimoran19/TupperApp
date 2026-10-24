@@ -80,4 +80,53 @@ test('recordatorios-push: manda el aviso cifrado, no lo repite y borra los telé
   // Otra corrida del reloj: el mismo aviso no se manda dos veces
   expect(await (await correr()).json()).toMatchObject({ usuarios: 1, enviados: 0 })
   expect((await simulador('/push/_recibidos')).filter((x) => x.endpoint.endsWith('telefono-1'))).toHaveLength(1)
+
+  // ---- Botones (1.32, F-06b): el aviso trae "Más tarde" con su firma y la dirección de la función
+  const recibido = (n) => {
+    const lista = recibidosDe('telefono-1')
+    return lista.then((l) =>
+      JSON.parse(
+        ece.decrypt(Buffer.from(l[n].cuerpo, 'base64'), { version: 'aes128gcm', privateKey: ecdh, authSecret: secreto }).toString('utf8'),
+      ),
+    )
+  }
+  const recibidosDe = async (fin) => (await simulador('/push/_recibidos')).filter((x) => x.endpoint.endsWith(fin))
+  const almuerzo = await recibido(0)
+  expect(almuerzo.botones).toEqual(['posponer'])
+  expect(almuerzo.firma).toMatchObject({ u: uid, a: 'comida-almuerzo' })
+  const tocar = (accion, firma, origen = 'http://localhost:5199') =>
+    fetch(almuerzo.url.replace(/^https?:\/\/[^/]+/, API), {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain', Origin: origen },
+      body: JSON.stringify({ accion, ...firma }),
+    })
+  // Con la firma tocada o con otro botón, no
+  expect((await tocar('posponer', { ...almuerzo.firma, u: crypto.randomUUID() })).status).toBe(400)
+  expect((await tocar('vaso', almuerzo.firma)).status).toBe(400)
+  // "Más tarde": queda para dentro de 15 minutos, una sola vez
+  const r2 = await tocar('posponer', almuerzo.firma)
+  expect(r2.status).toBe(200)
+  expect(await (await tocar('posponer', almuerzo.firma)).json()).toMatchObject({ repetido: true })
+  const [pospuesto] = await porServicio('GET', `recordatorios_pospuestos?user_id=eq.${uid}&select=*`)
+  expect(pospuesto).toMatchObject({ aviso: 'comida-almuerzo', titulo: 'Es hora de almorzar' })
+  expect(Date.parse(pospuesto.cuando) - Date.now()).toBeGreaterThan(13 * 60000)
+  // Pasados los 15 minutos, el reloj lo vuelve a mandar y lo borra
+  await porServicio('PATCH', `recordatorios_pospuestos?id=eq.${pospuesto.id}`, { cuando: new Date(Date.now() - 60000).toISOString() })
+  expect(await (await correr()).json()).toMatchObject({ enviados: 1 })
+  expect(await recibido(1)).toMatchObject({ titulo: 'Es hora de almorzar', tag: 'comida-almuerzo' })
+  expect(await porServicio('GET', `recordatorios_pospuestos?user_id=eq.${uid}&select=*`)).toEqual([])
+
+  // "Tomé un vaso": el aviso del agua trae los dos botones y el vaso se anota sin abrir la app
+  await porServicio('PATCH', `recordatorios?user_id=eq.${uid}`, {
+    config: { activo: true, comidas: {}, comidasOn: {}, agua: true, aguaCada: 3, aguaDesde: hora, aguaHasta: '23:59', ayuno: false },
+  })
+  expect(await (await correr()).json()).toMatchObject({ enviados: 1 })
+  const agua = await recibido(2)
+  expect(agua).toMatchObject({ titulo: 'Tomá un vaso de agua', botones: ['vaso', 'posponer'] })
+  const r3 = await tocar('vaso', agua.firma)
+  expect(await r3.json()).toMatchObject({ ok: true, titulo: 'Vaso anotado' })
+  expect(await (await tocar('vaso', agua.firma)).json()).toMatchObject({ repetido: true })
+  const vasos = await porServicio('GET', `log_entries?user_id=eq.${uid}&select=*`)
+  expect(vasos).toHaveLength(1)
+  expect(vasos[0]).toMatchObject({ meal: 'extra', qty: 250, date: agua.firma.f })
 })

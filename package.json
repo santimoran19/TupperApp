@@ -1,7 +1,7 @@
 {
   "name": "tupper",
   "private": true,
-  "version": "1.31.2",
+  "version": "1.32.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
+    "@supabase/postgrest-js": "^2.118.0",
     "@supabase/supabase-js": "^2.117.2",
     "@vercel/analytics": "^2.0.1",
     "@zxing/library": "^0.21.3",
@@ -26,15 +27,14 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
     "@electric-sql/pglite": "^0.5.8",
-    "@eslint/js": "^9.39.5",
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.56.1",
     "@tailwindcss/vite": "^4.3.3",
-    "@vitejs/plugin-react": "^5.2.0",
-    "eslint": "^9.39.5",
+    "@vitejs/plugin-react": "^6.1.2",
+    "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "fit-file-parser": "^2.3.3",
+    "fit-file-parser": "^6.2.3",
     "globals": "^17.13.0",
     "prettier": "^3.9.9",
     "tailwindcss": "^4.3.3",
@@ -42,5 +42,10 @@
     "vite-plugin-pwa": "^2.0.0",
     "vitest": "^5.0.5",
     "web-push": "^3.6.7"
+  },
+  "overrides": {
+    "@rolldown/plugin-babel": {
+      "@babel/plugin-transform-runtime": "^7.29.0"
+    }
   }
 }

@@ -5,6 +5,7 @@
 //   import { alimentosSexta, recetasSexta, foodsTodos, recipesTodas } from './seed-sexta.mjs'
 import { foods, recipes } from './seed-data.mjs'
 import { alimentosSexta } from './datos/alimentos-sexta.mjs'
+import { alimentosSeptima } from './datos/alimentos-septima.mjs'
 import { azar, crearArmador, crearChequeo } from './datos/motor.mjs'
 import * as ensaladas from './datos/f-ensaladas.mjs'
 import * as salteados from './datos/f-salteados.mjs'
@@ -52,8 +53,9 @@ const FAMILIAS = [
   [snacks.generarEmpanadas, 20],
 ]
 
-export const foodsTodos = [...foods, ...alimentosSexta]
-export const chequeoSexta = crearChequeo(foodsTodos)
+// La séptima tanda (1.32) se suma a la base completa pero no al armado de recetas: así las recetas que salen no cambian
+export const foodsTodos = [...foods, ...alimentosSexta, ...alimentosSeptima]
+export const chequeoSexta = crearChequeo([...foods, ...alimentosSexta])
 
 function armar() {
   const armador = crearArmador(
@@ -66,6 +68,6 @@ function armar() {
   return armador.recetas
 }
 
-export { alimentosSexta }
+export { alimentosSexta, alimentosSeptima }
 export const recetasSexta = armar()
 export const recipesTodas = [...recipes, ...recetasSexta]

@@ -13,7 +13,7 @@ import { ejercicios as ejerciciosGym } from '../../../scripts/gym-data.mjs'
 
 const PUERTO = 54321
 // Las funciones de verdad, corriendo en Deno: cada una en su puerto
-const FUNCIONES_REALES = { 'analizar-semana': 8000, entrar: 8001, 'recordatorios-push': 8003 }
+const FUNCIONES_REALES = { 'analizar-semana': 8000, entrar: 8001, 'dos-pasos': 8002, 'recordatorios-push': 8003 }
 const CLAVE_SERVICIO = 'service-role-de-prueba' // la que usa la función `entrar` para mirar usuarios, saltándose los permisos por fila
 // Las funciones solo contestan a páginas permitidas (S-02): en las pruebas, la de la app. La prueba 21 llama a las funciones directo.
 const ORIGEN_DE_LA_APP = 'http://localhost:5199'
@@ -61,6 +61,11 @@ const db = {
   // Lo que se sacó de la lista de compras (actualizacion-24.sql), de la despensa
   compras_quitadas: [],
   opiniones: [],
+  // Códigos de recuperación y notificaciones con botones (actualizacion-25.sql): solo las funciones, con la clave de servicio
+  codigos_recuperacion: [],
+  recuperacion_intentos: [],
+  recordatorios_pospuestos: [],
+  recordatorios_acciones: [],
 }
 let numeroDeEvento = 0
 // Administradores (actualizacion-24.sql): no se lee ni se escribe desde la app; las pruebas suman con /_pruebas/admin
@@ -92,6 +97,7 @@ const SIN_ID = new Set([
   'recordatorios',
   'recordatorios_enviados',
   'compras_quitadas',
+  'recordatorios_acciones',
 ])
 const bySlug = new Map()
 for (const f of foods) {
@@ -849,6 +855,11 @@ const FUNCIONES = {
     return null
   },
 
+  // Códigos de recuperación que quedan (actualizacion-25.sql)
+  codigos_que_quedan(uid) {
+    return db.codigos_recuperacion.filter((c) => c.user_id === uid && !c.usado_en).length
+  },
+
   // Panel de administración (actualizacion-24.sql)
   es_admin(uid) {
     return administradores.has(uid)
@@ -876,6 +887,26 @@ const FUNCIONES = {
       activas_30: distintas(desde(db.log_entries, 30)),
       registros_7: desde(db.log_entries, 7).length,
       hogares: db.hogares.length,
+      // La vuelta semanal (actualizacion-25.sql): lunes a domingo
+      semanas: Array.from({ length: 8 }, (_, i) => {
+        const lunes = new Date()
+        lunes.setUTCHours(0, 0, 0, 0)
+        lunes.setUTCDate(lunes.getUTCDate() - ((lunes.getUTCDay() + 6) % 7) - 7 * i)
+        const desdeW = lunes.getTime()
+        const en = (f, d) => {
+          const t = new Date(f.created_at || 0).getTime()
+          return t >= d && t < d + 7 * 86400000
+        }
+        const activos = new Set(db.log_entries.filter((f) => en(f, desdeW)).map((f) => f.user_id))
+        const antes = new Set(db.log_entries.filter((f) => en(f, desdeW - 7 * 86400000)).map((f) => f.user_id))
+        return {
+          semana: lunes.toISOString().slice(0, 10),
+          activas: activos.size,
+          volvieron: [...activos].filter((u) => antes.has(u)).length,
+          nuevas: db.profiles.filter((p) => en(p, desdeW)).length,
+        }
+      }),
+      reloj: null,
       ia_por_dia: [...ia]
         .map(([k, n]) => ({ dia: k.split('|')[0], tipo: k.split('|')[1], pedidos: n }))
         .sort((a, b) => (a.dia < b.dia ? 1 : -1)),
@@ -1078,6 +1109,7 @@ const server = http.createServer(async (req, res) => {
             funcion: funcion.activa,
             entrar: funcion.entrar,
             push: funcion.push,
+            dosPasos: funcion.dosPasos,
             vapid: VAPID.publica,
             cron: CRON_CLAVE,
           })
@@ -1327,6 +1359,47 @@ const server = http.createServer(async (req, res) => {
         return send(404, { code: 'NOT_FOUND', message: 'Requested function was not found' })
       }
     }
+    // ---- Administración de factores (lo usa la función `dos-pasos` con la clave de servicio, 1.32)
+    const adminFactores = url.pathname.match(/^\/auth\/v1\/admin\/users\/([\w-]+)\/factors(?:\/([\w-]+))?$/)
+    if (adminFactores) {
+      if (!esServicio(req)) return send(403, { msg: 'User not allowed' })
+      const u = [...users.values()].find((x) => x.id === adminFactores[1])
+      if (!u) return send(404, { msg: 'User not found' })
+      if (req.method === 'GET')
+        return send(
+          200,
+          (u.factores || []).map(({ secreto: _s, ...f }) => f),
+        )
+      if (req.method === 'DELETE') {
+        const f = (u.factores || []).find((x) => x.id === adminFactores[2])
+        if (!f) return send(404, { msg: 'Factor not found' })
+        u.factores = u.factores.filter((x) => x !== f)
+        return send(200, { id: f.id })
+      }
+    }
+    // El vaso de agua de la notificación (actualizacion-25.sql: solo con la clave de servicio)
+    if (url.pathname === '/rest/v1/rpc/anotar_vaso') {
+      if (!esServicio(req)) return send(401, { code: '42501', message: 'permission denied for function anotar_vaso' })
+      const agua = db.foods.find((f) => f.slug === 'agua' && !f.owner)
+      const fila = {
+        id: randomUUID(),
+        user_id: body.p_usuario,
+        date: body.p_fecha,
+        meal: 'extra',
+        name: agua.name,
+        food_id: agua.id,
+        recipe_id: null,
+        qty: 250,
+        kcal: 0,
+        protein: 0,
+        carbs: 0,
+        fat: 0,
+        skipped: false,
+        created_at: new Date().toISOString(),
+      }
+      db.log_entries.push(fila)
+      return send(200, fila.id)
+    }
     if (url.pathname === '/rest/v1/rpc/borrar_mi_cuenta') {
       const uid = uidDe(req)
       for (const [email, u] of users) if (u.id === uid) users.delete(email)
@@ -1372,7 +1445,18 @@ const server = http.createServer(async (req, res) => {
     }
     if (
       !servicio &&
-      ['hogares', 'hogar_miembros', 'catalogo', 'catalogo_aportes', 'strava_conexiones', 'recordatorios_enviados'].includes(tabla)
+      [
+        'hogares',
+        'hogar_miembros',
+        'catalogo',
+        'catalogo_aportes',
+        'strava_conexiones',
+        'recordatorios_enviados',
+        'codigos_recuperacion',
+        'recuperacion_intentos',
+        'recordatorios_pospuestos',
+        'recordatorios_acciones',
+      ].includes(tabla)
     )
       return send(403, { message: 'permission denied for table ' + tabla })
     const dueno = uid ? ambito(uid) : null
@@ -1398,10 +1482,19 @@ const server = http.createServer(async (req, res) => {
     }
     if ((tabla === 'ai_analyses' || tabla === 'eventos') && (req.method === 'PATCH' || req.method === 'DELETE'))
       return send(403, { message: 'permission denied for table ' + tabla })
-    if (req.method === 'GET') {
+    if (req.method === 'GET' || req.method === 'HEAD') {
       const filas = db[tabla].filter((r) => visible(r) && pasa(r))
       const desde = Number(url.searchParams.get('offset') || 0)
       const limite = url.searchParams.get('limit')
+      // Con "count=exact" (select con { count: 'exact' }) PostgREST dice el total en Content-Range; con HEAD, sin filas
+      if ((req.headers.prefer || '').includes('count=exact')) {
+        res.writeHead(200, {
+          ...cors,
+          'Content-Type': 'application/json',
+          'Content-Range': `${filas.length ? `0-${filas.length - 1}` : '*'}/${filas.length}`,
+        })
+        return res.end(req.method === 'HEAD' ? '' : JSON.stringify(filas))
+      }
       return lista(200, limite ? filas.slice(desde, desde + Number(limite)) : filas.slice(desde))
     }
     if (req.method === 'POST') {
@@ -1561,7 +1654,7 @@ const server = http.createServer(async (req, res) => {
 })
 
 // ---------- Las funciones de verdad, corriendo en Deno (si está instalado) ----------
-const funcion = { activa: false, entrar: false, push: false }
+const funcion = { activa: false, entrar: false, push: false, dosPasos: false }
 const pushSim = []
 // Claves VAPID y del reloj, de mentira, para la función recordatorios-push
 const CRON_CLAVE = 'reloj-de-prueba'
@@ -1603,7 +1696,7 @@ async function levantarFunciones() {
     }
     return false
   }
-  ;[funcion.activa, funcion.entrar, funcion.push] = await Promise.all([
+  ;[funcion.activa, funcion.entrar, funcion.push, funcion.dosPasos] = await Promise.all([
     arrancar('analizar-semana', FUNCIONES_REALES['analizar-semana'], {
       ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
       IA_PROVEEDOR: '',
@@ -1618,11 +1711,16 @@ async function levantarFunciones() {
       SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO,
     }),
     arrancar('recordatorios-push', FUNCIONES_REALES['recordatorios-push'], {
+      ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
       SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO,
       CRON_CLAVE,
       VAPID_PUBLICA: VAPID.publica,
       VAPID_PRIVADA: VAPID.privada,
       VAPID_SUJETO: 'mailto:pruebas@tupper.test',
+    }),
+    arrancar('dos-pasos', FUNCIONES_REALES['dos-pasos'], {
+      ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
+      SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO,
     }),
   ])
 }

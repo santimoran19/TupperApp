@@ -229,3 +229,124 @@ test('las notificaciones push se muestran con la app cerrada, no con la app a la
   await navegador.close()
   expect(errores).toEqual([])
 })
+
+// T-07b (1.32): con la app cerrada del todo, al volver la conexión el service worker manda la cola él solo, con el permiso
+// que dejó la app; se frena en el + y el - de la despensa (no se pueden repetir sin contar doble) y no hace nada con el
+// permiso vencido. "Cerrada": no hay ninguna pestaña de la app (la única está en about:blank).
+test('con la app cerrada, el service worker manda la cola al volver la conexión', async () => {
+  const API = 'http://localhost:54321'
+  const SERVICIO = { Authorization: 'Bearer service-role-de-prueba', apikey: 'test' }
+  // Una cuenta en el simulador, con su permiso
+  const email = `sw-${Date.now()}@test.com`
+  const alta = await (
+    await fetch(API + '/auth/v1/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: 'test' },
+      body: JSON.stringify({ email, password: 'Secreto9q', gotrue_meta_security: { captcha_token: `captcha-de-prueba-sw-${Date.now()}` } }),
+    })
+  ).json()
+  const uid = alta.user.id
+  const [arroz, yerba] = await (
+    await fetch(API + '/rest/v1/foods?select=id,slug&owner=is.null&slug=in.(arroz,yerba)&order=slug', {
+      headers: { Authorization: 'Bearer ' + alta.access_token, apikey: 'test' },
+    })
+  ).json()
+  const lista = async () =>
+    (await (await fetch(`${API}/rest/v1/shopping_items?select=food_id,qty&user_id=eq.${uid}`, { headers: SERVICIO })).json()).map((x) => [
+      x.food_id,
+      Number(x.qty),
+    ])
+
+  const navegador = await chromium.launch({ channel: 'chromium' })
+  const { ctx, pg } = await abrir(navegador)
+  await pg.goto(SITIO + '/')
+  await pg.waitForSelector('text=Crear cuenta')
+  await pg.evaluate(async () => {
+    await navigator.serviceWorker.ready
+  })
+  const cdp = await ctx.newCDPSession(pg)
+  const registros = []
+  cdp.on('ServiceWorker.workerRegistrationUpdated', (e) => registros.push(...e.registrations))
+  await cdp.send('ServiceWorker.enable')
+  await expect.poll(() => registros.filter((r) => !r.isDeleted).length).toBeGreaterThan(0)
+  const { registrationId } = registros.find((r) => !r.isDeleted)
+
+  // Lo que deja la app cuando anota sin conexión (store/sincro/sesionSW.js y la cola de sincronizacion.js)
+  const dejar = (cosas) =>
+    pg.evaluate(
+      (cosas) =>
+        new Promise((listo, fallo) => {
+          const pedido = indexedDB.open('tupper', 1)
+          pedido.onupgradeneeded = () => pedido.result.createObjectStore('copia')
+          pedido.onsuccess = () => {
+            const t = pedido.result.transaction('copia', 'readwrite')
+            for (const [clave, valor] of cosas) t.objectStore('copia').put(valor, clave)
+            t.oncomplete = () => {
+              pedido.result.close()
+              listo()
+            }
+            t.onerror = () => fallo(t.error)
+          }
+        }),
+      cosas,
+    )
+  const leer = (clave) =>
+    pg.evaluate(
+      (clave) =>
+        new Promise((listo) => {
+          const pedido = indexedDB.open('tupper', 1)
+          pedido.onsuccess = () => {
+            const g = pedido.result.transaction('copia').objectStore('copia').get(clave)
+            g.onsuccess = () => {
+              pedido.result.close()
+              listo(g.result ?? null)
+            }
+          }
+        }),
+      clave,
+    )
+  const volvioLaConexion = async () => {
+    await pg.goto('about:blank')
+    await cdp.send('ServiceWorker.dispatchSyncEvent', { origin: SITIO, registrationId, tag: 'tupper-cola', lastChance: false })
+    await pg.waitForTimeout(1500)
+    await pg.goto(SITIO + '/')
+    await pg.waitForSelector('text=Crear cuenta')
+  }
+
+  const vence = (alta.expires_at || Math.floor(Date.now() / 1000) + 3600) * 1000
+  const cola = [
+    { id: 'c1', tipo: 'agregarALista', datos: { food_id: arroz.id, qty: 2 }, n: 1 },
+    { id: 'c2', tipo: 'ajustarStock', datos: { food_id: arroz.id, delta: 1 }, n: 2 },
+    { id: 'c3', tipo: 'agregarALista', datos: { food_id: yerba.id, qty: 1 }, n: 3 },
+  ]
+  // Con el permiso vencido no manda nada
+  await dejar([
+    [`cola:${uid}`, cola],
+    ['sw:sesion', { uid, token: alta.access_token, vence: Date.now() - 1000 }],
+  ])
+  await volvioLaConexion()
+  expect(await lista()).toEqual([])
+  expect((await leer(`cola:${uid}`)).map((c) => c.id)).toEqual(['c1', 'c2', 'c3'])
+
+  // Con el permiso vigente manda en orden hasta el + de la despensa, que queda para la app (y el permiso, también)
+  await dejar([['sw:sesion', { uid, token: alta.access_token, vence }]])
+  await volvioLaConexion()
+  expect(await lista()).toEqual([[arroz.id, 2]])
+  expect((await leer(`cola:${uid}`)).map((c) => c.id)).toEqual(['c2', 'c3'])
+  expect(await leer('sw:sesion')).toMatchObject({ uid })
+
+  // Sin lo que la frenaba, termina y borra el permiso
+  await dejar([[`cola:${uid}`, [cola[2]]]])
+  await volvioLaConexion()
+  expect((await lista()).sort()).toEqual(
+    [
+      [arroz.id, 2],
+      [yerba.id, 1],
+    ].sort(),
+  )
+  expect((await leer(`cola:${uid}`)) ?? []).toEqual([])
+  expect(await leer('sw:sesion')).toBeNull()
+
+  await ctx.close()
+  await navegador.close()
+})

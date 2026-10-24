@@ -40,7 +40,7 @@ export const accionesDeHogar = (k) => {
       async (codigo) => {
         await sinPendientes()
         const r = ok(await supabase.rpc('unirse_al_hogar', { p_codigo: codigo }))
-        if (!r?.ok) throw invalido(r?.error || 'No se pudo entrar al hogar.')
+        if (!r?.ok) throw invalido(r?.error || 'No se pudo entrar al hogar. Revisá el código y probá de nuevo.')
         await recargar()
       },
       { unica: true },

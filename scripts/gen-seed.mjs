@@ -7,7 +7,7 @@
 import { foods, recipes, conAlcohol, alimentosQuinta, recetasQuinta } from './seed-data.mjs'
 import { actividades } from './ejercicio-data.mjs'
 import { ejercicios, GRUPOS, EQUIPOS } from './gym-data.mjs'
-import { alimentosSexta, recetasSexta, foodsTodos } from './seed-sexta.mjs'
+import { alimentosSexta, alimentosSeptima, recetasSexta, foodsTodos } from './seed-sexta.mjs'
 import { writeFileSync } from 'node:fs'
 const q = (v) => (v === null || v === undefined ? 'null' : typeof v === 'number' ? String(v) : `'${String(v).replace(/'/g, "''")}'`)
 function generar(alimentos, recetas, titulo) {
@@ -111,6 +111,15 @@ for (let i = 0; i < tandas; i++) {
   )
 }
 console.log('ok sexta tanda:', alimentosSexta.length, 'alimentos y', recetasSexta.length, 'recetas en', tandas, 'archivos')
+
+// ---------- Séptima tanda (1.32, F-12b): solo alimentos ----------
+let septima =
+  '-- Séptima tanda de la base (1.32): alimentos que la gente tuvo que cargar a mano. Generado con scripts/gen-seed.mjs. Se puede correr de nuevo: agrega solo lo que falta.\n\n'
+septima += 'insert into public.foods (slug, name, unit, unit_grams, unit_label, kcal, protein, carbs, fat, category, alcohol) values\n'
+septima +=
+  alimentosSeptima.map((f) => `  (${f.map(q).join(', ')}, ${conAlcohol.includes(f[0])})`).join(',\n') + '\non conflict (slug) do nothing;\n'
+writeFileSync(new URL('../supabase/seed-9-alimentos.sql', import.meta.url), septima)
+console.log('ok séptima tanda:', alimentosSeptima.length, 'alimentos')
 
 // los ingredientes de la última tanda tienen que estar en la base completa (pueden ser de tandas anteriores)
 console.log(

@@ -3,6 +3,8 @@
 // Todas las funciones pueden fallar (modo privado, sin lugar, el navegador cerró la base): tiran el error y quien las
 // llama decide qué hacer. Ninguna se queda esperando para siempre.
 const BASE = 'tupper'
+// El permiso que la app le deja al service worker para mandar la cola con la app cerrada (ver sincro/sesionSW.js)
+export const CLAVE_SESION_SW = 'sw:sesion'
 const ALMACEN = 'copia'
 // Hay navegadores donde IndexedDB a veces no contesta nunca: pasado este tiempo se da por fallado
 const LIMITE_MS = 2500

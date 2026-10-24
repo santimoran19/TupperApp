@@ -175,6 +175,19 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
   useEffect(() => {
     document.title = `${titulo} · Tupper`
   }, [titulo])
+  // Quien acaba de entrar con un código de recuperación (S-08): que sepa que la verificación quedó desactivada
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem('tupper:recuperada')) return
+      sessionStorage.removeItem('tupper:recuperada')
+    } catch {
+      return
+    }
+    avisar(
+      'Entraste con un código de recuperación y la verificación en dos pasos quedó desactivada. Activala de nuevo en tu Perfil.',
+      'aviso',
+    )
+  }, [avisar])
   const kcalHoy = redondear(sumar(registros.filter((r) => r.date === hoy())).kcal)
   const inicial = (perfil?.name || '?').trim().charAt(0).toUpperCase()
 

@@ -219,7 +219,7 @@ export default function Despensa() {
     const listo = await d.quitarDeDespensa(a.id)
     if (listo)
       d.avisar(
-        'Quitado de la despensa',
+        `Sacaste ${a.name} de la despensa`,
         'ok',
         qty > 0
           ? {

@@ -121,7 +121,7 @@ export const accionesDeRegistros = (k) => ({
     'editarRegistro',
     (id, qty) => {
       const fila = k.ver().e.registros.find((x) => x.id === id)
-      if (!fila) throw invalido('Ese registro ya no existe.')
+      if (!fila) throw invalido('Ese registro ya no existe: lo borraste desde otro lado. Recargá para ver cómo quedó.')
       if (fila.skipped || !(Number(fila.qty) > 0)) throw invalido('Ese registro no se puede editar.')
       if (fila.pendiente) throw invalido('Todavía no se terminó de guardar. Probá de nuevo cuando vuelva la conexión.')
       const n = redondear(qty, 2)

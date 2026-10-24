@@ -78,7 +78,7 @@ export default function Compras() {
       await navigator.clipboard.writeText(texto)
       d.avisar('Lista copiada')
     } catch {
-      d.avisar('No se pudo copiar la lista', 'error')
+      d.avisar('No se pudo copiar la lista. Probá con Compartir.', 'error')
     }
   }
   const gasto = comprasMes.reduce((s, c) => s + Number(c.price), 0)
@@ -120,7 +120,7 @@ export default function Compras() {
   // Quitar de la lista, con Deshacer (D-06): vuelve con la misma cantidad
   async function quitar(id, a, qty) {
     if (!(await d.quitarDeLista(id))) return
-    d.avisar('Quitado de la lista', 'ok', {
+    d.avisar(`Sacaste ${a.name} de la lista`, 'ok', {
       texto: 'Deshacer',
       hacer: async () => {
         if (await d.agregarALista(a.id, qty)) d.avisar(`${a.name} volvió a la lista`)

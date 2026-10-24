@@ -32,6 +32,7 @@ const ARCHIVOS = [
   'actualizacion-22.sql',
   'actualizacion-23.sql',
   'actualizacion-24.sql',
+  'actualizacion-25.sql',
   'seed.sql',
   'seed-6.sql',
   'seed-7.sql',
