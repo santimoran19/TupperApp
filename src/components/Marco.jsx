@@ -166,7 +166,7 @@ function BarraLateral({ nombre, inicial, conEjercicio }) {
 export default function Marco({ titulo, atras = false, children, sinNav = false }) {
   const { registros, perfil, sinConexion, pendientes, trabada, usuario } = useDatos()
   const { aviso, pregunta } = useAvisos()
-  const { responder, avisar } = useAvisar()
+  const { responder, avisar, quitarAviso } = useAvisar()
   useRecordatorios({ uid: usuario?.id, registros, avisar })
   const nav = useNavigate()
   const escritorio = useEscritorio()
@@ -220,9 +220,23 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
       {aviso && (
         <div className="fixed left-0 right-0 lg:left-64 aviso-barra z-[60] flex justify-center px-4 pointer-events-none">
           <div
-            className={`rounded-full px-4 py-2.5 text-sm font-medium shadow-flotante ${aviso.tipo === 'error' ? 'bg-rojo text-white' : 'bg-tinta text-fondo'}`}
+            role="status"
+            className={`rounded-full px-4 py-2.5 text-sm font-medium shadow-flotante flex items-center gap-3 ${aviso.tipo === 'error' ? 'bg-rojo text-white' : 'bg-tinta text-fondo'}`}
           >
-            {aviso.texto}
+            <span>{aviso.texto}</span>
+            {aviso.accion && (
+              <button
+                type="button"
+                onClick={() => {
+                  quitarAviso()
+                  aviso.accion.hacer()
+                }}
+                className="pointer-events-auto -my-1 -mr-2 px-3 h-8 rounded-full font-bold underline underline-offset-2"
+                data-testid="aviso-accion"
+              >
+                {aviso.accion.texto}
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -192,8 +192,26 @@ export default function Despensa() {
       }))
     )
       return false
+    // Lo que había, para poder volver atrás (D-06)
+    const fila = d.stock.find((s) => s.food_id === a.id)
+    const qty = Number(fila?.qty) || 0
+    const vence = d.vencimientos.get(a.id) || null
     const listo = await d.quitarDeDespensa(a.id)
-    if (listo) d.avisar('Quitado de la despensa')
+    if (listo)
+      d.avisar(
+        'Quitado de la despensa',
+        'ok',
+        qty > 0
+          ? {
+              texto: 'Deshacer',
+              hacer: async () => {
+                if (!(await d.fijarStock(a.id, qty))) return
+                if (vence) await d.fijarVencimiento(a.id, vence)
+                d.avisar(`${a.name} volvió a la despensa`)
+              },
+            }
+          : null,
+      )
     return listo
   }
   async function guardarCantidad() {

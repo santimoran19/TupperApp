@@ -27,6 +27,9 @@ const ARCHIVOS = [
   'actualizacion-17.sql',
   'actualizacion-18.sql',
   'actualizacion-19.sql',
+  'actualizacion-20.sql',
+  'actualizacion-21.sql',
+  'actualizacion-22.sql',
   'seed.sql',
   'seed-6.sql',
   'seed-7.sql',
@@ -38,6 +41,8 @@ const SUPABASE = `
   create schema auth;
   create table auth.users (id uuid primary key default gen_random_uuid(), email text);
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  create function auth.jwt() returns jsonb language sql stable as $$ select coalesce(nullif(current_setting('request.jwt.claims', true), ''), '{}')::jsonb $$;
+  create table auth.mfa_factors (id uuid primary key default gen_random_uuid(), user_id uuid not null, status text not null);
   grant usage on schema auth to anon, authenticated;
   grant usage on schema public to anon, authenticated;
   alter default privileges in schema public grant all on tables to anon, authenticated, service_role;

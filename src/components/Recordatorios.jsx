@@ -1,9 +1,11 @@
-// Perfil > Recordatorios (1.27): avisos de comidas, agua y ayuno. Se guardan en el teléfono.
+// Perfil > Recordatorios (1.27): avisos de comidas, agua y ayuno. Se guardan en el teléfono. Con la app cerrada (1.29,
+// F-06) los manda el servidor: ver lib/push.js.
 import { useState } from 'react'
 import { Icono } from './ui'
 import { useDatos } from '../store/Datos'
 import { RECORDATORIOS_INICIAL, claveRecordatorios, guardar, horaValida, leer } from '../lib/ayuno'
 import { avisarCambioRecordatorios } from '../lib/useRecordatorios'
+import { apagarPush, prenderPush, pushDisponible, pushPrendido } from '../lib/push'
 
 const COMIDAS = [
   ['desayuno', 'Desayuno'],
@@ -32,6 +34,8 @@ export default function Recordatorios() {
   const clave = claveRecordatorios(d.usuario.id)
   const [c, setC] = useState(() => leer(clave, RECORDATORIOS_INICIAL))
   const [permiso, setPermiso] = useState(() => (typeof Notification === 'undefined' ? 'no-hay' : Notification.permission))
+  const [cerrada, setCerrada] = useState(() => pushPrendido(d.usuario.id))
+  const [ocupado, setOcupado] = useState(false)
 
   const cambiar = (parte) => {
     const nuevo = { ...c, ...parte }
@@ -48,6 +52,15 @@ export default function Recordatorios() {
       }
     }
     cambiar({ activo: si })
+  }
+  const conAppCerrada = async (si) => {
+    setOcupado(true)
+    const r = si ? await prenderPush(d.usuario.id) : await apagarPush(d.usuario.id)
+    setOcupado(false)
+    if (typeof Notification !== 'undefined') setPermiso(Notification.permission)
+    if (r.error) return d.avisar(r.error, 'error')
+    setCerrada(si)
+    d.avisar(si ? 'Listo: te avisamos aunque la app esté cerrada' : 'Los avisos llegan solo con la app abierta')
   }
   const hora = (comida, valor) => horaValida(valor) && cambiar({ comidas: { ...c.comidas, [comida]: valor } })
 
@@ -102,14 +115,29 @@ export default function Recordatorios() {
             <Interruptor activo={c.ayuno} onCambiar={(v) => cambiar({ ayuno: v })} etiqueta="Avisar cuando se cumple el ayuno" />
             <span className="flex-1 text-sm">Cuando cumplo el ayuno</span>
           </div>
+          {pushDisponible() && permiso !== 'denied' && (
+            <div className="flex items-center gap-3 pt-3 border-t border-linea">
+              <Interruptor
+                activo={cerrada}
+                onCambiar={(v) => !ocupado && conAppCerrada(v)}
+                etiqueta="Avisarme aunque la app esté cerrada"
+              />
+              <span className="flex-1 text-sm">
+                Aunque la app esté cerrada
+                <span className="block text-xs text-gris">Tus horarios se guardan en tu cuenta para poder avisarte.</span>
+              </span>
+            </div>
+          )}
           <p className="text-xs text-gris leading-snug">
-            {permiso === 'granted'
-              ? 'Los avisos llegan mientras la app esté abierta o la hayas usado hace poco. Con la app cerrada del todo, el teléfono no los deja pasar.'
-              : permiso === 'denied'
-                ? 'Bloqueaste las notificaciones del navegador: los avisos aparecen solo dentro de la app. Podés permitirlas en los ajustes del navegador.'
-                : permiso === 'no-hay'
-                  ? 'Este navegador no tiene notificaciones: los avisos aparecen dentro de la app.'
-                  : 'Los avisos aparecen dentro de la app.'}
+            {permiso === 'granted' && cerrada
+              ? 'Te avisamos aunque la app esté cerrada. En iPhone, solo si la instalaste en la pantalla de inicio.'
+              : permiso === 'granted'
+                ? 'Los avisos llegan mientras la app esté abierta o la hayas usado hace poco. Con la app cerrada del todo, el teléfono no los deja pasar.'
+                : permiso === 'denied'
+                  ? 'Bloqueaste las notificaciones del navegador: los avisos aparecen solo dentro de la app. Podés permitirlas en los ajustes del navegador.'
+                  : permiso === 'no-hay'
+                    ? 'Este navegador no tiene notificaciones: los avisos aparecen dentro de la app.'
+                    : 'Los avisos aparecen dentro de la app.'}
           </p>
         </div>
       )}

@@ -1,9 +1,18 @@
 // Chat con IA (1.28, IA-01). La llama la app con la sesión del usuario:
 //   POST /functions/v1/asistente-ia   { "mensajes": [{ "role": "user", "content": "¿Qué ceno?" }], "contexto": { ...resumen del día } }
-// Devuelve { respuesta, restantes, proveedor }. No guarda la conversación: solo cuenta el mensaje en ai_usos (tipo 'chat')
+// Devuelve { respuesta, anotar?, restantes, proveedor } (anotar: 1.29, ver separarAnotar). No guarda la conversación: solo cuenta el mensaje en ai_usos (tipo 'chat')
 // para el tope diario. Necesita la actualización 21 de la base y al menos un proveedor cargado como secreto (proveedores.ts).
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { armarMensajes, contextoTexto, encabezadosCors, limpiarMensajes, limpiarRespuesta, origenAjeno, origenesPermitidos } from './logica.ts'
+import {
+  armarMensajes,
+  contextoTexto,
+  encabezadosCors,
+  limpiarMensajes,
+  limpiarRespuesta,
+  origenAjeno,
+  origenesPermitidos,
+  separarAnotar,
+} from './logica.ts'
 import { conversar, hayProveedores } from './proveedores.ts'
 
 const CABECERAS = 'authorization, x-client-info, apikey, content-type'
@@ -66,7 +75,9 @@ async function manejar(req: Request): Promise<Response> {
         return fallo(503, 'ocupado', 'La IA está con mucha demanda. Probá de nuevo en unos minutos.')
       return fallo(502, 'error_ia', 'No se pudo responder. Probá de nuevo.')
     }
-    return responder(200, { respuesta: limpiarRespuesta(salida.texto), restantes, proveedor: salida.proveedor })
+    // Si pidió anotar algo, viene aparte (la app muestra el botón para revisarlo y anotarlo: IA-06)
+    const { texto, anotar } = separarAnotar(salida.texto)
+    return responder(200, { respuesta: limpiarRespuesta(texto) || 'Listo.', anotar, restantes, proveedor: salida.proveedor })
   } catch (err) {
     console.error('asistente-ia', err)
     const cortado = err instanceof Error && (err.name === 'TimeoutError' || err.name === 'AbortError')

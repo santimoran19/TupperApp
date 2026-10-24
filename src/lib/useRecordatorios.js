@@ -1,8 +1,10 @@
-// Avisos de comidas, agua y ayuno (1.27). Corre mientras la app está abierta (o en segundo plano reciente): una PWA no puede
-// despertarse sola sin notificaciones push, que necesitan un servidor aparte (queda en la hoja de ruta).
+// Avisos de comidas, agua y ayuno (1.27). Corre mientras la app está abierta (o en segundo plano reciente). Con la app
+// cerrada los manda el servidor como notificaciones push, si la persona las prendió (1.29, lib/push.js): ahí, con la app
+// en segundo plano, de acá no sale nada (los manda el servidor) y se copia la configuración a la base cuando cambia.
 import { useEffect, useRef } from 'react'
 import { claveAyuno, claveRecordatorios, estadoAyuno, leer, guardar, RECORDATORIOS_INICIAL, recordatoriosAhora } from './ayuno'
 import { hoy } from './fechas'
+import { copiarRecordatorios, pushPrendido, revisarPush } from './push'
 
 const EVENTO = 'tupper:recordatorios'
 // Lo avisa Perfil al cambiar la configuración, así el aviso se entera sin recargar
@@ -32,6 +34,7 @@ export function useRecordatorios({ uid, registros, avisar }) {
   useEffect(() => {
     if (!uid) return undefined
     const revisar = () => {
+      copiarRecordatorios(uid).catch(() => {})
       const config = leer(claveRecordatorios(uid), RECORDATORIOS_INICIAL)
       if (!config.activo) return
       const fecha = hoy()
@@ -49,6 +52,8 @@ export function useRecordatorios({ uid, registros, avisar }) {
       }
       if (pendientes.length === 0) return
       guardar(claveAvisados, { fecha, ids: [...(guardados.fecha === fecha ? guardados.ids : []), ...pendientes.map((p) => p.id)] })
+      // Con los avisos push prendidos y la app en segundo plano, los manda el servidor (si no, llegarían dos)
+      if (pushPrendido(uid) && document.visibilityState !== 'visible') return
       for (const p of pendientes) {
         notificar(p.titulo, p.texto).then((sistema) => {
           if (!sistema) ref.current.avisar(p.titulo)
@@ -56,6 +61,7 @@ export function useRecordatorios({ uid, registros, avisar }) {
       }
     }
     revisar()
+    revisarPush(uid)
     const t = setInterval(revisar, 30000)
     const alVolver = () => document.visibilityState === 'visible' && revisar()
     document.addEventListener('visibilitychange', alVolver)

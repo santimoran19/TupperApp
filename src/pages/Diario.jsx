@@ -222,7 +222,20 @@ export default function Diario() {
       })
     ) {
       const listo = await d.borrarRegistro(r.id)
-      if (listo && !sinDatos && avisos.length) d.avisar(avisos.join(' '), 'aviso')
+      if (!listo) return
+      // Deshacer (D-06): se vuelve a anotar lo mismo, en la misma comida y descontando de la despensa como la primera vez
+      const plato = r.food_id ? { food_id: r.food_id, qty: Number(r.qty) } : { recipe_id: r.recipe_id, porciones: Number(r.qty) }
+      const sePuede = r.food_id ? d.alimentosPorId.has(r.food_id) : r.recipe_id && d.recetasPorId.has(r.recipe_id)
+      const deshacer = sePuede
+        ? {
+            texto: 'Deshacer',
+            hacer: async () => {
+              if (await d.registrar({ date: r.date, meal: r.meal, platos: [plato], descontar: !sinDatos })) d.avisar(`${r.name} volvió`)
+            },
+          }
+        : null
+      if (!sinDatos && avisos.length) d.avisar(avisos.join(' '), 'aviso', deshacer)
+      else d.avisar(`Borraste ${r.name}`, 'ok', deshacer)
     }
   }
   const abrirEdicion = (r) => {

@@ -1,17 +1,20 @@
 // Asistente con IA (1.28, IA-01): preguntas como "¿qué ceno con lo que me queda?" o "¿puedo comer un alfajor?", con los
 // datos del día. La conversación queda solo en este teléfono mientras la pestaña está abierta; no se guarda en la base.
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import Marco from '../components/Marco'
 import { Icono } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { armarContexto } from '../lib/contextoIA'
+import { platosDe } from '../lib/registroIA'
+import { hoy } from '../lib/fechas'
 
 const CLAVE_AVISO = 'tupper:asistente-aviso'
 const SUGERENCIAS = [
   '¿Qué ceno con lo que me queda en la despensa?',
   '¿Puedo comer un alfajor ahora?',
   '¿Cómo llego a la proteína de hoy?',
+  'Anotame una manzana en la merienda',
   'Armame una merienda con lo que tengo',
 ]
 const MAX_LARGO = 1000
@@ -62,6 +65,7 @@ function Texto({ children }) {
 
 export default function Asistente() {
   const d = useDatos()
+  const nav = useNavigate()
   const claveChat = `tupper:asistente:${d.usuario?.id || ''}`
   const [mensajes, setMensajes] = useState(() => leer(claveChat, []))
   const [texto, setTexto] = useState('')
@@ -99,8 +103,21 @@ export default function Asistente() {
       setTexto(q)
       return
     }
-    setMensajes([...nuevos, { role: 'assistant', content: r.respuesta }])
+    setMensajes([...nuevos, { role: 'assistant', content: r.respuesta, ...(r.anotar ? { anotar: r.anotar } : {}) }])
     if (r.restantes != null) setRestantes(r.restantes)
+  }
+
+  // Anotar desde el chat (1.29, IA-06): lo que pidió se cruza con sus alimentos y recetas y se lleva a Registrar para revisar
+  function anotar(pedido) {
+    const { platos, sinCruzar } = platosDe(pedido.items, { alimentos: d.alimentos, recetas: d.recetas })
+    if (!platos.length) {
+      setError(`No encontré ${sinCruzar.map((i) => i.nombre).join(', ')} en tus alimentos. Cargalo a mano desde Registrar.`)
+      return
+    }
+    const partes = [`Del asistente: ${platos.length === 1 ? '1 ítem' : `${platos.length} ítems`}, revisá las cantidades.`]
+    if (sinCruzar.length) partes.push(`No encontré: ${sinCruzar.map((i) => i.nombre).join(', ')}.`)
+    const comida = pedido.comida ? `&comida=${pedido.comida}` : ''
+    nav(`/registrar?fecha=${hoy()}${comida}`, { state: { ia: { platos, mensaje: { tipo: 'ok', texto: partes.join(' ') } } } })
   }
 
   if (!aceptado) {
@@ -164,6 +181,11 @@ export default function Asistente() {
               >
                 <span className="sr-only">{m.role === 'user' ? 'Vos: ' : 'Asistente: '}</span>
                 {m.role === 'user' ? m.content : <Texto>{m.content}</Texto>}
+                {m.anotar && (
+                  <button onClick={() => anotar(m.anotar)} className="btn-chico bg-verde text-white mt-2" data-testid="asistente-anotar">
+                    <Icono n="check" size={16} /> Revisar y anotar ({m.anotar.items.length})
+                  </button>
+                )}
               </div>
             </li>
           ))}

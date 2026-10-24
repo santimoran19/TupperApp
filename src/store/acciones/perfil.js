@@ -4,9 +4,13 @@ import { ok, supabase, traerTodo } from '../base'
 import { traerEjercicio } from '../carga'
 import { reemplazar } from '../listas'
 import { borrarFotos, rutasDe } from '../../lib/fotos'
+import { apagarPush } from '../../lib/push'
 
 // Cuánto se espera a que Supabase cierre la sesión antes de cerrarla a mano en el teléfono
 const ESPERA_SALIR_MS = 4000
+
+// Los avisos con la app cerrada se apagan en este teléfono, así no le llegan a quien entre después (sin esperar mucho)
+const soltarPush = (uid) => Promise.race([apagarPush(uid), new Promise((listo) => setTimeout(listo, 3000))])
 
 // Cierra la sesión. Sin conexión y con el permiso vencido, Supabase no puede: tarda hasta medio minuto en darse por
 // vencido y la deja como estaba. No se lo espera tanto: se saca a mano del teléfono y se recarga, para que la persona
@@ -179,6 +183,7 @@ export const accionesDePerfil = (k) => ({
         throw Object.assign(new Error('No se pudieron borrar tus fotos. Revisá la conexión y probá de nuevo.'), { causa: err })
       }
       ok(await supabase.rpc('borrar_mi_cuenta'))
+      await soltarPush(k.uid)
       await k.vaciar()
       await cerrarSesion()
     },
@@ -198,6 +203,7 @@ export const accionesDePerfil = (k) => ({
       })
       if (!seguir) return false
     }
+    await soltarPush(k.uid)
     await k.vaciar()
     await cerrarSesion()
     return true

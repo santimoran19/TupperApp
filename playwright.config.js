@@ -3,6 +3,17 @@ import { defineConfig } from '@playwright/test'
 
 // Con REUSAR=1 se usan los servidores que ya estén andando (sirve para repetir un archivo suelto sin empezar de cero)
 const reusar = !!process.env.REUSAR
+// Con NAVEGADOR=webkit corre en WebKit (el motor de Safari, T-03) una parte de las pruebas: las que no usan cosas propias
+// de Chrome (la cámara falsa, el protocolo de Chrome para los avisos push). Arranca con la 01, que crea la cuenta.
+const webkit = process.env.NAVEGADOR === 'webkit'
+const EN_SAFARI = [
+  '01-acceso',
+  '03-diario-bebidas-afuera',
+  '07-modo-oscuro',
+  '10-botones-en-iphone',
+  '31-accesibilidad',
+  '32-novedades-129',
+].map((n) => new RegExp(`${n}\\.spec\\.js$`))
 
 export default defineConfig({
   testDir: 'pruebas/e2e',
@@ -12,7 +23,8 @@ export default defineConfig({
   retries: 0,
   timeout: 240000,
   reporter: [['list']],
-  use: { browserName: 'chromium' },
+  use: { browserName: webkit ? 'webkit' : 'chromium' },
+  ...(webkit ? { testMatch: EN_SAFARI } : {}),
   webServer: [
     {
       command: 'node pruebas/e2e/servidor/supabase-simulado.mjs',

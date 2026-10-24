@@ -29,6 +29,11 @@ export default [
     },
   },
   {
+    // El service worker (src/sw.js)
+    files: ['src/sw.js'],
+    languageOptions: { globals: globals.serviceworker },
+  },
+  {
     // Lo que corre con Node: configuración, scripts y pruebas (las de navegador además corren pedazos adentro de la página)
     files: ['*.config.js', 'scripts/**', 'pruebas/**'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },

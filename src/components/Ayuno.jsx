@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Icono } from './ui'
 import { useDatos } from '../store/Datos'
 import { PROTOCOLOS, ayunoOlvidado, claveAyuno, duracionTexto, estadoAyuno, guardar, leer, protocoloDe, resumenAyunos } from '../lib/ayuno'
+import { avisarCambioRecordatorios } from '../lib/useRecordatorios'
 
 const INICIAL = { protocolo: '16', actual: null, historial: [] }
 
@@ -52,6 +53,8 @@ export default function Ayuno() {
   const cambiar = (nuevo) => {
     setEst(nuevo)
     guardar(clave, nuevo)
+    // Para que el aviso de "cumpliste tu ayuno" (también el que llega con la app cerrada) se entere enseguida
+    avisarCambioRecordatorios()
   }
   const proto = protocoloDe(est.protocolo)
   const e = est.actual ? estadoAyuno({ inicio: est.actual.inicio, horas: est.actual.horas, ahora }) : null

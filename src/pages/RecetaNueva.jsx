@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import Marco from '../components/Marco'
 import SelectorAlimento from '../components/SelectorAlimento'
+import PegarReceta from '../components/PegarReceta'
 import { Err, Hoja, Icono, Macros, Numero } from '../components/ui'
 import { useDatos } from '../store/Datos'
 import { COMIDAS, NOMBRE_COMIDA, macrosDe, porcionSugerida, sumar, unidadDe } from '../lib/nutricion'
@@ -42,6 +43,7 @@ export default function RecetaNueva() {
   if (ingredientes !== elegidos) setIngredientes(ingredientes)
   const [buscando, setBuscando] = useState(false)
   const [guardando, setGuardando] = useState(false)
+  const [avisoIA, setAvisoIA] = useState(null)
   const set = (k) => (v) => setF((s) => ({ ...s, [k]: v }))
 
   const porciones = Math.max(1, Math.round(Number(f.servings) || 1))
@@ -91,6 +93,31 @@ export default function RecetaNueva() {
     <Marco titulo={original ? 'Editar receta' : 'Nueva receta'} atras sinNav>
       <div className="dos-columnas">
         <div className="space-y-3">
+          {!original && (
+            <PegarReceta
+              onReceta={(r) => {
+                setF((s) => ({
+                  ...s,
+                  name: r.nombre.slice(0, LIM.nombre),
+                  minutes: String(r.minutos),
+                  servings: String(r.porciones),
+                  steps: r.pasos.join('\n').slice(0, LIM.pasos),
+                }))
+                setIngredientes(r.ingredientes.slice(0, MAX_INGREDIENTES))
+                setAvisoIA(
+                  `Armé la receta con ${r.ingredientes.length} ${r.ingredientes.length === 1 ? 'ingrediente' : 'ingredientes'}: revisá las cantidades.` +
+                    (r.sinCruzar.length
+                      ? ` No encontré: ${r.sinCruzar.map((i) => i.nombre).join(', ')}. Agregalos a mano si hacen falta.`
+                      : ''),
+                )
+              }}
+            />
+          )}
+          {avisoIA && (
+            <p className="text-sm rounded-xl p-3 bg-verde-suave text-verde-texto" role="status" data-testid="aviso-receta-ia">
+              {avisoIA}
+            </p>
+          )}
           <div className="space-y-3" data-tour="rn-datos">
             <div>
               <label className="etiqueta" htmlFor="rn-nombre">

@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
-import { expect, test } from '@playwright/test'
+import { chromium, expect, test } from '@playwright/test'
 import { build } from 'vite'
 
 const PUERTO = 5300
@@ -181,5 +181,51 @@ test('una pestaña recién abierta también llega a la versión nueva (el botón
   expect(await aviso.count()).toBe(0)
 
   await ctx.close()
+  expect(errores).toEqual([])
+})
+
+// Recordatorios con la app cerrada (1.29, F-06): el service worker muestra la notificación push solo si la app no está
+// a la vista (si está, el aviso lo muestra ella adentro y no se repite). El push se entrega con el protocolo de Chrome.
+// (Con el Chromium completo: el "headless shell" de Playwright no da permiso de notificaciones)
+test('las notificaciones push se muestran con la app cerrada, no con la app a la vista', async () => {
+  const navegador = await chromium.launch({ channel: 'chromium' })
+  const { ctx, pg, errores } = await abrir(navegador)
+  await ctx.grantPermissions(['notifications'], { origin: SITIO })
+  await pg.goto(SITIO + '/')
+  await pg.waitForSelector('text=Crear cuenta')
+  await pg.evaluate(async () => {
+    await navigator.serviceWorker.ready
+  })
+  const cdp = await ctx.newCDPSession(pg)
+  const registros = []
+  cdp.on('ServiceWorker.workerRegistrationUpdated', (e) => registros.push(...e.registrations))
+  await cdp.send('ServiceWorker.enable')
+  await expect.poll(() => registros.filter((r) => !r.isDeleted).length).toBeGreaterThan(0)
+  const { registrationId } = registros.find((r) => !r.isDeleted)
+  const mandar = () =>
+    cdp.send('ServiceWorker.deliverPushMessage', {
+      origin: SITIO,
+      registrationId,
+      data: JSON.stringify({ titulo: 'Es hora de almorzar', texto: 'Anotala cuando termines.', tag: 'comida-almuerzo', ruta: '/' }),
+    })
+  const notificaciones = () =>
+    pg.evaluate(async () =>
+      (await (await navigator.serviceWorker.getRegistration()).getNotifications()).map((n) => [n.title, n.body, n.tag]),
+    )
+
+  await mandar()
+  await pg.waitForTimeout(800)
+  expect(await notificaciones(), 'con la app a la vista no hay notificación del sistema').toEqual([])
+
+  // "Cerrada": la pestaña se va a otro lado
+  await pg.goto('about:blank')
+  await mandar()
+  await pg.waitForTimeout(800)
+  await pg.goto(SITIO + '/')
+  await pg.waitForSelector('text=Crear cuenta')
+  expect(await notificaciones()).toEqual([['Es hora de almorzar', 'Anotala cuando termines.', 'comida-almuerzo']])
+
+  await ctx.close()
+  await navegador.close()
   expect(errores).toEqual([])
 })

@@ -50,6 +50,24 @@ export const accionesExtras = (k) => ({
     )
   }),
 
+  // Receta desde un texto (1.29, IA-04): { receta: { nombre, porciones, minutos, pasos, items } } o { error }
+  leerRecetaIA: async (texto) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('registrar-ia', { body: { tipo: 'receta', texto } })
+      if (error) {
+        const detalle = await error.context?.json?.().catch(() => null)
+        anotarEvento('ia_receta', { resultado: 'error', codigo: detalle?.codigo || String(error.context?.status || 'red') })
+        if (detalle?.mensaje) return { error: detalle.mensaje }
+        return { error: 'No se pudo. Revisá la conexión y probá de nuevo.' }
+      }
+      if (!data?.receta?.items?.length) return { error: 'No encontré una receta en ese texto.' }
+      anotarEvento('ia_receta', { resultado: 'ok', items: data.receta.items.length })
+      return { receta: data.receta }
+    } catch {
+      return { error: 'No se pudo. Revisá la conexión y probá de nuevo.' }
+    }
+  },
+
   // Chat con IA (1.28): manda la conversación y un resumen del día a la función `asistente-ia`. No guarda nada en la base
   // (solo cuenta el mensaje para el tope diario). Devuelve { respuesta, restantes } o { error, codigo }.
   preguntarIA: async ({ mensajes, contexto }) => {
@@ -66,7 +84,7 @@ export const accionesExtras = (k) => ({
       }
       if (typeof data?.respuesta !== 'string' || !data.respuesta.trim()) return { error: 'No se pudo responder. Probá de nuevo.' }
       anotarEvento('ia_chat', { resultado: 'ok', proveedor: data.proveedor || '' })
-      return { respuesta: data.respuesta, restantes: data.restantes }
+      return { respuesta: data.respuesta, anotar: data.anotar || null, restantes: data.restantes }
     } catch {
       return { error: 'No se pudo. Revisá la conexión y probá de nuevo.' }
     }

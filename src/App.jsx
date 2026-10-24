@@ -4,6 +4,7 @@ import { sesionGuardada, supabase } from './lib/supabase'
 import { ProveedorDatos, useDatos } from './store/Datos'
 import { borrarLocal } from './store/local'
 import { leerRecorrido } from './lib/recorrido'
+import { faltaCodigo } from './lib/dosPasos'
 import { Logo } from './components/Marco'
 import Acceso from './pages/Acceso'
 import Diario from './pages/Diario'
@@ -13,6 +14,7 @@ const Bienvenida = lazy(() => import('./pages/Bienvenida'))
 const ElegirUsuario = lazy(() => import('./pages/ElegirUsuario'))
 const ConsentimientoSalud = lazy(() => import('./pages/ConsentimientoSalud'))
 const Asistente = lazy(() => import('./pages/Asistente'))
+const CodigoDosPasos = lazy(() => import('./pages/CodigoDosPasos'))
 const Registrar = lazy(() => import('./pages/Registrar'))
 const Despensa = lazy(() => import('./pages/Despensa'))
 const Compras = lazy(() => import('./pages/Compras'))
@@ -180,6 +182,15 @@ export default function App() {
     ) : null
   if (sesion === undefined) return legal || <Cargando />
   if (!sesion) return legal || <Acceso />
+  // Con la verificación en dos pasos activada, antes de los datos va el código (1.29, S-06)
+  if (faltaCodigo(sesion))
+    return (
+      legal || (
+        <Suspense fallback={Hueco}>
+          <CodigoDosPasos sesion={sesion} />
+        </Suspense>
+      )
+    )
   return (
     <ProveedorDatos key={sesion.user.id} usuario={sesion.user}>
       {legal || <Pantallas />}

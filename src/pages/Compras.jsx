@@ -97,6 +97,17 @@ export default function Compras() {
     }
   }
 
+  // Quitar de la lista, con Deshacer (D-06): vuelve con la misma cantidad
+  async function quitar(id, a, qty) {
+    if (!(await d.quitarDeLista(id))) return
+    d.avisar('Quitado de la lista', 'ok', {
+      texto: 'Deshacer',
+      hacer: async () => {
+        if (await d.agregarALista(a.id, qty)) d.avisar(`${a.name} volvió a la lista`)
+      },
+    })
+  }
+
   const Fila = ({ a, qty, origen, id }) => (
     <div className="flex items-center gap-2 py-3">
       <Foto ruta={a.image_path} categoria={a.category} para={a.name} className="w-10 h-10 rounded-xl" icono={20} />
@@ -107,7 +118,7 @@ export default function Compras() {
         </p>
       </div>
       {id && (
-        <button onClick={() => d.quitarDeLista(id)} className="toque w-8 h-8 text-gris" aria-label={`Quitar ${a.name}`}>
+        <button onClick={() => quitar(id, a, qty)} className="toque w-8 h-8 text-gris" aria-label={`Quitar ${a.name}`}>
           <Icono n="close" size={18} />
         </button>
       )}

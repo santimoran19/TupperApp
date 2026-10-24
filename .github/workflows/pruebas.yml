@@ -60,6 +60,7 @@ jobs:
         with:
           deno-version: v2.x
       - run: npm ci
+      # chromium trae también el Chromium completo, que usa la prueba 12 para los avisos push
       - run: npx playwright install --with-deps chromium
       - name: Pruebas de navegador
         run: npx playwright test
@@ -68,5 +69,36 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: resultado-navegador
+          path: test-results/
+          retention-days: 7
+
+  # WebKit, el motor de Safari (T-03): una parte de las pruebas de navegador (ver playwright.config.js, EN_SAFARI).
+  # Por ahora solo a mano (Actions → Pruebas → Run workflow), hasta que haya corrido bien unas veces.
+  safari:
+    name: Pruebas en WebKit (Safari)
+    needs: rapidas
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: npm ci
+      - run: npx playwright install --with-deps webkit
+      - name: Pruebas en WebKit
+        run: npx playwright test
+        env:
+          NAVEGADOR: webkit
+      - name: Guardar lo que quedó si falló
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: resultado-webkit
           path: test-results/
           retention-days: 7

@@ -77,7 +77,8 @@ export async function leerFoto(instrucciones: string, dataUrl: string, signal: A
 }
 
 // Texto -> ítems. Primero Groq (rápido y con cupo grande); si no, los de Cloudflare / Gemini sin imagen.
-export async function leerTexto(instrucciones: string, texto: string, signal: AbortSignal): Promise<Resultado<string>> {
+// `maxTokens`: la receta (1.29) necesita más lugar que una comida
+export async function leerTexto(instrucciones: string, texto: string, signal: AbortSignal, maxTokens = 900): Promise<Resultado<string>> {
   let ultimo = { estado: 503, detalle: 'sin_configurar' }
   const intentos: Config[] = []
   if (env('GROQ_API_KEY'))
@@ -85,7 +86,7 @@ export async function leerTexto(instrucciones: string, texto: string, signal: Ab
   intentos.push(...configuraciones())
   for (const c of intentos) {
     const razona = c.modelo.startsWith('openai/gpt-oss')
-    const r = await chat(c.url, c.clave, c.modelo, [{ role: 'system', content: instrucciones }, { role: 'user', content: texto }], signal, razona ? { reasoning_effort: 'low', include_reasoning: false } : {})
+    const r = await chat(c.url, c.clave, c.modelo, [{ role: 'system', content: instrucciones }, { role: 'user', content: texto }], signal, { max_tokens: maxTokens, ...(razona ? { reasoning_effort: 'low', include_reasoning: false } : {}) })
     if (r.ok && r.texto) return { ok: true, valor: r.texto, proveedor: c.nombre }
     ultimo = r.ok ? { estado: 502, detalle: 'respuesta_vacia' } : { estado: r.estado, detalle: `${c.nombre}: ${r.detalle}` }
     console.error('registrar-ia texto', c.nombre, c.modelo, ultimo.estado, ultimo.detalle)

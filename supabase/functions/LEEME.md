@@ -151,3 +151,67 @@ Con `GEMINI_API_KEY` cargada, Gemini también entra de respaldo en la carga con 
 ## Pruebas
 
 Como con `registrar-ia`, las pruebas de navegador reemplazan la función por una de mentira; la lógica (`logica.ts`, `proveedores.ts`) tiene pruebas unitarias (`pruebas/unidad/novedades-128.test.js` y `analisis.test.js`). Nunca se probó contra Gemini de verdad: la primera vez, hacé un par de preguntas desde el teléfono y mirá los registros de la función.
+
+# Novedades de la 1.29
+
+## Volver a publicar `asistente-ia` y `registrar-ia`
+
+El asistente ahora puede proponer "Revisar y anotar" lo que le contás (IA-06) y `registrar-ia` lee recetas pegadas (IA-04, `tipo: 'receta'`). Hasta publicarlas de nuevo, la app anda igual pero sin esas dos cosas:
+
+```
+supabase functions deploy asistente-ia --project-ref bpxxwmcqidoxgmfyzhpc
+supabase functions deploy registrar-ia --project-ref bpxxwmcqidoxgmfyzhpc
+```
+
+## Verificación en dos pasos (S-06)
+
+1. Correr `supabase/actualizacion-22.sql` (también trae las tablas de los recordatorios; es aditivo).
+2. En el panel: **Authentication → Sign In / Providers → Multi-Factor** (o **Auth → MFA**), que **TOTP (App Authenticator)** esté en *Enabled*. Viene prendido por defecto.
+3. Nada más: la opción aparece en Perfil. Quien la active no puede ver sus datos con una sesión de solo contraseña (la base lo exige, no solo la app).
+
+**Ojo con las tablas nuevas:** las que se creen de acá en adelante tienen que sumar la regla `dos_pasos` (copiá el bloque `do $$ ... $$` del final de `actualizacion-22.sql`; se puede correr de nuevo sin problema). Las funciones `security definer` (las `rpc` de hogares, registrar, etc.) todavía no piden el código: queda como S-07.
+
+## Recordatorios con la app cerrada (`recordatorios-push`, F-06)
+
+La app copia a la tabla `recordatorios` los horarios de cada persona que prendió "Aunque la app esté cerrada", y el navegador se suscribe a las notificaciones push (`push_suscripciones`). Esta función la llama **el reloj de la base (pg_cron) cada 15 minutos**: mira qué hora es donde está cada uno, qué comidas ya anotó, y manda los avisos (comidas, agua y ayuno cumplido), cifrados con el estándar Web Push. No usa servicios pagos: el envío lo hace el servicio de push de cada navegador (Google, Apple, Mozilla), gratis.
+
+### Pasos (una sola vez)
+
+1. **Claves VAPID** (identifican a Tupper ante los servicios de push). Generalas en tu compu, no las pegues en ningún chat:
+   ```
+   npx web-push generate-vapid-keys
+   ```
+   Te da una *Public Key* y una *Private Key*.
+2. **Clave del reloj**: cualquier texto largo al azar, por ejemplo `openssl rand -hex 32`.
+3. **Secretos de la función** (Edge Functions → Secrets): `VAPID_PUBLICA` (la pública), `VAPID_PRIVADA` (la privada), `VAPID_SUJETO` (`mailto:tu-mail@...`) y `CRON_CLAVE` (la del paso 2).
+4. **Publicarla sin verificación de JWT** (la llama el reloj con `x-cron-clave`, no una persona; la clave publicable nueva no es un JWT):
+   ```
+   supabase functions deploy recordatorios-push --no-verify-jwt --project-ref bpxxwmcqidoxgmfyzhpc
+   ```
+5. **En Vercel**: variable de entorno `VITE_VAPID_PUBLIC` = la clave pública (la misma de `VAPID_PUBLICA`) y volver a publicar el sitio. Sin esta variable el interruptor no aparece en la app.
+6. **El reloj**, en el SQL Editor (reemplazá `LA-CLAVE-DEL-PASO-2`):
+   ```sql
+   create extension if not exists pg_cron;
+   create extension if not exists pg_net;
+   select vault.create_secret('LA-CLAVE-DEL-PASO-2', 'cron_clave');
+   select cron.schedule('recordatorios-push', '*/15 * * * *', $$
+     select net.http_post(
+       url := 'https://bpxxwmcqidoxgmfyzhpc.supabase.co/functions/v1/recordatorios-push',
+       headers := jsonb_build_object(
+         'Content-Type', 'application/json',
+         'x-cron-clave', (select decrypted_secret from vault.decrypted_secrets where name = 'cron_clave')
+       ),
+       body := '{}'::jsonb,
+       timeout_milliseconds := 20000
+     );
+   $$);
+   ```
+   Para ver si anda: `select * from cron.job_run_details order by start_time desc limit 5;` y los registros de la función (devuelve `{ usuarios, enviados }`). Para apagarlo: `select cron.unschedule('recordatorios-push');`.
+
+### Cómo probarlo
+
+Prendé los recordatorios en Perfil, después "Aunque la app esté cerrada" (pide permiso de notificaciones), poné una comida un par de minutos más tarde, cerrá la app y esperá al siguiente cuarto de hora. En iPhone solo funciona con la app instalada en la pantalla de inicio (iOS 16.4 o más nuevo).
+
+### Pruebas
+
+`pruebas/unidad/push.test.js` comprueba el cifrado (descifrando con la librería `http_ece`, la que usa `web-push`), la firma VAPID y que los avisos sean los mismos que con la app abierta. `pruebas/unidad/dos-pasos.test.js` corre la actualización 22 en un Postgres de verdad. La prueba de navegador 12 entrega un push al service worker y mira que muestre la notificación solo con la app cerrada. Nunca se probó contra un servicio de push de verdad: la primera vez mirá los registros de la función (un 401/403 del servicio de push suele ser la clave VAPID mal copiada).

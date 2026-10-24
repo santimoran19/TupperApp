@@ -2,7 +2,8 @@
 // Guarda todo en memoria y arranca con los alimentos y recetas de la base. No toca internet ni el proyecto real.
 // Si Deno está instalado, además levanta las funciones `analizar-semana` y `entrar` de verdad para probarlas enteras.
 import http from 'node:http'
-import { randomUUID } from 'node:crypto'
+import { randomBytes, randomUUID } from 'node:crypto'
+import { aBase32, codigoTotp } from './totp.mjs'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { conAlcohol } from '../../../scripts/seed-data.mjs'
@@ -816,9 +817,10 @@ const verificaciones = []
 const captchasUsados = new Set() // cada comprobación de "no soy un robot" sirve una sola vez
 const ultimoMail = new Map() // email -> cuándo se le mandó el último mail de recuperación o de confirmación
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url')
-function sesion(u) {
+// La sesión, con el nivel (aal1: solo contraseña; aal2: también con el código de la verificación en dos pasos)
+function sesion(u, aal = 'aal1') {
   const exp = Math.floor(Date.now() / 1000) + 3600
-  const token = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: u.id, email: u.email, role: 'authenticated', exp })}.ZmlybWE`
+  const token = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: u.id, email: u.email, role: 'authenticated', aal, exp })}.ZmlybWE`
   const user = {
     id: u.id,
     aud: 'authenticated',
@@ -826,10 +828,29 @@ function sesion(u) {
     email: u.email,
     app_metadata: {},
     user_metadata: {},
+    factors: (u.factores || []).map(({ secreto: _s, ...f }) => f),
     created_at: new Date().toISOString(),
   }
-  return { access_token: token, token_type: 'bearer', expires_in: 3600, expires_at: exp, refresh_token: 'r-' + u.id, user }
+  return {
+    access_token: token,
+    token_type: 'bearer',
+    expires_in: 3600,
+    expires_at: exp,
+    refresh_token: `r-${u.id}${aal === 'aal2' ? ':2' : ''}`,
+    user,
+  }
 }
+function aalDe(req) {
+  const t = (req.headers.authorization || '').replace('Bearer ', '')
+  try {
+    return JSON.parse(Buffer.from(t.split('.')[1], 'base64url').toString()).aal || 'aal1'
+  } catch {
+    return 'aal1'
+  }
+}
+// Verificación en dos pasos (S-06): códigos TOTP de verdad (RFC 6238: 6 números, cada 30 segundos, con SHA-1)
+const conFactorActivo = (u) => (u?.factores || []).some((f) => f.status === 'verified')
+const desafios = new Map() // id del desafío -> id del factor
 function uidDe(req) {
   const t = (req.headers.authorization || '').replace('Bearer ', '')
   try {
@@ -1029,8 +1050,12 @@ const server = http.createServer(async (req, res) => {
         if (!u.confirmado) return send(400, { code: 400, error_code: 'email_not_confirmed', msg: 'Email not confirmed' })
         return send(200, sesion(u))
       }
-      const u = [...users.values()].find((x) => 'r-' + x.id === body.refresh_token)
-      return u ? send(200, sesion(u)) : send(400, { msg: 'bad refresh' })
+      const [id, nivel] = String(body.refresh_token || '')
+        .replace(/^r-/, '')
+        .split(':')
+      const u = [...users.values()].find((x) => x.id === id)
+      // Renovar la sesión mantiene el nivel, salvo que la verificación ya no esté activada
+      return u ? send(200, sesion(u, nivel === '2' && conFactorActivo(u) ? 'aal2' : 'aal1')) : send(400, { msg: 'bad refresh' })
     }
     if (url.pathname === '/auth/v1/user') {
       const u = [...users.values()].find((x) => x.id === uidDe(req))
@@ -1043,6 +1068,65 @@ const server = http.createServer(async (req, res) => {
       return send(200, sesion(u).user)
     }
     if (url.pathname === '/auth/v1/logout') return send(204)
+    // ---- Verificación en dos pasos (como Supabase Auth: /factors)
+    const factor = url.pathname.match(/^\/auth\/v1\/factors(?:\/([\w-]+))?(?:\/(challenge|verify))?$/)
+    if (factor) {
+      const u = [...users.values()].find((x) => x.id === uidDe(req))
+      if (!u) return send(401, { msg: 'no' })
+      u.factores ||= []
+      const [, idFactor, paso] = factor
+      if (!idFactor && req.method === 'POST') {
+        // Para sumar uno con otro ya activo hace falta haber entrado con el código
+        if (conFactorActivo(u) && aalDe(req) !== 'aal2')
+          return send(403, { code: 'insufficient_aal', error_code: 'insufficient_aal', msg: 'AAL2 required to enroll a new factor' })
+        if (u.factores.length >= 10)
+          return send(422, { error_code: 'too_many_enrolled_mfa_factors', msg: 'Maximum number of verified factors reached' })
+        const secreto = aBase32(randomBytes(20))
+        const nuevo = {
+          id: randomUUID(),
+          friendly_name: body.friendly_name,
+          factor_type: 'totp',
+          status: 'unverified',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          secreto,
+        }
+        u.factores.push(nuevo)
+        const uri = `otpauth://totp/Tupper:${u.email}?secret=${secreto}&issuer=Tupper`
+        return send(200, {
+          id: nuevo.id,
+          type: 'totp',
+          friendly_name: nuevo.friendly_name,
+          totp: {
+            qr_code: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>',
+            secret: secreto,
+            uri,
+          },
+        })
+      }
+      const f = u.factores.find((x) => x.id === idFactor)
+      if (!f) return send(404, { error_code: 'mfa_factor_not_found', msg: 'Factor not found' })
+      if (paso === 'challenge') {
+        const id = randomUUID()
+        desafios.set(id, f.id)
+        return send(200, { id, type: 'totp', expires_at: Math.floor(Date.now() / 1000) + 300 })
+      }
+      if (paso === 'verify') {
+        if (desafios.get(body.challenge_id) !== f.id) return send(422, { error_code: 'mfa_challenge_expired', msg: 'Challenge expired' })
+        const ahora = Date.now()
+        const bien = [-30000, 0, 30000].some((d) => codigoTotp(f.secreto, ahora + d) === String(body.code))
+        if (!bien) return send(422, { error_code: 'mfa_verification_failed', msg: 'Invalid TOTP code entered' })
+        desafios.delete(body.challenge_id)
+        f.status = 'verified'
+        return send(200, sesion(u, 'aal2'))
+      }
+      if (req.method === 'DELETE') {
+        if (f.status === 'verified' && aalDe(req) !== 'aal2')
+          return send(403, { code: 'insufficient_aal', error_code: 'insufficient_aal', msg: 'AAL2 required to unenroll verified factor' })
+        u.factores = u.factores.filter((x) => x !== f)
+        return send(200, { id: f.id })
+      }
+    }
     // Administración de usuarios (solo con la clave de servicio, como en Supabase): la usa la función `entrar`
     const admin = url.pathname.match(/^\/auth\/v1\/admin\/users\/([\w-]+)$/)
     if (admin) {
@@ -1163,6 +1247,11 @@ const server = http.createServer(async (req, res) => {
     const servicio = esServicio(req)
     const uid = uidDe(req)
     if (!uid && !servicio) return send(401, { message: 'sin sesión' })
+    // La base exige el código a quien activó la verificación en dos pasos (actualizacion-22.sql): no ve nada ni cambia nada
+    if (!servicio && aalDe(req) !== 'aal2' && conFactorActivo([...users.values()].find((x) => x.id === uid))) {
+      if (req.method === 'GET' || req.method === 'HEAD') return send(200, [])
+      return send(403, { code: '42501', message: `new row violates row-level security policy for table "${tabla}"` })
+    }
     if (!servicio && ['hogares', 'hogar_miembros', 'catalogo', 'catalogo_aportes'].includes(tabla))
       return send(403, { message: 'permission denied for table ' + tabla })
     const dueno = uid ? ambito(uid) : null

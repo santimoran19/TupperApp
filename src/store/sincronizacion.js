@@ -233,6 +233,7 @@ export function crearSincronizacion({ uid, setE, avisar, alEstado }) {
     try {
       await cambiarGuardado(CLAVE_COLA, (guardada) => [...(Array.isArray(guardada) ? guardada : []), cambio])
       confirmados.add(cambio.id)
+      if (!conexion) pedirAviso()
     } catch {
       if (avisoCopia) return
       avisoCopia = true
@@ -522,6 +523,18 @@ export function crearSincronizacion({ uid, setE, avisar, alEstado }) {
   const alSalir = () => {
     if (document.visibilityState === 'hidden') escribirFoto()
   }
+  // Sin conexión y con cambios en la cola, se le pide al navegador que avise cuando vuelva (1.29, T-07): el service
+  // worker (src/sw.js) le pasa el aviso a la app aunque esté en segundo plano, y ahí se manda la cola sin esperar a volver.
+  function pedirAviso() {
+    try {
+      globalThis.navigator?.serviceWorker?.ready.then((r) => r.sync?.register('tupper-cola')).catch(() => {})
+    } catch {
+      // navegadores sin esto: se manda al volver a la app, como siempre
+    }
+  }
+  const alAvisoDelSW = (ev) => {
+    if (ev.data?.tipo === 'tupper:sincronizar' && !pasada && (cola.length > 0 || !conexion)) sincronizar()
+  }
 
   // "Reintentar": lo pide la persona, así que no se espera la pausa
   function reintentar() {
@@ -541,6 +554,7 @@ export function crearSincronizacion({ uid, setE, avisar, alEstado }) {
     window.addEventListener('focus', alVolver)
     window.addEventListener('online', alVolver)
     window.addEventListener('pagehide', escribirFoto)
+    globalThis.navigator?.serviceWorker?.addEventListener?.('message', alAvisoDelSW)
     relojCadaTanto = setInterval(cadaTanto, REINTENTO_MS)
     // Se le pide al navegador que no borre la copia si le falta lugar (puede decir que no; no cambia nada)
     navigator.storage?.persist?.().catch(() => {})
@@ -574,6 +588,7 @@ export function crearSincronizacion({ uid, setE, avisar, alEstado }) {
     window.removeEventListener('focus', alVolver)
     window.removeEventListener('online', alVolver)
     window.removeEventListener('pagehide', escribirFoto)
+    globalThis.navigator?.serviceWorker?.removeEventListener?.('message', alAvisoDelSW)
     clearInterval(relojCadaTanto)
     clearTimeout(relojPronto)
     clearTimeout(relojPausa)

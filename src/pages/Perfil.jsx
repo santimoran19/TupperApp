@@ -1,6 +1,9 @@
 // Perfil: objetivo, progreso de peso y cintura, y comidas que se hacen fuera de casa.
 import Recordatorios from '../components/Recordatorios'
+import GraficoPeso from '../components/GraficoPeso'
+import { faltaParaMeta } from '../lib/peso'
 import Opinion from '../components/Opinion'
+import DosPasos from '../components/DosPasos'
 import ExportarPlanilla from '../components/ExportarPlanilla'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -16,49 +19,6 @@ import { TEMAS, elegirTema, temaGuardado } from '../lib/tema'
 import { VERSION } from '../lib/eventos'
 import SiluetaInteractiva from '../components/SiluetaInteractiva'
 import { hayWebGL, prenderTresD, tresDPrendido } from '../components/Vista3D'
-
-function Grafico({ puntos, meta }) {
-  if (puntos.length < 2) return <p className="text-sm text-gris">Cuando tengas dos registros aparece la curva.</p>
-  const W = 380,
-    H = 150,
-    m = { i: 34, d: 10, a: 12, b: 22 }
-  const valores = puntos.map((p) => p.v).concat(meta ? [meta] : [])
-  const min = Math.min(...valores) - 1
-  const max = Math.max(...valores) + 1
-  const x = (i) => m.i + (i * (W - m.i - m.d)) / (puntos.length - 1)
-  const y = (v) => m.a + ((max - v) * (H - m.a - m.b)) / (max - min)
-  const linea = puntos.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ')
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
-      {[min + 1, (min + max) / 2, max - 1].map((v) => (
-        <g key={v}>
-          <line x1={m.i} x2={W - m.d} y1={y(v)} y2={y(v)} className="stroke-linea" />
-          <text x={m.i - 6} y={y(v) + 4} textAnchor="end" fontSize="10" className="fill-gris">
-            {redondear(v, 1)}
-          </text>
-        </g>
-      ))}
-      {meta && (
-        <g>
-          <line x1={m.i} x2={W - m.d} y1={y(meta)} y2={y(meta)} className="stroke-naranja" strokeDasharray="5 4" />
-          <text x={W - m.d} y={y(meta) - 4} textAnchor="end" fontSize="10" className="fill-naranja-oscuro">
-            meta {meta} kg
-          </text>
-        </g>
-      )}
-      <path d={linea} fill="none" className="stroke-verde-texto" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-      {puntos.map((p, i) => (
-        <circle key={p.f} cx={x(i)} cy={y(p.v)} r="3.5" className="fill-verde-texto" />
-      ))}
-      <text x={x(0)} y={H - 6} fontSize="10" className="fill-gris">
-        {fechaCorta(puntos[0].f)}
-      </text>
-      <text x={x(puntos.length - 1)} y={H - 6} textAnchor="end" fontSize="10" className="fill-gris">
-        {fechaCorta(puntos[puntos.length - 1].f)}
-      </text>
-    </svg>
-  )
-}
 
 export default function Perfil() {
   const {
@@ -112,7 +72,8 @@ export default function Perfil() {
   const actual = pesos.length ? pesos[pesos.length - 1].v : Number(perfil.weight_kg) || null
   const inicio = pesos.length ? pesos[0].v : actual
   const bajado = actual && inicio ? redondear(inicio - actual, 1) : 0
-  const falta = actual && perfil.goal_weight_kg ? redondear(actual - perfil.goal_weight_kg, 1) : null
+  // Sirve para bajar y para subir de peso (antes, con una meta más alta que el peso de hoy, decía "¡Llegaste!")
+  const falta = faltaParaMeta({ actual, meta: Number(perfil.goal_weight_kg) || null, inicio })
 
   const errMedida = nueva
     ? {
@@ -201,10 +162,10 @@ export default function Perfil() {
               </div>
               <div>
                 <p className="text-xs text-gris">Falta</p>
-                <p className="font-bold">{falta === null ? '—' : falta <= 0 ? '¡Llegaste!' : `${falta} kg`}</p>
+                <p className="font-bold">{falta === null ? '—' : falta.llegaste ? '¡Llegaste!' : `${falta.kg} kg`}</p>
               </div>
             </div>
-            <Grafico puntos={pesos} meta={Number(perfil.goal_weight_kg) || null} />
+            <GraficoPeso puntos={pesos} meta={Number(perfil.goal_weight_kg) || null} inicio={inicio} />
             {ordenadas.length > 0 && (
               <div className="mt-3 divide-y divide-linea">
                 {[...ordenadas]
@@ -290,6 +251,8 @@ export default function Perfil() {
           <Hogar />
 
           <Recordatorios />
+
+          <DosPasos />
 
           <Opinion />
 

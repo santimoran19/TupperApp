@@ -95,6 +95,25 @@ export function cantidadPara(alimento, item) {
 export const porcionesPara = (item) =>
   item.unidad === 'unidad' || item.unidad === 'porcion' ? Math.max(0.5, redondearA(item.cantidad, 0.5)) : 1
 
+// Los ingredientes de una receta pegada (1.29, IA-04): solo alimentos (una receta no lleva otra receta), con la cantidad
+// en la unidad de cada uno. Lo que no se encuentra queda en `sinCruzar` para buscarlo a mano.
+export function ingredientesDe(items, { alimentos }) {
+  const ingredientes = []
+  const sinCruzar = []
+  for (const item of items) {
+    const [mejor] = emparejar(item, { alimentos, recetas: [] })
+    if (!mejor || mejor.puntaje < NIVEL_DUDOSO) {
+      sinCruzar.push(item)
+      continue
+    }
+    const qty = cantidadPara(mejor.objeto, item)
+    const ya = ingredientes.find((i) => i.food_id === mejor.objeto.id)
+    if (ya) ya.qty = String(Number(ya.qty) + qty)
+    else ingredientes.push({ food_id: mejor.objeto.id, qty: String(qty) })
+  }
+  return { ingredientes, sinCruzar }
+}
+
 // Pasa los ítems de la IA a platos del formulario de Registrar ({ food_id, qty } o { recipe_id, porciones }) y deja lo que no se pudo
 export function platosDe(items, { alimentos, recetas }) {
   const platos = []

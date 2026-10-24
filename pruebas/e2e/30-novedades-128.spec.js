@@ -179,7 +179,7 @@ test('carga rápida, combos, copiar día, asistente, opiniones, planilla, altura
     expect(opiniones[0]).toMatchObject({ tipo: 'problema', texto: 'El botón de compartir no anda en mi teléfono', pantalla: '/perfil' })
 
     await pg.getByTestId('exportar-planilla').click()
-    await pg.getByRole('radio', { name: 'Todo' }).click()
+    await pg.getByRole('radiogroup', { name: 'Período', exact: true }).getByRole('radio', { name: 'Todo' }).click()
     const [descarga] = await Promise.all([pg.waitForEvent('download'), pg.getByRole('button', { name: /Descargar planilla/ }).click()])
     expect(descarga.suggestedFilename()).toMatch(/^tupper-registro-\d{4}-\d{2}-\d{2}\.csv$/)
     const contenido = fs.readFileSync(await descarga.path(), 'utf8')

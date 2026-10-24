@@ -39,41 +39,30 @@ export default defineConfig({
         background_color: '#f9fbf8',
         display: 'standalone',
         orientation: 'portrait',
+        id: '/',
         start_url: '/',
+        // Accesos directos al mantener apretado el ícono de la app instalada (Android y compu)
+        shortcuts: [
+          { name: 'Registrar comida', short_name: 'Registrar', url: '/registrar', icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+          { name: 'Preguntale a la IA', short_name: 'Asistente', url: '/asistente', icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+          { name: 'Despensa', url: '/despensa', icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+          { name: 'Lista de compras', short_name: 'Compras', url: '/compras', icons: [{ src: 'icon-192.png', sizes: '192x192' }] },
+        ],
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' },
           { src: 'icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: {
-        navigateFallback: '/index.html',
+      // El service worker es propio (src/sw.js, 1.29): además de guardar la app, muestra las notificaciones push
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // La imagen de vista previa es para las redes: no hace falta guardarla en el teléfono. three.js tampoco se guarda de
-        // entrada (pesa ~190 KB comprimido y se puede apagar): se guarda la primera vez que se usa
+        // entrada (pesa ~190 KB comprimido y se puede apagar): se guarda la primera vez que se usa (ver src/sw.js)
         globIgnores: ['**/og.png', '**/assets/tres-*.js'],
-        runtimeCaching: [
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/assets/tres-'),
-            handler: 'CacheFirst',
-            options: { cacheName: 'tres', expiration: { maxEntries: 4 } },
-          }, // La malla del cuerpo en 3D (~800 KB, MakeHuman CC0): se baja la primera vez que se abre el cuerpo y queda guardada
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith('/modelos/'),
-            handler: 'CacheFirst',
-            options: { cacheName: 'modelos', expiration: { maxEntries: 4 }, cacheableResponse: { statuses: [200] } },
-          },
-          // Las fotos de alimentos y recetas (Supabase Storage): una vez vistas, se guardan para verlas sin conexión
-          {
-            urlPattern: ({ url }) => url.pathname.includes('/storage/v1/object/public/fotos/'),
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'fotos',
-              expiration: { maxEntries: 800, maxAgeSeconds: 60 * 60 * 24 * 60 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
-        ],
       },
     }),
   ],

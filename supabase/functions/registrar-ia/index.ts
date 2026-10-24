@@ -2,6 +2,7 @@
 //   POST /functions/v1/registrar-ia   { "tipo": "foto", "imagen": "<base64>", "mime": "image/jpeg" }
 //                                     { "tipo": "voz",  "audio": "<base64>",  "mime": "audio/webm" }
 //                                     { "tipo": "texto", "texto": "dos milanesas con ensalada" }
+//                                     { "tipo": "receta", "texto": "<receta pegada>" }  (1.29: devuelve { receta, restantes })
 // Devuelve { items: [{ nombre, cantidad, unidad, gramos, confianza }], texto?, restantes }. La app los cruza con sus alimentos y la
 // persona confirma o corrige antes de anotar nada. No se guarda la foto, el audio ni lo dicho: solo se cuenta el pedido (ai_usos).
 // Necesita al menos un proveedor cargado como secreto (ver proveedores.ts) y la actualización 20 de la base.
@@ -11,10 +12,13 @@ import {
   encabezadosCors,
   esBase64,
   INSTRUCCIONES_COMIDA,
+  INSTRUCCIONES_RECETA,
   interpretarItems,
+  interpretarReceta,
   MAX_AUDIO,
   MAX_IMAGEN,
   MAX_TEXTO,
+  MAX_TEXTO_RECETA,
   origenAjeno,
   origenesPermitidos,
   PISTA_VOZ,
@@ -60,7 +64,7 @@ async function manejar(req: Request): Promise<Response> {
     // ---- Qué se pide, y que venga bien armado
     const cuerpo = await req.json().catch(() => ({}))
     const tipo = cuerpo.tipo
-    if (!['foto', 'voz', 'texto'].includes(tipo)) return fallo(400, 'tipo', 'Pedido incorrecto.')
+    if (!['foto', 'voz', 'texto', 'receta'].includes(tipo)) return fallo(400, 'tipo', 'Pedido incorrecto.')
     let bytes: Uint8Array | null = null
     let mime = ''
     let texto = ''
@@ -73,6 +77,9 @@ async function manejar(req: Request): Promise<Response> {
       if (!TIPOS_AUDIO.includes(mime) || !esBase64(cuerpo.audio)) return fallo(400, 'audio', 'El audio no es válido.')
       if (bytesDeBase64(cuerpo.audio) > MAX_AUDIO) return fallo(413, 'grande', 'El audio es demasiado largo.')
       bytes = desdeBase64(cuerpo.audio)
+    } else if (tipo === 'receta') {
+      texto = String(cuerpo.texto || '').trim().slice(0, MAX_TEXTO_RECETA)
+      if (texto.length < 20) return fallo(400, 'texto', 'Pegá la receta entera, con los ingredientes.')
     } else {
       texto = String(cuerpo.texto || '').trim().slice(0, MAX_TEXTO)
       if (texto.length < 2) return fallo(400, 'texto', 'Escribí qué comiste.')
@@ -85,7 +92,8 @@ async function manejar(req: Request): Promise<Response> {
     if (usos.error) throw new Error('usos: ' + usos.error.message)
     if ((usos.count ?? 0) >= LIMITE_DIARIO) return fallo(429, 'limite', `Llegaste al máximo de ${LIMITE_DIARIO} pedidos por día. Probá mañana o cargá la comida a mano.`)
     // Se cuenta antes de consultar (si fallara el proveedor igual consumió cupo de la red: evita que se repita sin parar)
-    const anotado = await db.from('ai_usos').insert({ user_id: usuario.id, kind: tipo })
+    // La receta cuenta como un pedido de texto (la tabla acepta foto, voz, texto y chat)
+    const anotado = await db.from('ai_usos').insert({ user_id: usuario.id, kind: tipo === 'receta' ? 'texto' : tipo })
     if (anotado.error) throw new Error('anotar: ' + anotado.error.message)
     // Limpieza: las filas de más de 2 días no hacen falta
     await db.from('ai_usos').delete().eq('user_id', usuario.id).lt('created_at', new Date(Date.now() - 2 * 86400000).toISOString())
@@ -95,6 +103,13 @@ async function manejar(req: Request): Promise<Response> {
     const signal = AbortSignal.timeout(40000)
     let dicho: string | undefined
     let salida
+    if (tipo === 'receta') {
+      const r = await leerTexto(INSTRUCCIONES_RECETA, texto, signal, 2500)
+      if (!r.ok) return errorDeProveedor(r.estado, r.detalle)
+      const receta = interpretarReceta(r.valor)
+      if (!receta) return fallo(422, 'no_es_receta', 'No encontré una receta con ingredientes en ese texto.')
+      return responder(200, { receta, restantes, proveedor: r.proveedor })
+    }
     if (tipo === 'foto') {
       salida = await leerFoto(INSTRUCCIONES_COMIDA, `data:${mime};base64,${String(cuerpo.imagen).replace(/\s/g, '')}`, signal)
     } else {

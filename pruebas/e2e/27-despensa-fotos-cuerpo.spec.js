@@ -20,7 +20,7 @@ const llamar = (pg, metodo, ruta, cuerpo, cabeceras = {}) =>
 
 test('despensa con vencimientos, fotos, silueta, músculos y 3D', async ({ browser }) => {
   const errores = []
-  const ctx = await contexto(browser, { sesion: true })
+  const ctx = await contexto(browser, { sesion: true, tresD: true })
   const pg = await ctx.newPage()
   escuchar(pg, errores)
   const tarjeta = (nombre) => pg.locator('div.tarjeta', { has: pg.locator(`p.font-semibold:text-is("${nombre}")`) })
@@ -177,7 +177,13 @@ test('despensa con vencimientos, fotos, silueta, músculos y 3D', async ({ brows
     const resumen = pg.locator('[data-tour="diario-resumen"]')
     await expect(resumen.getByText(/kcal de [\d.]+/)).toBeVisible()
     const hayWebGL = await pg.evaluate(() => !!document.createElement('canvas').getContext('webgl'))
-    if (hayWebGL) await expect(resumen.locator('canvas')).toHaveCount(1)
+    if (hayWebGL) {
+      await expect(resumen.locator('canvas')).toHaveCount(1)
+      // Las calorías van arriba del tupper y no encima: al girar, la tapa las tapaba (1.28)
+      const kcal = await pg.getByTestId('diario-kcal').boundingBox()
+      const lienzo = await resumen.locator('canvas').boundingBox()
+      expect(kcal.y + kcal.height).toBeLessThanOrEqual(lienzo.y + 1)
+    }
     await pg.goto(APP + '/perfil')
     const llave = pg.getByRole('switch', { name: /Dibujos en 3D/ })
     if (hayWebGL) {

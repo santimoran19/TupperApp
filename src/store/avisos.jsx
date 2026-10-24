@@ -15,7 +15,9 @@ export function ProveedorAvisos({ children }) {
   const [aviso, setAviso] = useState(null)
   const [pregunta, setPregunta] = useState(null)
 
-  const avisar = useCallback((texto, tipo = 'ok') => setAviso({ texto, tipo, id: Date.now() }), [])
+  // `accion` (1.29, D-06): un botón en el cartel, por ejemplo { texto: 'Deshacer', hacer: () => ... }
+  const avisar = useCallback((texto, tipo = 'ok', accion = null) => setAviso({ texto, tipo, accion, id: Date.now() }), [])
+  const quitarAviso = useCallback(() => setAviso(null), [])
   // `confirmar({...})` devuelve una promesa que da true o false cuando la persona contesta
   const confirmar = useCallback((opciones) => new Promise((resolver) => setPregunta({ ...opciones, resolver })), [])
   const responder = useCallback(
@@ -29,12 +31,13 @@ export function ProveedorAvisos({ children }) {
 
   useEffect(() => {
     if (!aviso) return
-    const t = setTimeout(() => setAviso(null), aviso.tipo === 'error' || aviso.tipo === 'aviso' ? 6000 : 2500)
+    // Con un botón (Deshacer) se deja más tiempo: hay que llegar a tocarlo
+    const t = setTimeout(() => setAviso(null), aviso.accion ? 7000 : aviso.tipo === 'error' || aviso.tipo === 'aviso' ? 6000 : 2500)
     return () => clearTimeout(t)
   }, [aviso])
 
   const enPantalla = useMemo(() => ({ aviso, pregunta }), [aviso, pregunta])
-  const funciones = useMemo(() => ({ avisar, confirmar, responder }), [avisar, confirmar, responder])
+  const funciones = useMemo(() => ({ avisar, confirmar, responder, quitarAviso }), [avisar, confirmar, responder, quitarAviso])
   return (
     <CtxAvisar.Provider value={funciones}>
       <CtxEnPantalla.Provider value={enPantalla}>{children}</CtxEnPantalla.Provider>

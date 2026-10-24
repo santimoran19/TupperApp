@@ -20,7 +20,9 @@ export const CELULAR = { viewport: { width: 412, height: 900 }, deviceScaleFacto
 export const IPHONE = { viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, colorScheme: 'dark' }
 
 // Abre un navegador "nuevo" (sin nada guardado) o con la sesión de la prueba anterior.
-export async function contexto(browser, { sesion = false, ...opciones } = {}) {
+// `tresD`: los dibujos 3D van apagados salvo en las pruebas que los miran (T-08, 1.29). En la máquina de las pruebas el 3D
+// se dibuja sin placa de video y deja todo lento: un toque llegó a tardar 8 segundos y algunas pruebas fallaban por tiempo.
+export async function contexto(browser, { sesion = false, tresD = false, ...opciones } = {}) {
   const ctx = await browser.newContext({
     ...CELULAR,
     locale: 'es-AR',
@@ -30,6 +32,14 @@ export async function contexto(browser, { sesion = false, ...opciones } = {}) {
   })
   ctx.setDefaultTimeout(30000)
   await ctx.clock.setFixedTime(new Date(AHORA))
+  if (!tresD)
+    await ctx.addInitScript(() => {
+      try {
+        localStorage.setItem('tupper:3d', 'no')
+      } catch {
+        /* sin almacenamiento: queda como esté */
+      }
+    })
   // Por las dudas: nada de esto tiene que llegar nunca al proyecto real
   await ctx.route(/\.supabase\.co\//, (ruta) => ruta.abort())
   // Los dos servicios de afuera que usa la pantalla de acceso se reemplazan por unos de mentira: las pruebas no salen a internet
@@ -105,6 +115,10 @@ export async function adelantarReloj(ctx, minutos) {
 export async function guardarSesion(ctx) {
   fs.mkdirSync(path.dirname(SESION), { recursive: true })
   await ctx.storageState({ path: SESION })
+  // El 3D apagado de las pruebas (ver `contexto`) no se guarda con la sesión: si no, las que lo miran lo heredarían apagado
+  const estado = JSON.parse(fs.readFileSync(SESION, 'utf8'))
+  for (const origen of estado.origins || []) origen.localStorage = (origen.localStorage || []).filter((x) => x.name !== 'tupper:3d')
+  fs.writeFileSync(SESION, JSON.stringify(estado))
 }
 
 // Junta los errores de la consola y de la página. Con `dialogos`, acepta los confirm() del navegador.
