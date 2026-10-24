@@ -32,7 +32,7 @@ export default function Bienvenida() {
           </div>
         </div>
         <div className="tarjeta p-5">
-          <FormularioPerfil textoBoton="Empezar" onGuardar={guardar} />
+          <FormularioPerfil textoBoton="Empezar" onGuardar={guardar} consentimiento />
         </div>
         <button onClick={() => salir({ preguntar: false })} className="block mx-auto mt-4 text-sm text-gris underline">
           Salir

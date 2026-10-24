@@ -26,6 +26,7 @@ const LATERAL = [
   { a: '/compras', icono: 'shopping_cart', texto: 'Lista de compras' },
   { a: '/resumen', icono: 'bar_chart', texto: 'Resumen semanal' },
   { a: '/alimentos', icono: 'eco', texto: 'Mis alimentos' },
+  { a: '/asistente', icono: 'forum', texto: 'Asistente con IA' },
 ]
 
 // Solo aparece con el cálculo de gasto prendido (F-19)

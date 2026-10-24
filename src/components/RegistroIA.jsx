@@ -22,7 +22,9 @@ const guardarAviso = () => {
   }
 }
 
-export default function RegistroIA({ onPlatos }) {
+// `onPlatos(platos, mensaje)`: recibe lo que se armó y el texto que lo explica. `sinTarjeta`: para meterlo adentro de otra
+// tarjeta (la carga rápida del Diario, 1.28), sin su propio recuadro ni título.
+export default function RegistroIA({ onPlatos, sinTarjeta = false }) {
   const d = useDatos()
   const [estado, setEstado] = useState('libre') // libre | grabando | trabajando
   const [escribiendo, setEscribiendo] = useState(false)
@@ -41,14 +43,15 @@ export default function RegistroIA({ onPlatos }) {
     const { platos, sinCruzar } = platosDe(r.items, { alimentos: d.alimentos, recetas: d.recetas })
     if (platos.length === 0 && sinCruzar.length === 0)
       return setMensaje({ tipo: 'error', texto: 'No encontré comida ahí. Probá de nuevo o cargala a mano.' })
-    onPlatos(platos)
     setEscribiendo(false)
     setTexto('')
     const partes = []
     if (r.texto) partes.push(`Escuché: “${r.texto}”.`)
     if (platos.length) partes.push(`Armé ${platos.length === 1 ? '1 ítem' : `${platos.length} ítems`}: revisá las cantidades.`)
     if (sinCruzar.length) partes.push(`No encontré en tus alimentos: ${sinCruzar.map((i) => i.nombre).join(', ')}. Buscalos a mano.`)
-    setMensaje({ tipo: platos.length ? 'ok' : 'error', texto: partes.join(' ') })
+    const nuevo = { tipo: platos.length ? 'ok' : 'error', texto: partes.join(' ') }
+    setMensaje(nuevo)
+    if (platos.length) onPlatos(platos, nuevo)
   }
 
   const alElegirFoto = async (e) => {
@@ -98,10 +101,12 @@ export default function RegistroIA({ onPlatos }) {
 
   if (!aceptado) {
     return (
-      <section className="tarjeta p-4 mb-4" data-testid="ia-aviso">
-        <p className="font-semibold flex items-center gap-2">
-          <Icono n="wand_stars" size={20} className="text-teal" /> Cargar con IA
-        </p>
+      <section className={sinTarjeta ? '' : 'tarjeta p-4 mb-4'} data-testid="ia-aviso">
+        {!sinTarjeta && (
+          <p className="font-semibold flex items-center gap-2">
+            <Icono n="wand_stars" size={20} className="text-teal" /> Cargar con IA
+          </p>
+        )}
         <p className="text-sm text-gris mt-1 leading-snug">
           Sacale una foto a tu plato, decí lo que comiste o escribilo, y la app arma el plato. La foto, el audio o el texto se mandan a un
           servicio de IA solo para reconocer la comida; <b>no se guardan</b>. La IA se puede equivocar, sobre todo con las cantidades:
@@ -122,10 +127,17 @@ export default function RegistroIA({ onPlatos }) {
 
   const ocupado = estado !== 'libre'
   return (
-    <section className="tarjeta p-4 mb-4" aria-labelledby="ia-titulo" data-testid="registro-ia">
-      <p id="ia-titulo" className="font-semibold flex items-center gap-2 mb-3">
-        <Icono n="wand_stars" size={20} className="text-teal" /> Cargar con IA
-      </p>
+    <section
+      className={sinTarjeta ? '' : 'tarjeta p-4 mb-4'}
+      aria-labelledby={sinTarjeta ? undefined : 'ia-titulo'}
+      aria-label={sinTarjeta ? 'Cargar con IA' : undefined}
+      data-testid="registro-ia"
+    >
+      {!sinTarjeta && (
+        <p id="ia-titulo" className="font-semibold flex items-center gap-2 mb-3">
+          <Icono n="wand_stars" size={20} className="text-teal" /> Cargar con IA
+        </p>
+      )}
 
       {estado === 'grabando' ? (
         <div className="flex items-center gap-3">

@@ -121,9 +121,9 @@ export default function Compras() {
     <Marco titulo="Lista de compras" atras>
       <div className="lg:max-w-[760px] lg:mx-auto xl:max-w-none xl:grid xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-x-6 xl:items-start">
         <section className="rounded-3xl bg-verde text-white p-5 mb-4 xl:col-start-2 xl:row-start-1">
-          <p className="text-xs font-semibold opacity-80">Gastaste en {nombreMes(hoy())}</p>
+          <p className="text-xs font-semibold">Gastaste en {nombreMes(hoy())}</p>
           <p className="text-3xl font-bold mt-1">{pesos(gasto)}</p>
-          <p className="text-sm opacity-80 mt-1">
+          <p className="text-sm mt-1">
             {comprasMes.length} {comprasMes.length === 1 ? 'compra anotada' : 'compras anotadas'}
           </p>
         </section>

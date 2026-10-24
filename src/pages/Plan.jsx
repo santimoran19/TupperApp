@@ -316,7 +316,7 @@ export default function Plan() {
             <section
               key={f}
               data-tour="plan-dia"
-              className={`tarjeta p-4 ${pasado ? 'opacity-60' : ''} ${f === h ? 'ring-2 ring-verde-medio' : ''}`}
+              className={`tarjeta p-4 ${pasado ? '!bg-campo !shadow-none' : ''} ${f === h ? 'ring-2 ring-verde-medio' : ''}`}
             >
               <div className="flex items-center justify-between mb-1">
                 <p className="font-semibold">

@@ -11,6 +11,8 @@ import Diario from './pages/Diario'
 // El acceso y el diario cargan de entrada; el resto de las pantallas se baja recién cuando se abre
 const Bienvenida = lazy(() => import('./pages/Bienvenida'))
 const ElegirUsuario = lazy(() => import('./pages/ElegirUsuario'))
+const ConsentimientoSalud = lazy(() => import('./pages/ConsentimientoSalud'))
+const Asistente = lazy(() => import('./pages/Asistente'))
 const Registrar = lazy(() => import('./pages/Registrar'))
 const Despensa = lazy(() => import('./pages/Despensa'))
 const Compras = lazy(() => import('./pages/Compras'))
@@ -89,6 +91,14 @@ function Pantallas() {
         />
       </Suspense>
     )
+  // Quien tenía cuenta antes de la 1.28 acepta una vez el uso de sus datos de salud (`=== null`: con una base sin la
+  // actualización 21 la columna no viene y no se pide)
+  if (perfil.salud_consentida_at === null)
+    return (
+      <Suspense fallback={Hueco}>
+        <ConsentimientoSalud />
+      </Suspense>
+    )
   return (
     <Suspense fallback={Hueco}>
       <Routes>
@@ -106,6 +116,7 @@ function Pantallas() {
         <Route path="/gasto" element={<Gasto />} />
         <Route path="/ejercicio" element={<Ejercicio />} />
         <Route path="/perfil" element={<Perfil />} />
+        <Route path="/asistente" element={<Asistente />} />
         <Route path="*" element={<NoEncontrada />} />
       </Routes>
       {leerRecorrido(usuario.id) !== null && (

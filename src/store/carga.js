@@ -31,6 +31,7 @@ export const VACIO = {
   prefs: [],
   compras: [],
   analisis: [],
+  combos: [], // "mi desayuno de siempre" (F-09, supabase/actualizacion-21.sql)
   ...EJERCICIO_VACIO,
 }
 
@@ -95,7 +96,7 @@ async function traerHogar() {
 // hogar: en esas cuatro tablas `user_id` guarda el id de uno u otro (el `ámbito`). Lo demás es siempre de la persona.
 export async function traer(uid) {
   const desde = sumarDias(hoy(), -90)
-  const [hogar, perfiles, alimentos, recetas, items, plan, reglas, registros, medidas, prefs, analisis] = await Promise.all([
+  const [hogar, perfiles, alimentos, recetas, items, plan, reglas, registros, medidas, prefs, analisis, combos] = await Promise.all([
     traerHogar(),
     supabase.from('profiles').select('*').eq('id', uid).then(ok),
     traerTodo(() => supabase.from('foods').select('*').order('id')),
@@ -107,6 +108,8 @@ export async function traer(uid) {
     traerTodo(() => supabase.from('measurements').select('*').eq('user_id', uid).order('date')),
     supabase.from('recipe_prefs').select('*').eq('user_id', uid).then(ok),
     supabase.from('ai_analyses').select('*').eq('user_id', uid).gte('week_start', sumarDias(desde, -7)).then(ok),
+    // Con una base sin la actualización 21 la tabla no existe: sin combos, como antes
+    opcional(() => supabase.from('combos').select('*').eq('user_id', uid).order('created_at').then(ok)),
   ])
   const ambito = hogar?.id ?? uid
   const [stock, preparado, lista, compras] = await Promise.all([
@@ -137,5 +140,6 @@ export async function traer(uid) {
     prefs,
     compras,
     analisis,
+    combos,
   }
 }

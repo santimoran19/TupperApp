@@ -42,6 +42,19 @@ export function pesoMinimo({ peso, grasa, sexo }) {
   return Math.max(Math.ceil(peso + d), Math.ceil(magra))
 }
 
+// El peso más bajo de la barra de "Cómo te verías" (1.28). Antes era `pesoMinimo` (la grasa esencial con la masa magra de hoy) y
+// para alguien de 90 kilos daba unos 64: no dejaba ver pesos que mucha gente tiene. Ahora llega hasta un IMC de 15 (muy delgado)
+// para su altura, y nunca queda por encima de lo que pesa hoy. Por debajo de la grasa esencial lo que baja es masa magra.
+export const IMC_MINIMO_BARRA = 15
+export function pesoMinimoBarra({ peso, altura }) {
+  const porAltura = altura > 0 ? Math.floor(IMC_MINIMO_BARRA * (altura / 100) ** 2) : 40
+  return Math.max(30, Math.min(porAltura, Math.floor((peso || porAltura) * 0.95)))
+}
+
+// La altura que se acepta (cm) y la de referencia del dibujo
+export const ALTURA_MIN = 120
+export const ALTURA_MAX = 220
+
 // Cómo se llama ese % (rangos habituales de la ACE, aproximados)
 export function nombreDeGrasa(grasa, sexo) {
   const f = sexo === 'f'
@@ -115,7 +128,8 @@ export function escalaDe({ peso, grasa, altura, sexo }) {
   if (!(peso > 0) || !(altura > 0) || grasa == null) return 1
   const magra = peso * (1 - grasa / 100)
   const ffmi = magra / (altura / 100) ** 2
-  return entre(Math.sqrt(ffmi / (sexo === 'f' ? 15 : 18)), 0.88, 1.18)
+  // Desde la 1.28 baja hasta 0,8: con la barra se puede llegar a pesos muy bajos y el cuerpo tiene que afinarse
+  return entre(Math.sqrt(ffmi / (sexo === 'f' ? 15 : 18)), 0.8, 1.18)
 }
 
 // ---------- El dibujo ----------

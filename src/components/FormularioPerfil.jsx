@@ -6,8 +6,11 @@ import { ACTIVIDADES, liquidoSugerido, objetivoSugerido } from '../lib/nutricion
 import { edad } from '../lib/fechas'
 import { LIM, errNacimiento, errNumero, errTexto, hayErrores, rangoNacimiento } from '../lib/validar'
 import SiluetaInteractiva from './SiluetaInteractiva'
+import CasillaSalud from './CasillaSalud'
 
-export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
+// `consentimiento` (al crear la cuenta, 1.28, L-04): pide la casilla de los datos de salud antes de guardar.
+export default function FormularioPerfil({ inicial, textoBoton, onGuardar, consentimiento = false }) {
+  const [acepto, setAcepto] = useState(false)
   const [f, setF] = useState({
     name: inicial?.name || '',
     username: inicial?.username || '',
@@ -65,7 +68,7 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
       errNumero(f.liquido === '' ? '' : Number(f.liquido) * 1000, LIM.liquido, { opcional: true }) &&
       'Tiene que estar entre 0,5 y 6 litros.',
   }
-  const valido = datosOk && !hayErrores(errObjetivo) && !usuario.error
+  const valido = datosOk && !hayErrores(errObjetivo) && !usuario.error && (!consentimiento || acepto)
   // Un error de rango se muestra al toque; uno de "falta completar", solo después de tocar Guardar
   const ver = (k, e) => (e && (intento || !['', null, undefined].includes(k)) ? e : null)
 
@@ -86,6 +89,7 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
       kcal_target: Math.round(Number(kcal)),
       protein_target: Math.round(Number(prot)),
       water_target_ml: f.liquido === '' ? null : Math.round(Number(f.liquido) * 1000),
+      ...(consentimiento ? { salud_consentida_at: new Date().toISOString() } : {}),
     })
     setGuardando(false)
   }
@@ -207,6 +211,7 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
             perfil={{ ...inicial, sex: f.sex, birth_date: f.birth_date, height_cm: f.height_cm, goal_weight_kg: f.goal_weight_kg }}
             peso={Number(f.weight_kg)}
             onUsarMeta={(kg) => set('goal_weight_kg')(String(kg))}
+            onGuardarAltura={(cm) => set('height_cm')(String(cm))}
           />
         </section>
       )}
@@ -296,6 +301,7 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar }) {
           </p>
         </div>
       </div>
+      {consentimiento && <CasillaSalud acepto={acepto} onCambiar={setAcepto} error={intento && !acepto} />}
       <button type="submit" disabled={guardando} className="btn-primario w-full">
         {textoBoton}
       </button>

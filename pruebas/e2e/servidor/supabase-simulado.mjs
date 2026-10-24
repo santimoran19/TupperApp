@@ -46,6 +46,9 @@ const db = {
   routines: [],
   routine_exercises: [],
   workout_sets: [],
+  // Combos y opiniones (supabase/actualizacion-21.sql)
+  combos: [],
+  opiniones: [],
 }
 let numeroDeEvento = 0
 // IA simulada: lo que recibió el "modelo" y cómo tiene que responder (ok | texto | error | saturado)
@@ -1222,7 +1225,8 @@ const server = http.createServer(async (req, res) => {
           out.push(existente)
         } else {
           const fila = { ...(SIN_ID.has(tabla) ? {} : { id: randomUUID() }), ...f }
-          if (['log_entries', 'shopping_items', 'profiles', 'ai_analyses'].includes(tabla)) fila.created_at = new Date().toISOString()
+          if (['log_entries', 'shopping_items', 'profiles', 'ai_analyses', 'combos', 'opiniones'].includes(tabla))
+            fila.created_at = new Date().toISOString()
           if (tabla === 'log_entries' && fila.skipped === undefined) fila.skipped = false
           if (tabla === 'profiles')
             Object.assign(fila, {
@@ -1240,6 +1244,7 @@ const server = http.createServer(async (req, res) => {
               gasto_ajuste_pct: null,
               gasto_factor: null,
               gasto_factor_fecha: null,
+              salud_consentida_at: null,
               ...f,
             })
           if (tabla === 'foods' && fila.alcohol === undefined) fila.alcohol = false

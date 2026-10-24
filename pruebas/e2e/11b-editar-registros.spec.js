@@ -39,7 +39,11 @@ test('ver y cambiar la cantidad de lo anotado, con la despensa al día', async (
     return Number(filas[0]?.qty ?? NaN)
   }
   // Los huevos de esta prueba son los últimos de la cena (puede haber otros anotados por las pruebas anteriores)
-  const filaHuevo = () => pg.locator('section', { hasText: 'CENA' }).locator('button[aria-label="Cambiar la cantidad de Huevo"]').last()
+  const filaHuevo = () =>
+    pg
+      .locator('section', { hasText: 'CENA' })
+      .getByRole('button', { name: /^Cambiar la cantidad de Huevo ·/ })
+      .last()
   const borrarHuevo = () => pg.locator('section', { hasText: 'CENA' }).locator('button[aria-label="Borrar Huevo"]').last()
   const registroDe = async (nombre) => (await rest(pg, 'log_entries', '&name=eq.' + encodeURIComponent(nombre))).at(-1)
 
@@ -124,14 +128,20 @@ test('ver y cambiar la cantidad de lo anotado, con la despensa al día', async (
   await test.step('si el cambio no toca la despensa, se guarda directo', async () => {
     await pg.click('button:has-text("Vaso de agua")')
     await pg.waitForSelector('text=Un vaso de agua anotado')
-    await pg.click('button[aria-label="Cambiar la cantidad de Agua"] >> nth=-1')
+    await pg
+      .getByRole('button', { name: /^Cambiar la cantidad de Agua ·/ })
+      .last()
+      .click()
     await pg.fill('input[aria-label="Cantidad"]', '500')
     await pg.click('button:has-text("Guardar")')
     await pg.waitForSelector('text=Cantidad cambiada')
     expect(await dialogo(pg).count()).toBe(0)
     expect(Number((await registroDe('Agua')).qty)).toBe(500)
     // Una cantidad inválida no se puede guardar
-    await pg.click('button[aria-label="Cambiar la cantidad de Agua"] >> nth=-1')
+    await pg
+      .getByRole('button', { name: /^Cambiar la cantidad de Agua ·/ })
+      .last()
+      .click()
     await pg.fill('input[aria-label="Cantidad"]', '0')
     await expect(pg.locator('button:has-text("Guardar")')).toBeDisabled()
     await pg.keyboard.press('Escape')
@@ -163,7 +173,7 @@ test('ver y cambiar la cantidad de lo anotado, con la despensa al día', async (
     await expect(pg.locator('section', { hasText: 'CENA' }).locator('button[aria-label="Borrar Huevo"]')).toHaveCount(huevosAntes - 1)
     await expect.poll(stockHuevo).toBe(10)
     // Y el vaso de agua también se va
-    const aguas = pg.locator('button[aria-label="Cambiar la cantidad de Agua"]')
+    const aguas = pg.getByRole('button', { name: /^Cambiar la cantidad de Agua ·/ })
     const aguasAntes = await aguas.count()
     await pg.click('button[aria-label="Borrar Agua"] >> nth=-1')
     await dialogo(pg).getByRole('button', { name: 'Borrar' }).click()

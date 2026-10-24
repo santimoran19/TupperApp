@@ -31,43 +31,37 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 2. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-3. F-18 · Registrarse e iniciar sesión con Google
-4. IA-01 · Chat con IA (va junto con IA-02)
-5. IA-02 · Proveedor de respaldo
-6. D-07 · Revisión completa de accesibilidad
-7. L-04 · Consentimiento al registrarse
-8. C-05 · Opiniones desde la app
-9. T-03 · Pruebas en Safari
-10. T-04 · Base de pruebas aparte
-11. T-01 · Actualizar las herramientas
-12. F-06 · Recordatorios
+3. IA-05 · Mejorar la carga con foto (probar Gemini primero) y probar el asistente con los proveedores reales
+4. F-18 · Registrarse e iniciar sesión con Google
+5. D-07b · Accesibilidad: probarla con TalkBack y VoiceOver de verdad
+6. T-03 · Pruebas en Safari
+7. T-04 · Base de pruebas aparte
+8. T-01 · Actualizar las herramientas
+9. F-06 · Recordatorios con la app cerrada (Web Push)
+10. T-08 · Pruebas de navegador intermitentes (13 y 04)
 
 **Cuando haya tiempo (P3)**
-13. F-08 · Copiar un día entero
-14. D-06 · Deshacer en más lugares
-15. D-04 · Esqueletos de carga
-16. F-10 · Peso: gráfico y fecha estimada
-17. F-11 · Exportar el registro a planilla
-18. F-09 · Combos frecuentes
-19. F-12b · Seguir sumando a la base común
-20. F-13 · Categorías editables por el usuario
-21. D-08 · Revisión de los textos
-22. IA-04 · Cargar una receta desde un texto
-23. IA-05 · Probar la carga con IA con los proveedores reales (primera vez que se activa)
-24. C-06 · Métricas de uso
-25. T-05 · Partir `sincronizacion.js`
-26. T-07 · Mandar lo cargado sin conexión con la app cerrada
-27. S-06 · Verificación en dos pasos
-28. S-03 · Contraseñas filtradas también del lado de Supabase
-29. F-22 · Sincronizar con relojes y apps de salud (necesita app nativa o servidor)
-30. F-19b · Seguir con gasto y ejercicio (importar archivos, pulso en reposo, validar con mediciones reales)
+11. IA-06 · Que el asistente pueda anotar ("anotame una manzana")
+12. D-06 · Deshacer en más lugares
+13. D-04 · Esqueletos de carga
+14. F-10 · Peso: gráfico y fecha estimada
+15. F-12b · Seguir sumando a la base común
+16. F-13 · Categorías editables por el usuario
+17. D-08 · Revisión de los textos
+18. IA-04 · Cargar una receta desde un texto
+19. C-06 · Métricas de uso
+20. T-05 · Partir `sincronizacion.js`
+21. T-07 · Mandar lo cargado sin conexión con la app cerrada
+22. S-06 · Verificación en dos pasos
+23. S-03 · Contraseñas filtradas también del lado de Supabase
+24. F-22 · Sincronizar con relojes y apps de salud (necesita app nativa o servidor)
+25. F-19b · Seguir con gasto y ejercicio (importar archivos, pulso en reposo, validar con mediciones reales)
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-31. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-32. C-02 · Dominio propio y página de presentación (va junto con C-03)
-33. C-01 · Planes y cobro (para empezar a cobrar)
-34. F-18 · Registrarse e iniciar sesión con Google (el nombre de usuario, F-17, ya está hecho)
-35. C-04 · Play Store (cuesta la cuenta de desarrollador)
+26. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+27. C-02 · Dominio propio y página de presentación (va junto con C-03)
+28. C-01 · Planes y cobro (para empezar a cobrar)
+29. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -81,30 +75,23 @@ Nada por ahora.
 - [~] **F-06 · Recordatorios con la app cerrada (Web Push)** · P2 · L. La 1.27 trajo los recordatorios que avisan **con la app abierta** (agua, cena sin anotar y más; ver F-21). Falta que lleguen con la app cerrada.
   - Necesita notificaciones push del navegador y algo del lado del servidor que las mande a la hora (una función programada en Supabase y claves VAPID).
   - En iPhone solo funcionan con la app instalada en la pantalla de inicio (iOS 16.4 o más).
-- [ ] **F-08 · Copiar un día entero** · P3 · S. Hoy se puede repetir la comida de ayer; falta copiar el día completo (o un día cualquiera) a otra fecha.
-- [ ] **F-09 · Combos frecuentes** · P3 · M. Guardar "mi desayuno de siempre" con varios alimentos y registrarlo con un toque.
 - [ ] **F-18 · Registrarse e iniciar sesión con Google** · P2 · M. Un botón "Continuar con Google" en la pantalla de acceso, para crear la cuenta o entrar sin escribir mail ni contraseña. **Qué hace falta de tu lado:** crear un proyecto en Google Cloud, configurar la pantalla de consentimiento y las credenciales OAuth (cliente web), y activar el proveedor Google en Supabase (Authentication > Providers) con las direcciones de vuelta de la app y de Supabase. Gratis. **Cosas a resolver:** (1) el consentimiento de Google en modo de prueba solo deja entrar a 100 usuarios que vos agregues a mano; para abrirlo a cualquiera hay que publicarlo, y Google pide la Política de privacidad y la página de inicio en un dominio propio (esto se cruza con C-02, dominio propio); (2) si ya existe una cuenta con el mismo mail, Supabase puede unirla con la de Google; hay que dejarlo bien configurado para que nadie tome una cuenta ajena; (3) quien entra con Google no tiene contraseña: la pantalla de "Olvidé mi contraseña" y el Perfil tienen que explicarlo, y se podría ofrecer crear una; (4) igual hay que pasar por el perfil (fecha de nacimiento, para cumplir los 18 años de L-01) y, con F-17, elegir el nombre de usuario; (5) sumar a la Política de privacidad que Google es un proveedor y qué datos se reciben (mail y nombre; la foto no se guarda); (6) probarlo en el navegador del teléfono y en la app instalada (PWA), donde el regreso desde Google a veces se comporta distinto. Va con pruebas (el simulador de las pruebas tiene que fingir el regreso de Google) y los textos del botón. Borrar la cuenta y descargar los datos siguen igual.
 - [ ] **F-22 · Sincronizar con relojes y apps de salud** · P3 · L. Traer pasos, ejercicio y peso desde Apple Salud, Google Fit/Health Connect, Garmin o Strava. Una app web (PWA) no puede leer Apple Salud ni Health Connect: hace falta una app nativa (ver C-04) o conectar Strava/Garmin con un servidor propio. Hoy la alternativa es importar archivos (F-19b).
 - [ ] **F-19b · Seguir con gasto y ejercicio** · P3 · M. Quedó afuera de la 1.23: (1) importar entrenamientos desde archivos (.gpx, .tcx, .fit o la exportación de Apple Salud); conectar Strava o Garmin directo necesita algo del lado del servidor, y leer Apple Salud o Health Connect directo (los pasos incluidos) no se puede desde una PWA; sí se podría con una app instalable (Capacitor), junto con C-04; (2) usar el pulso en reposo (`profiles.resting_hr`, ya existe la columna) en el cálculo; (3) **validar el cálculo contra mediciones de referencia** (calorimetría indirecta, o al menos el seguimiento de varias personas): hoy los márgenes de error son orientativos, no validados; los coeficientes de movimiento según el trabajo y por paso son criterio propio y quedarían ajustados con esos datos; (4) un tope de proteína o cálculo sobre masa magra para obesidad alta (IMC mayor a 35), que los dos nutricionistas sugirieron; se dejó afuera a propósito la proteína configurable por ser confusa para quien no sabe de nutrición.
 - [ ] **F-10 · Peso: gráfico y fecha estimada** · P3 · S. Gráfico de los últimos meses y, con la tendencia, cuándo llegaría al peso objetivo, sin prometer nada.
-- [ ] **F-11 · Exportar el registro a planilla** · P3 · S. Hoy "Descargar mis datos" baja un JSON; sumar un CSV que abra en Excel, útil para llevarle al nutricionista.
 - [ ] **F-12b · Seguir sumando a la base común** · P3 · S (continuo). Después de la sexta tanda (1.25: 227 alimentos y 1.471 recetas), sumar alimentos y recetas cuando aparezcan faltantes: mirar los alimentos propios que repiten varios usuarios y lo que la gente busca y no encuentra. Los alimentos se agregan en `scripts/datos/alimentos-sexta.mjs` (o en `seed-data.mjs` si es una tanda nueva) y las recetas en una familia de `scripts/datos/f-*.mjs`; se corre `npm run seed`. Ver también F-04b (lista de recetas con más de mil).
 - [ ] **F-13 · Categorías editables por el usuario** · P3 · M. Crear, renombrar y elegir categorías para sus alimentos propios.
 ## 2. Inteligencia artificial
 
-- [ ] **IA-01 · Chat con IA** · P2 · L. Preguntas como "¿puedo comer tal cosa ahora?" o "¿qué ceno con lo que me queda?", con los datos del día: objetivo, lo comido, lo que falta, la despensa y el plan. El análisis semanal sigue igual. Candidato al plan pago. **Falta definir:**
-  - si recuerda las conversaciones (si sí, sumarlo a la Política de privacidad);
-  - el tope de mensajes por día (propuesta: 20);
-  - si más adelante va a poder registrar cosas ("anotame una manzana").
-- [ ] **IA-02 · Proveedor de respaldo** · P2 · S. Si Groq está saturado, probar con otro (NVIDIA tiene API gratis con el mismo formato). Antes, leer sus términos: el acceso gratis parece pensado para pruebas, no para producción.
-- [ ] **IA-05 · Probar la carga con IA con los proveedores reales** · P2 · S. La carga por foto, voz y texto (1.27) se probó solo con respuestas simuladas, porque donde se desarrolló no hay salida a esos servicios. Pasos: correr `actualizacion-20.sql`, cargar los secretos (ver `supabase/functions/LEEME.md`), publicar `registrar-ia` y probar con el teléfono una foto, un audio y un texto. Mirar qué tan bien reconoce la comida argentina y, si hace falta, ajustar `INSTRUCCIONES_COMIDA` o el orden de proveedores.
+- [~] **IA-05 · Mejorar la carga con foto y probar el asistente** · P2 · S. Ya activada (1.27) y probada por Santi: texto y voz andan bien; la foto flojea. Próximo paso: con `GEMINI_API_KEY` cargada, poner el secreto `VISION_ORDEN` en `gemini,cloudflare` y comparar con las mismas fotos; si sigue floja, ajustar `INSTRUCCIONES_COMIDA` (porciones argentinas, platos típicos). El asistente (`asistente-ia`, 1.28) tampoco se probó contra Gemini de verdad: hacer unas preguntas desde el teléfono y mirar los registros.
+- [ ] **IA-06 · Que el asistente pueda anotar** · P3 · M. "Anotame una manzana" desde el chat: que la respuesta traiga los ítems y la app los lleve a Registrar para confirmar, como la carga con IA.
 - [ ] **IA-04 · Cargar una receta desde un texto** · P3 · S. Pegar una receta de internet y que la IA la arme con los alimentos de la base.
 
 ## 3. Diseño y uso
 
 - [ ] **D-04 · Esqueletos de carga** · P3 · S. Mostrar la forma de la pantalla mientras trae los datos, en vez de "Cargando...".
 - [ ] **D-06 · Deshacer en más lugares** · P3 · S. "No comí" ya tiene Deshacer; sumarlo a borrar un registro, quitar de la despensa y quitar de la lista.
-- [ ] **D-07 · Revisión completa de accesibilidad** · P2 · M. Lector de pantalla, etiquetas de los campos, contraste en los dos temas y letra grande del sistema (que nada se corte).
+- [ ] **D-07b · Accesibilidad con lectores de pantalla de verdad** · P2 · S. La 1.28 pasó axe (WCAG 2.1 AA) en las pantallas principales y la letra al 150 %. Falta: recorrer la app con TalkBack (Android) y VoiceOver (iPhone), las hojas y diálogos abiertos (axe revisó las pantallas como abren) y los avisos de nivel "moderado" que axe no hace fallar.
 - [ ] **D-08 · Revisión de los textos** · P3 · S. Que se digan las mismas cosas con las mismas palabras en toda la app, y que los errores digan qué hacer.
 
 ## 4. Seguridad
@@ -116,7 +103,6 @@ Nada por ahora.
 ## 5. Legal y datos personales
 
 - [ ] **L-03 · Registro de la base de datos** · P1 · S. En Argentina, las bases con datos personales se inscriben en el registro de la Agencia de Acceso a la Información Pública, y acá hay datos de salud. Confirmarlo con legales. **Preparado en la 1.23.3, falta el trámite de tu lado:** la guía paso a paso con el texto de cada campo está en el documento "Tupper: inscripción de la base en la AAIP" (gratis, no vence, unos 20 minutos por TAD con clave fiscal nivel 2). En la app: la Política de privacidad suma las dos leyendas oficiales (acceso gratuito cada seis meses, art. 14 inc. 3, y la AAIP como órgano de control), las copias de seguridad diarias cifradas en GitHub, y muestra el número de inscripción cuando se carga en `registroAAIP` de `src/lib/marca.js`. Antes del trámite: firmar el DPA de Supabase, guardar los de Vercel, Groq, Cloudflare y GitHub, y activar la verificación en dos pasos en los paneles.
-- [ ] **L-04 · Consentimiento al registrarse** · P2 · S. Una casilla explícita para el uso de datos de salud, además del texto que ya está debajo del botón.
 
 ## 6. Para venderla
 
@@ -127,7 +113,6 @@ Nada por ahora.
 - [ ] **C-02 · Dominio propio y página de presentación** · P2 · M. Una página para quien todavía no tiene cuenta: qué hace la app, capturas y el botón para crear la cuenta. Con dominio nuevo hay que actualizar el captcha de Cloudflare, Supabase y los archivos que nombra el README. Es la base de C-03 (mails propios) y de F-18 (Google pide la Política de privacidad y la página de inicio en un dominio propio para publicarse). Conviene comprarlo primero.
 - [ ] **C-03 · Mails propios (SMTP)** · P1 · S. El servidor de mails que trae Supabase solo manda a direcciones del equipo del proyecto y a 2 mensajes por hora, sin garantía de entrega: sirve para probar, no para que se registre gente de afuera. Con un SMTP propio llegan a cualquier dirección y el límite arranca en 30 por hora (se puede subir). **Va después de comprar el dominio y junto con C-02:** hace falta un dominio propio para mandar desde `no-responder@tudominio` (una casilla de Gmail no sirve: límites, spam y no deja autenticar el dominio); el mismo dominio se usa para la página de presentación y para publicar el acceso con Google (F-18). **Servicio de envío** (verifica el dominio con SPF, DKIM y DMARC): Resend (gratis: 3.000 mails por mes, 100 por día; recomendado por simple) o Brevo (gratis: hasta 300 por día, con su logo probablemente). Cada registro usa 1 o 2 mails. **Pasos:** (1) comprar el dominio; (2) crear la cuenta del servicio, agregar el dominio y cargar los registros DNS que pida; (3) cargar el SMTP en Supabase (Authentication > SMTP); (4) cambiar el remitente y los links de las plantillas de `supabase/emails/`; (5) probar que el código de confirmación y el de recuperar contraseña lleguen a una casilla ajena. Si se quiere recibir respuestas en `soporte@tudominio`, se reenvía a Gmail con un servicio de reenvío gratuito (aparte del envío). Pasos en `supabase/emails/LEEME.md`.
 - [ ] **C-04 · Play Store** · P3 · M. Empaquetar la app para Android (USD 25, una vez). Pide una prueba cerrada con 12 testers durante 14 días. App Store después: USD 99 por año, hace falta una Mac y Apple suele rechazar las apps que son solo una web.
-- [ ] **C-05 · Opiniones desde la app** · P2 · S. Un "Contanos qué te falta" en el Perfil que llegue a tu mail o a una tabla.
 - [ ] **C-06 · Métricas de uso** · P3 · S. Cuántos vuelven a la semana y qué pantallas usan, sin datos personales: Vercel Analytics ya cuenta visitas, falta mirar el recorrido.
 
 ## 7. Técnico y calidad
@@ -136,12 +121,25 @@ Nada por ahora.
 - [ ] **T-03 · Pruebas en Safari** · P2 · M. Hoy las pruebas de navegador corren solo en Chrome. Sumar WebKit, que es el motor de Safari, para encontrar antes los problemas de iPhone (ver V-01).
 - [ ] **T-04 · Base de pruebas aparte** · P2 · M. Un segundo proyecto de Supabase (el plan gratis permite dos) para probar cambios de la base antes de tocar la de producción.
 - [ ] **T-05 · Partir `sincronizacion.js`** · P3 · M. Quedó en unas 740 líneas. Separar la cola, la copia del teléfono y el envío, sin cambiar lo que hace.
+- [ ] **T-08 · Pruebas de navegador intermitentes** · P2 · S. En la tanda completa, la 13 (sin conexión) y la 04 (cuenta y recetas) a veces fallan por tiempo: el tupper 3D con GL por software deja el navegador de las pruebas lento (un toque tardó 8 segundos). Corridas iguales pasan o fallan; cada una pasó en alguna corrida. Opciones: apagar el 3D en las pruebas que no lo miran, o esperar con más margen.
 - [ ] **T-07 · Mandar lo cargado sin conexión con la app cerrada** · P3 · M. Solo en Android: el navegador lo manda cuando vuelve la señal, aunque la app no esté abierta. En iPhone no existe.
 
 ---
 
 ## Hecho
 
+- **1.28.0 · Carga rápida, combos, copiar un día, asistente con IA, accesibilidad, consentimiento, opiniones y planilla** (hay que correr `supabase/actualizacion-21.sql`, cargar `GEMINI_API_KEY` y publicar `asistente-ia` y de nuevo `analizar-semana`; ver `supabase/functions/LEEME.md`).
+  - *3D y silueta:* la barra de "Cómo te verías" baja hasta un IMC de 15 para la altura (`pesoMinimoBarra`; antes no bajaba de la masa magra de hoy, unos 64 kg para 90 kg) y el cuerpo se afina (2D: `escalaDe` hasta 0,8; 3D: `ancho` hasta 15 % más angosto). La altura se ajusta ahí mismo (centímetro a centímetro, se puede guardar en el perfil), con una regla al lado de la silueta 2D y del cuerpo 3D (la cámara se aleja con la altura). En el Diario, las calorías van arriba del tupper y no encima (al girar, la tapa las tapaba).
+  - *Mini rediseño:* tarjeta "Anotá rápido" en el Diario con Foto, Voz, Escribir, los combos y "Preguntale a la IA"; lo que arma la IA pasa a Registrar para revisar. En Registrar, la carga con IA va primero. El asistente está en la barra lateral de la compu.
+  - *F-08 Copiar un día:* botón debajo de las comidas del Diario; elige la fecha (por defecto mañana si es hoy, si no hoy), suma repetidos y saltea los "no comí" (`src/lib/combos.js`, `CopiarDia.jsx`).
+  - *F-09 Combos:* "Guardar como combo" en Registrar (hasta 30 por cuenta y 15 cosas cada uno, tabla `combos`); se usan desde Registrar o el Diario y se borran con "Editar".
+  - *IA-01 Asistente:* `/asistente` con sugerencias, conversación en el teléfono (sessionStorage, no en la base) y un resumen del día sin nombre ni email (`src/lib/contextoIA.js`). Función `asistente-ia`: Gemini primero y Groq de respaldo, 30 preguntas por día (`ai_usos` tipo `chat`), instrucciones con límites de salud (no es médico, nada de dietas extremas, cuidado con trastornos alimentarios).
+  - *IA-02 Respaldo:* `analizar-semana` prueba Groq y, si falla, Gemini (Anthropic, que se paga, nunca entra de respaldo).
+  - *D-07 Accesibilidad:* prueba 31 con axe (WCAG 2.1 A y AA) en 10 pantallas, tema claro y oscuro, más la letra al 150 % sin que nada se salga. Se arregló: contraste (textos con opacidad sobre verde, días pasados del plan y alimentos agotados), nombres accesibles que no incluían el texto visible (Diario y Despensa), fila de botones de la Despensa que se salía con letra grande y la silueta que se salía en el Perfil; el título de Recordatorios usaba el mismo id que el del recorrido.
+  - *L-04 Consentimiento:* casilla obligatoria al crear el perfil (`CasillaSalud`, se guarda `profiles.salud_consentida_at`); quien ya tenía cuenta la acepta una vez (`ConsentimientoSalud`, con la opción de salir o borrar la cuenta). Con una base sin la actualización 21, se guarda el resto y no se pide.
+  - *C-05 Opiniones:* "Contanos qué te falta" en el Perfil (idea, algo anda mal u otra), tabla `opiniones` con tope de 10 por día; las leés en Supabase (Table Editor).
+  - *F-11 Planilla:* "Exportar mi registro a Excel" en el Perfil: CSV con punto y coma, coma decimal y BOM (abre bien en Excel en español), una fila por cosa y el total de cada día, por semana, mes, 3 meses o todo. "Descargar mis datos" suma combos y opiniones.
+  - *Pruebas:* `novedades-128.test.js` (9), respaldo en `analisis.test.js`, pesos bajos en `cuerpo.test.js`; de navegador, la 30 (todo lo nuevo, con las funciones de IA simuladas) y la 31 (accesibilidad). Las pruebas que crean cuentas marcan la casilla nueva.
 - **F-20 · Plan que aprovecha lo que vence, ayuno y recordatorios, y carga con foto, voz o texto** (versión 1.27.0; hay que correr `supabase/actualizacion-20.sql` y, para la IA, publicar la función `registrar-ia` con sus claves; ver `supabase/functions/LEEME.md`). Salió de comparar con Fitia (su ventaja es la carga con IA; la de Tupper, que el plan sale de la despensa y es gratis).
   - *Plan inteligente (F-20):* `armarPlan` suma un puntaje por aprovechar lo que vence (≤3 días +16, ≤7 +9, ≤14 +3, tope 30, solo si el alimento sigue bueno ese día y queda en el stock simulado) y reparte las calorías del día por comida (`PESO_COMIDA`: desayuno 22 %, almuerzo 34 %, merienda 14 %, cena 30 %) con una pequeña preferencia por la proteína. Al armar, el aviso cuenta cuántos alimentos que vencen se aprovecharon y el Plan muestra una tarjeta con los que quedaron sin plan (`plan-vence`) que lleva a Recetas filtradas por ese alimento.
   - *Ayuno intermitente y recordatorios (F-21):* en el Diario (solo hoy) el ayuno con esquemas 12:12, 14:10, 16:8, 18:6 y 20:4, hora de inicio editable, cuánto pasó, cuánto falta y el cumplimiento semanal. En el Perfil, recordatorios de agua, comidas sin anotar y fin del ayuno, con horas editables; avisan **con la app abierta** (sin servidor no se puede con la app cerrada: ver F-06). Todo se guarda en el teléfono (`tupper:ayuno:`, `tupper:recordatorios:`).

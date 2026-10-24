@@ -5,16 +5,29 @@ import Silueta from './Silueta'
 import Vista3D, { hayWebGL, tresDPrendido } from './Vista3D'
 import { Icono } from './ui'
 import { edad as edadDe } from '../lib/fechas'
-import { escalaDe, grasaConPeso, grasaEstimada, nombreDeGrasa, pesoMinimo } from '../lib/silueta'
+import { ALTURA_MAX, ALTURA_MIN, escalaDe, grasaConPeso, grasaEstimada, nombreDeGrasa, pesoMinimoBarra } from '../lib/silueta'
 import { redondear } from '../lib/nutricion'
 
 const KG_POR_PIXEL = 1 / 7
+// Los kilos con coma decimal, como se escriben acá (79,2 y no 79.2)
+const kgTexto = (n) => redondear(n, 1).toLocaleString('es-AR')
 
 // `perfil`: el de la persona. `peso`: el de hoy (la última medida). `onUsarMeta(kg)`: si está, aparece el botón para
-// guardar el peso elegido como meta.
-export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta = false }) {
+// guardar el peso elegido como meta. `onGuardarAltura(cm)`: si está, la altura que se ajusta acá se puede guardar en el perfil.
+export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, onGuardarAltura, compacta = false }) {
   const sexo = perfil?.sex === 'f' ? 'f' : 'm'
-  const altura = Number(perfil?.height_cm) || null
+  const alturaPerfil = Number(perfil?.height_cm) || null
+  // La altura se puede ajustar acá mismo (1.28): cambia la regla, el % de grasa estimado y el ancho del cuerpo
+  const [alturaElegida, setAlturaElegida] = useState(alturaPerfil)
+  useEffect(() => {
+    setAlturaElegida(alturaPerfil)
+  }, [alturaPerfil])
+  const altura = alturaElegida || alturaPerfil
+  // Lo que está escrito en el campo (puede estar a medio escribir); la altura de verdad solo cambia con un valor válido
+  const [textoAltura, setTextoAltura] = useState(String(altura || ''))
+  useEffect(() => {
+    setTextoAltura(String(altura || ''))
+  }, [altura])
   const edad = perfil?.birth_date ? edadDe(perfil.birth_date) : null
   const propia = perfil?.body_fat_pct != null && perfil.body_fat_pct !== '' ? Number(perfil.body_fat_pct) : null
   const grasaHoy = propia ?? grasaEstimada({ peso, altura, edad, sexo })
@@ -22,10 +35,9 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
 
   const rango = useMemo(() => {
     if (!(peso > 0) || grasaHoy == null) return null
-    const min = Math.max(35, pesoMinimo({ peso, grasa: grasaHoy, sexo }))
     // Hasta 50 kilos más que hoy (y al menos 150): hay personas de 120 kilos y más, y ver adónde se llega también sirve
-    return [min, Math.min(250, Math.ceil(Math.max(peso + 50, 150)))]
-  }, [peso, grasaHoy, sexo])
+    return [pesoMinimoBarra({ peso, altura }), Math.min(250, Math.ceil(Math.max(peso + 50, 150)))]
+  }, [peso, grasaHoy, altura])
   const [elegido, setElegido] = useState(() => meta || (peso ? Math.round(peso - Math.max(2, peso * 0.08)) : null))
   const arrastre = useRef(null)
   const [tresD, setTresD] = useState(false)
@@ -33,6 +45,7 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
   useEffect(() => {
     if (meta) setElegido(meta)
   }, [meta])
+  const cambiarAltura = (cm) => setAlturaElegida(Math.min(ALTURA_MAX, Math.max(ALTURA_MIN, Math.round(cm))))
 
   if (!rango || !altura || !edad) {
     return (
@@ -78,8 +91,8 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
         escala={escalaNueva}
         comparar={kg < peso ? grasaHoy : null}
         escalaComparar={escalaHoy}
-        className={compacta ? 'w-28' : 'w-32 sm:w-36'}
-        titulo={`Tu silueta con ${redondear(kg, 1)} kilos`}
+        className={compacta ? 'w-28 max-w-[34vw]' : 'w-32 sm:w-36 max-w-[34vw]'}
+        titulo={`Tu silueta con ${kgTexto(kg)} kilos`}
       />
     </div>
   )
@@ -103,12 +116,14 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
           <Vista3D
             tipo="cuerpo"
             props={{ sexo, grasa: grasaNueva, escala: escalaNueva, altura, modo: 'silueta' }}
-            etiqueta={`Tu cuerpo en 3D con ${redondear(kg, 1)} kilos`}
+            etiqueta={`Tu cuerpo en 3D con ${kgTexto(kg)} kilos`}
             className="w-full max-w-[280px]"
             lienzo="w-full h-80"
             sinTresD={siluetaNueva}
           />
-          <p className="text-xs text-gris -mt-1">Arrastrá para girar · {redondear(kg, 1)} kg</p>
+          <p className="text-xs text-gris -mt-1">
+            Arrastrá para girar · {kgTexto(kg)} kg · {String((altura / 100).toFixed(2)).replace('.', ',')} m
+          </p>
         </div>
       ) : (
         <div className="flex items-end justify-center gap-2">
@@ -117,12 +132,13 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
               grasa={grasaHoy}
               sexo={sexo}
               escala={escalaHoy}
-              className={compacta ? 'w-28' : 'w-32 sm:w-36'}
+              altura={altura}
+              className={compacta ? 'w-32 max-w-[38vw]' : 'w-36 sm:w-40 max-w-[38vw]'}
               titulo="Tu silueta de hoy"
             />
             <figcaption className="text-center mt-1">
               <span className="block text-xs text-gris">Hoy</span>
-              <span className="block font-bold">{redondear(peso, 1)} kg</span>
+              <span className="block font-bold">{kgTexto(peso)} kg</span>
             </figcaption>
           </figure>
           <Icono n="chevron_right" className="text-gris mb-14" />
@@ -130,7 +146,7 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
             {siluetaNueva}
             <figcaption className="text-center mt-1">
               <span className="block text-xs text-gris">Con</span>
-              <span className="block font-bold text-verde-texto text-lg leading-tight">{redondear(kg, 1)} kg</span>
+              <span className="block font-bold text-verde-texto text-lg leading-tight">{kgTexto(kg)} kg</span>
             </figcaption>
           </figure>
         </div>
@@ -149,7 +165,7 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
           value={kg}
           onChange={(e) => fijar(Number(e.target.value))}
           className="w-full accent-[rgb(var(--c-verde))]"
-          aria-valuetext={`${redondear(kg, 1)} kilos`}
+          aria-valuetext={`${kgTexto(kg)} kilos`}
         />
         <div className="flex justify-between text-[11px] text-gris">
           <span>{rango[0]} kg</span>
@@ -160,6 +176,53 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
         </div>
       </div>
 
+      <div className="flex items-center gap-2 mt-3 rounded-2xl bg-campo px-3 py-2" data-testid="silueta-altura">
+        <Icono n="straighten" size={20} className="text-verde-texto" />
+        <span className="text-sm flex-1">Altura</span>
+        <button
+          type="button"
+          onClick={() => cambiarAltura(altura - 1)}
+          disabled={altura <= ALTURA_MIN}
+          className="toque w-9 h-9 rounded-full bg-superficie flex items-center justify-center"
+          aria-label="Un centímetro menos"
+        >
+          <Icono n="remove" size={18} />
+        </button>
+        <label htmlFor="sil-altura" className="sr-only">
+          Altura en centímetros
+        </label>
+        <input
+          id="sil-altura"
+          type="number"
+          inputMode="numeric"
+          min={ALTURA_MIN}
+          max={ALTURA_MAX}
+          value={textoAltura}
+          onChange={(e) => {
+            setTextoAltura(e.target.value)
+            const v = Number(e.target.value)
+            if (v >= ALTURA_MIN && v <= ALTURA_MAX) setAlturaElegida(Math.round(v))
+          }}
+          onBlur={() => setTextoAltura(String(altura))}
+          className="w-14 h-9 rounded-xl bg-superficie text-center font-semibold"
+        />
+        <span className="text-sm text-gris">cm</span>
+        <button
+          type="button"
+          onClick={() => cambiarAltura(altura + 1)}
+          disabled={altura >= ALTURA_MAX}
+          className="toque w-9 h-9 rounded-full bg-superficie flex items-center justify-center"
+          aria-label="Un centímetro más"
+        >
+          <Icono n="add" size={18} />
+        </button>
+      </div>
+      {onGuardarAltura && alturaPerfil && altura !== alturaPerfil && altura >= ALTURA_MIN && altura <= ALTURA_MAX && (
+        <button type="button" onClick={() => onGuardarAltura(altura)} className="btn-suave w-full mt-2">
+          <Icono n="check" size={20} /> Guardar {altura} cm como mi altura
+        </button>
+      )}
+
       <div className="grid grid-cols-2 gap-2 mt-3 text-center">
         <div className="rounded-2xl bg-campo p-3">
           <p className="text-[11px] text-gris">Grasa hoy{propia == null ? ' (estimada)' : ''}</p>
@@ -168,7 +231,7 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
           </p>
         </div>
         <div className="rounded-2xl bg-verde-suave p-3">
-          <p className="text-[11px] text-verde-texto">Con {redondear(kg, 1)} kg</p>
+          <p className="text-[11px] text-verde-texto">Con {kgTexto(kg)} kg</p>
           <p className="font-bold text-verde-texto">
             {Math.round(grasaNueva)} % <span className="text-xs font-semibold">· {nombreDeGrasa(grasaNueva, sexo)}</span>
           </p>
@@ -185,7 +248,7 @@ export default function SiluetaInteractiva({ perfil, peso, onUsarMeta, compacta 
       )}
       {onUsarMeta && Math.abs(kg - (meta || 0)) >= 0.5 && (
         <button type="button" onClick={() => onUsarMeta(kg)} className="btn-suave w-full mt-3">
-          <Icono n="check" size={20} /> Usar {redondear(kg, 1)} kg como mi meta
+          <Icono n="check" size={20} /> Usar {kgTexto(kg)} kg como mi meta
         </button>
       )}
       <p className="text-[11px] text-gris mt-2 leading-snug">

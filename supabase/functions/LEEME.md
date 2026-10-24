@@ -116,3 +116,38 @@ Solo la foto (achicada a 1024 px), el audio (hasta 30 s) o el texto escrito, par
 ## Pruebas
 
 Las pruebas de navegador reemplazan la función por una de mentira (acá no corre Deno). La lógica de la función (`logica.ts`) tiene pruebas unitarias; **lo que no se probó nunca es hablar con los proveedores reales**: la primera vez, probá una foto, un audio y un texto desde el teléfono y mirá los registros de la función en el panel de Supabase.
+
+---
+
+# Asistente con IA (`asistente-ia`) y respaldo del análisis semanal (1.28)
+
+El asistente ("Preguntale a la IA", en el Diario y en `/asistente`) responde preguntas como "¿qué ceno con lo que me queda?" con un resumen del día que arma la app (objetivo, lo comido, lo que falta, la despensa y el plan; sin nombre ni email). No guarda la conversación: solo cuenta cada pregunta en `ai_usos` (tipo `chat`) para el tope diario.
+
+## Pasos para activarlo
+
+1. Correr `supabase/actualizacion-21.sql` en el editor SQL (combos, consentimiento, opiniones y el tipo `chat` en `ai_usos`; es aditivo).
+2. Cargar el secreto `GEMINI_API_KEY` (gratis en https://aistudio.google.com/apikey → **Create API key**). Si no está, el asistente usa `GROQ_API_KEY`, que ya está cargada.
+3. Publicar la función: `supabase functions deploy asistente-ia --project-ref bpxxwmcqidoxgmfyzhpc`.
+4. Volver a publicar `analizar-semana` para que tenga el respaldo: `supabase functions deploy analizar-semana --project-ref bpxxwmcqidoxgmfyzhpc`.
+
+## Proveedores
+
+| Función | Primero | Respaldo |
+| --- | --- | --- |
+| `asistente-ia` | Gemini (`gemini-3.1-flash-lite`) | Groq (`openai/gpt-oss-120b`) |
+| `analizar-semana` | Groq | Gemini (solo los gratis: Anthropic nunca entra de respaldo porque se paga) |
+| `registrar-ia` | Cloudflare (foto) / Groq (voz y texto) | Gemini si está la clave |
+
+Con `GEMINI_API_KEY` cargada, Gemini también entra de respaldo en la carga con foto (ver arriba). **Ojo:** en el plan gratis, Google puede usar lo que se le manda para mejorar sus productos; la Política de privacidad ya lo dice.
+
+## Secretos opcionales
+
+| Secreto | Para qué | Por defecto |
+| --- | --- | --- |
+| `CHAT_ORDEN` | Orden de proveedores del asistente | `gemini,groq` |
+| `GEMINI_MODEL` | Qué modelo de Gemini usar | `gemini-3.1-flash-lite` |
+| `ASISTENTE_LIMITE_DIARIO` | Preguntas por cuenta cada 24 horas (tope 200) | `30` |
+
+## Pruebas
+
+Como con `registrar-ia`, las pruebas de navegador reemplazan la función por una de mentira; la lógica (`logica.ts`, `proveedores.ts`) tiene pruebas unitarias (`pruebas/unidad/novedades-128.test.js` y `analisis.test.js`). Nunca se probó contra Gemini de verdad: la primera vez, hacé un par de preguntas desde el teléfono y mirá los registros de la función.

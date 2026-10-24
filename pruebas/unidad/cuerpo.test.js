@@ -2,7 +2,7 @@
 import fs from 'node:fs'
 import { describe, expect, test } from 'vitest'
 import { inflar, leerCuerpo, mezclar, normales, parametrosCuerpo, pesosDeMezcla } from '../../src/components/tres/cuerpo.js'
-import { escalaDe, grasaConPeso } from '../../src/lib/silueta.js'
+import { escalaDe, grasaConPeso, pesoMinimoBarra } from '../../src/lib/silueta.js'
 
 const modelo = (() => {
   const b = fs.readFileSync(new URL('../../public/modelos/cuerpo.bin', import.meta.url))
@@ -59,6 +59,18 @@ describe('gordura del cuerpo 3D', () => {
         inflar(modelo, out, p, minY, maxY)
         expect(out.every(Number.isFinite)).toBe(true)
       }
+  })
+  test('pesos bajos (1.28): la barra baja hasta un IMC de 15 y el cuerpo se angosta', () => {
+    // 90 kilos y 1,75 m: antes la barra no bajaba de unos 64; ahora llega a 45
+    expect(pesoMinimoBarra({ peso: 90, altura: 175 })).toBe(45)
+    // Nunca por encima de lo que pesa hoy, y nunca menos de 30
+    expect(pesoMinimoBarra({ peso: 42, altura: 175 })).toBe(39)
+    expect(pesoMinimoBarra({ peso: 35, altura: 120 })).toBe(30)
+    const flaco = conPeso('m', 175, 90, 25, 45)
+    const normal = conPeso('m', 175, 90, 25, 80)
+    expect(flaco.ancho).toBeLessThan(normal.ancho)
+    expect(flaco.ancho).toBeGreaterThanOrEqual(0.85)
+    expect(normal.ancho).toBe(1)
   })
   test('las normales salen unitarias', () => {
     const n = normales(modelo.pos, modelo.indices)

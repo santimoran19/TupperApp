@@ -275,7 +275,7 @@ export const PASOS = [
     ancla: 'perfil-atajos',
     titulo: 'Y algo más',
     texto:
-      'Desde acá abrís el resumen de la semana y Mis alimentos (los que creaste vos). Con Descargar mis datos te bajás una copia de todo lo tuyo.',
+      'Desde acá abrís el resumen de la semana y Mis alimentos (los que creaste vos). Con Descargar mis datos te bajás una copia de todo lo tuyo, y con Exportar a Excel, tu registro para el nutricionista.',
   },
   {
     id: 'fin',

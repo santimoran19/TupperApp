@@ -473,13 +473,13 @@ export default function Despensa() {
               <div className="chips-hilera sin-scroll mb-4">
                 {categorias.map((c) => (
                   <Chip key={c} activo={c === categoria} onClick={() => setCategoria(c)}>
-                    {c} <span className="opacity-60">({c === 'Todos' ? filas.length : cuentaCat.get(c)})</span>
+                    {c} <span className="font-normal">({c === 'Todos' ? filas.length : cuentaCat.get(c)})</span>
                   </Chip>
                 ))}
               </div>
               <div className="grilla-tarjetas [--min:19rem]">
                 {visibles.map(({ a, qty, estado, nivel }) => (
-                  <div key={a.id} className={`tarjeta p-3.5 ${qty <= 0 ? 'opacity-80' : ''}`}>
+                  <div key={a.id} className={`tarjeta p-3.5 ${qty <= 0 ? '!bg-campo !shadow-none' : ''}`}>
                     <div className="flex items-start gap-3">
                       <Foto ruta={a.image_path} categoria={a.category} nombre={a.name} className="w-16 h-16 rounded-2xl" />
                       <div className="flex-1 min-w-0">
@@ -519,7 +519,8 @@ export default function Despensa() {
                         </div>
                       </div>
                     )}
-                    <div className="flex items-center gap-2 mt-3">
+                    {/* Con la letra grande del teléfono, los botones bajan a otra fila en vez de salirse (1.28, D-07) */}
+                    <div className="flex flex-wrap items-center gap-2 mt-3">
                       <div className="flex items-center rounded-full bg-campo">
                         <button
                           onClick={() => d.ajustarStock(a.id, -pasoDe(a))}
@@ -546,7 +547,7 @@ export default function Despensa() {
                           <Link
                             to={`/recetas?con=${d.base(a).id}`}
                             className="btn-chico bg-verde-suave text-verde-texto px-3"
-                            aria-label={`Recetas con ${a.name}`}
+                            aria-label={`Cocinar: recetas con ${a.name}`}
                           >
                             <Icono n="skillet" size={16} /> Cocinar
                           </Link>

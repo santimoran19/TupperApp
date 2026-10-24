@@ -112,6 +112,7 @@ test('cuenta con código, bebidas, recetas y resumen', async ({ browser }) => {
     expect(await pg.locator('text=¡Hola').count(), 'guardó el perfil de un menor').toBe(0)
     await pg.fill('#pf-nac', '2000-05-01')
     await pg.waitForSelector('text=Tupper es solo para mayores de 18 años.', { state: 'detached' })
+    await pg.check('#pf-consentimiento')
     await pg.click('button:has-text("Empezar")')
     await pg.waitForSelector('text=¡Hola, Ana!')
     await saltarRecorrido(pg)

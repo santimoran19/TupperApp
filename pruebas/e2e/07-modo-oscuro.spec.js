@@ -94,7 +94,7 @@ test('modo oscuro: todas las pantallas y el selector de tema', async ({ browser 
     expect(await pg.evaluate(fondo)).toBe('rgb(249, 251, 248)')
     await pg.reload()
     await pg.waitForSelector('text=Apariencia')
-    await pg.locator('button[role=radio][aria-checked=true]').innerText()
+    await pg.getByRole('radiogroup', { name: 'Tema de la app' }).locator('button[role=radio][aria-checked=true]').innerText()
     expect(await pg.evaluate(fondo)).toBe('rgb(249, 251, 248)')
     await pg.click('button[role=radio]:has-text("Oscuro")')
     await pg.waitForTimeout(200)

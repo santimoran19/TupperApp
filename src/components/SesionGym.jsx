@@ -141,7 +141,9 @@ function BloqueEjercicio({ ej, ejercicio, previa, records, onCambiar, onQuitar, 
           const rotos = records.get(s.clave) || []
           return (
             <div key={s.clave}>
-              <div className={`grid grid-cols-[2rem_1fr_1fr_3.5rem_2.5rem] gap-2 items-center ${s.hecha ? 'opacity-70' : ''}`}>
+              <div
+                className={`grid grid-cols-[2rem_1fr_1fr_3.5rem_2.5rem] gap-2 items-center ${s.hecha ? 'bg-verde-claro rounded-xl' : ''}`}
+              >
                 <button
                   onClick={() => set(s.clave, 'warmup')(!s.warmup)}
                   className={`h-9 rounded-lg text-xs font-bold ${s.warmup ? 'bg-naranja-suave text-naranja-oscuro' : 'bg-campo text-gris'}`}
@@ -228,7 +230,7 @@ function BarraDescanso({ descanso, ahora, onSumar, onSaltar }) {
     >
       <Icono n="timer" size={22} />
       <div className="flex-1">
-        <p className="text-xs opacity-80">Descanso</p>
+        <p className="text-xs">Descanso</p>
         <p className="text-xl font-bold leading-none tabular-nums">{faltan > 0 ? mmss(faltan) : '¡Listo!'}</p>
       </div>
       <button onClick={() => onSumar(15)} className="btn-chico bg-white/20 text-fondo">

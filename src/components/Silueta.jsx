@@ -42,15 +42,39 @@ const formas = (p) => [
   <ellipse key="h" cx={p.cabeza.cx} cy={p.cabeza.cy} rx={p.cabeza.rx} ry={p.cabeza.ry} />,
 ]
 
+// La regla de la altura (1.28): de la coronilla a los pies del dibujo, con una marca cada 10 cm
+const REGLA = { x: 218, arriba: 10, abajo: 426 }
+const metros = (cm) => (cm / 100).toFixed(2).replace('.', ',')
+
 // `grasa`: % de grasa de la silueta principal. `comparar`: % de la de fondo (o null). `escala`: ancho según la masa magra.
-export default function Silueta({ grasa, sexo = 'm', escala = 1, comparar = null, escalaComparar = escala, className = 'w-40', titulo }) {
+// `altura` (cm): si está, se dibuja al lado una regla con la altura.
+export default function Silueta({
+  grasa,
+  sexo = 'm',
+  escala = 1,
+  comparar = null,
+  escalaComparar = escala,
+  className = 'w-40',
+  titulo,
+  altura = null,
+}) {
   const id = useId().replace(/:/g, '')
   const g = useSuave(grasa)
   const e = useSuave(escala)
   const p = partes(medidas(g, sexo, e))
   const fondo = comparar != null ? partes(medidas(comparar, sexo, escalaComparar)) : null
+  const conRegla = altura > 0
+  const marcas = conRegla
+    ? Array.from({ length: Math.floor(altura / 10) + 1 }, (_, i) => REGLA.abajo - ((REGLA.abajo - REGLA.arriba) * i * 10) / altura)
+    : []
+  const nombre = titulo || `Silueta con ${Math.round(grasa)} % de grasa`
   return (
-    <svg viewBox="0 0 200 440" className={className} role="img" aria-label={titulo || `Silueta con ${Math.round(grasa)} % de grasa`}>
+    <svg
+      viewBox={conRegla ? '0 -18 240 458' : '0 0 200 440'}
+      className={className}
+      role="img"
+      aria-label={conRegla ? `${nombre}, ${metros(altura)} metros de altura` : nombre}
+    >
       <defs>
         <linearGradient id={`sil-${id}`} gradientUnits="userSpaceOnUse" x1="40" y1="20" x2="170" y2="430">
           <stop offset="0" stopColor="rgb(var(--c-verde-medio))" />
@@ -71,6 +95,19 @@ export default function Silueta({ grasa, sexo = 'm', escala = 1, comparar = null
       {/* El brillo va en un solo rectángulo recortado con la forma, para que no se note dónde se tocan las partes */}
       <clipPath id={`cuerpo-${id}`}>{formas(p)}</clipPath>
       <rect x="0" y="0" width="200" height="440" fill={`url(#luz-${id})`} clipPath={`url(#cuerpo-${id})`} />
+      {conRegla && (
+        <g stroke="rgb(var(--c-gris))" strokeWidth="1.5" data-testid="regla-altura" aria-hidden="true">
+          <line x1={REGLA.x} y1={REGLA.arriba} x2={REGLA.x} y2={REGLA.abajo} />
+          {marcas.map((y, i) => (
+            <line key={i} x1={REGLA.x - (i % 5 === 0 ? 7 : 4)} y1={y} x2={REGLA.x} y2={y} />
+          ))}
+          <line x1={REGLA.x - 10} y1={REGLA.arriba} x2={REGLA.x + 6} y2={REGLA.arriba} strokeWidth="2" />
+          <line x1={REGLA.x - 10} y1={REGLA.abajo} x2={REGLA.x + 6} y2={REGLA.abajo} strokeWidth="2" />
+          <text x={REGLA.x - 2} y="-4" textAnchor="middle" fontSize="15" fontWeight="700" fill="rgb(var(--c-tinta))" stroke="none">
+            {metros(altura)} m
+          </text>
+        </g>
+      )}
     </svg>
   )
 }

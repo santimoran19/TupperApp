@@ -112,13 +112,13 @@ export default function Recetas() {
     <Marco titulo="Recetas">
       <div className="lg:flex lg:gap-6 lg:items-start lg:mb-2">
         <section className="rounded-3xl bg-verde text-white p-5 mb-4 lg:w-[22rem] lg:shrink-0" data-tour="rec-resumen">
-          <p className="text-[11px] font-bold tracking-wider opacity-80 flex items-center gap-1.5">
+          <p className="text-[11px] font-bold tracking-wider flex items-center gap-1.5">
             <Icono n="kitchen" size={16} /> CON TU DESPENSA
           </p>
           <p className="text-2xl font-bold mt-1">
             {listas} {listas === 1 ? 'receta lista' : 'recetas listas'} para cocinar
           </p>
-          <p className="text-sm opacity-85 mt-1">Se actualiza sola cada vez que cambia tu stock.</p>
+          <p className="text-sm mt-1">Se actualiza sola cada vez que cambia tu stock.</p>
         </section>
 
         <div className="lg:flex-1 lg:min-w-0" data-tour="rec-buscar">

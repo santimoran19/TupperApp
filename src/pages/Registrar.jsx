@@ -1,7 +1,7 @@
 // Registrar una comida: alimentos sueltos con su cantidad, bebidas o porciones de una receta.
 import RegistroIA from '../components/RegistroIA'
-import { useMemo, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Marco from '../components/Marco'
 import SelectorAlimento from '../components/SelectorAlimento'
 import { Barra, Chip, Err, Hoja, Icono, Numero } from '../components/ui'
@@ -175,6 +175,48 @@ export default function Registrar() {
       }
       return lista
     })
+  // Un combo (F-09): se suma todo de una; lo que ya está en el plato no se repite
+  const agregarCombo = (c) =>
+    agregarDeIA((c.items || []).filter((p) => (p.food_id ? d.alimentosPorId.has(p.food_id) : d.recetasPorId.has(p.recipe_id))))
+
+  // Lo que llega desde la carga rápida del Diario (1.28): lo que armó la IA o un combo. Se usa una sola vez y se borra de
+  // la dirección, así al recargar no se vuelve a sumar.
+  const ubicacion = useLocation()
+  const [mensajeIA, setMensajeIA] = useState(null)
+  const traido = useRef(false)
+  useEffect(() => {
+    if (traido.current) return
+    traido.current = true
+    const llega = ubicacion.state
+    if (!llega) return
+    if (llega.ia?.platos?.length) {
+      agregarDeIA(llega.ia.platos)
+      if (llega.ia.mensaje) setMensajeIA(llega.ia.mensaje)
+    }
+    const combo = llega.combo && d.combos.find((c) => c.id === llega.combo)
+    if (combo) agregarCombo(combo)
+    // Se borra sin navegar: navegar de nuevo vuelve a armar la pantalla y se perdía lo que se acababa de sumar
+    try {
+      window.history.replaceState({ ...window.history.state, usr: null }, '')
+    } catch {
+      /* sin historial: al recargar se suma de nuevo, no es grave */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const [nuevoCombo, setNuevoCombo] = useState(null) // nombre que se está escribiendo, o null si la hoja está cerrada
+  const [editandoCombos, setEditandoCombos] = useState(false)
+  const guardarCombo = async (ev) => {
+    ev.preventDefault()
+    const items = platos.map((p) =>
+      p.food_id ? { food_id: p.food_id, qty: Number(p.qty) } : { recipe_id: p.recipe_id, porciones: Number(p.porciones) },
+    )
+    if (await d.guardarCombo(nuevoCombo, items)) {
+      d.avisar(`Combo "${nuevoCombo.trim()}" guardado`)
+      setNuevoCombo(null)
+    }
+  }
+
   const cambiar = (i, cambios) => setPlatos((p) => p.map((x, j) => (j === i ? { ...x, ...cambios } : x)))
   const quitar = (i) => setPlatos((p) => p.filter((_, j) => j !== i))
 
@@ -237,6 +279,45 @@ export default function Registrar() {
             ))}
           </div>
 
+          {/* La carga con IA va primero (1.28): es lo más rápido para anotar */}
+          <RegistroIA onPlatos={agregarDeIA} />
+          {mensajeIA && (
+            <p
+              className={`text-sm -mt-2 mb-4 rounded-xl p-3 ${mensajeIA.tipo === 'ok' ? 'bg-verde-suave text-verde-texto' : 'bg-naranja-suave text-naranja-oscuro'}`}
+              role="status"
+            >
+              {mensajeIA.texto}
+            </p>
+          )}
+
+          {d.combos.length > 0 && (
+            <>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-semibold flex items-center gap-1.5">
+                  <Icono n="bolt" size={18} className="text-verde-texto" /> Tus combos
+                </p>
+                <button onClick={() => setEditandoCombos(true)} className="text-xs font-semibold text-verde-texto px-2 h-8">
+                  Editar
+                </button>
+              </div>
+              <div className="chips-hilera sin-scroll mb-4" data-testid="combos">
+                {d.combos.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => agregarCombo(c)}
+                    className="shrink-0 max-w-[220px] rounded-full bg-verde-claro text-verde-texto pl-4 pr-2 h-10 flex items-center gap-2 text-sm font-semibold"
+                    aria-label={`Agregar el combo ${c.name}`}
+                  >
+                    <span className="truncate">{c.name}</span>
+                    <span className="w-6 h-6 shrink-0 rounded-full bg-superficie flex items-center justify-center">
+                      <Icono n="add" size={16} />
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
           <div className="grid grid-cols-3 gap-2 mb-4" data-tour="reg-tipos">
             <button onClick={() => setBuscando('alimento')} className="tarjeta p-3 text-left" data-tour="reg-alimento">
               <div className="w-10 h-10 rounded-full bg-verde-claro text-verde-texto flex items-center justify-center mb-2">
@@ -260,8 +341,6 @@ export default function Registrar() {
               <p className="text-xs text-gris">Una porción armada</p>
             </button>
           </div>
-
-          <RegistroIA onPlatos={agregarDeIA} />
 
           {platos.length === 0 && deAyer.length > 0 && (
             <button onClick={repetirAyer} className="w-full tarjeta p-3 mb-4 flex items-center gap-3 text-left">
@@ -490,6 +569,11 @@ export default function Registrar() {
                 />
                 Descontar de mi despensa lo que usé
               </label>
+              {valido && (
+                <button onClick={() => setNuevoCombo('')} className="btn-suave w-full mt-3" data-testid="guardar-combo">
+                  <Icono n="bolt" size={20} /> Guardar como combo
+                </button>
+              )}
             </section>
           )}
 
@@ -537,6 +621,65 @@ export default function Registrar() {
               )
             })}
           </div>
+        </Hoja>
+      )}
+
+      {nuevoCombo !== null && (
+        <Hoja titulo="Guardar como combo" onCerrar={() => setNuevoCombo(null)}>
+          <form onSubmit={guardarCombo}>
+            <p className="text-sm text-gris mb-3">
+              Un combo junta lo que comés seguido ({platos.length} {platos.length === 1 ? 'cosa' : 'cosas'}, con estas cantidades) para
+              anotarlo con un toque desde el Diario o desde acá.
+            </p>
+            <label htmlFor="combo-nombre" className="text-sm font-semibold">
+              Nombre
+            </label>
+            <input
+              id="combo-nombre"
+              value={nuevoCombo}
+              onChange={(e) => setNuevoCombo(e.target.value)}
+              maxLength={40}
+              placeholder="Ej: Mi desayuno de siempre"
+              className="campo w-full mt-1"
+              autoFocus
+            />
+            <button type="submit" disabled={!nuevoCombo.trim()} className="btn-primario w-full mt-4">
+              <Icono n="check" size={20} /> Guardar combo
+            </button>
+          </form>
+        </Hoja>
+      )}
+      {editandoCombos && (
+        <Hoja titulo="Tus combos" onCerrar={() => setEditandoCombos(false)}>
+          {d.combos.length === 0 ? (
+            <p className="text-sm text-gris">No tenés combos guardados.</p>
+          ) : (
+            <ul className="divide-y divide-linea">
+              {d.combos.map((c) => (
+                <li key={c.id} className="flex items-center gap-3 py-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium truncate">{c.name}</p>
+                    <p className="text-xs text-gris truncate">
+                      {(c.items || [])
+                        .map((p) => (p.food_id ? d.alimentosPorId.get(p.food_id)?.name : d.recetasPorId.get(p.recipe_id)?.name))
+                        .filter(Boolean)
+                        .join(', ')}
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      if (await d.confirmar({ titulo: `¿Borrar el combo "${c.name}"?`, texto: 'Lo que ya anotaste no cambia.' }))
+                        d.borrarCombo(c.id)
+                    }}
+                    className="toque w-10 h-10 rounded-full flex items-center justify-center text-rojo-texto"
+                    aria-label={`Borrar el combo ${c.name}`}
+                  >
+                    <Icono n="delete" size={20} />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </Hoja>
       )}
     </Marco>

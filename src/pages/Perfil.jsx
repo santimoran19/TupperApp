@@ -1,5 +1,7 @@
 // Perfil: objetivo, progreso de peso y cintura, y comidas que se hacen fuera de casa.
 import Recordatorios from '../components/Recordatorios'
+import Opinion from '../components/Opinion'
+import ExportarPlanilla from '../components/ExportarPlanilla'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Marco from '../components/Marco'
@@ -241,6 +243,10 @@ export default function Perfil() {
                   if (await ajustarPerfil({ goal_weight_kg: kg }))
                     avisar(`Tu meta ahora es ${String(kg).replace('.', ',')} kg. Si usás un objetivo fijo de calorías, revisalo en Editar.`)
                 }}
+                onGuardarAltura={async (cm) => {
+                  if (await ajustarPerfil({ height_cm: cm }))
+                    avisar(`Guardamos tu altura: ${cm} cm. Para recalcular tus calorías, entrá a Editar.`)
+                }}
               />
             </section>
           )}
@@ -284,6 +290,8 @@ export default function Perfil() {
           <Hogar />
 
           <Recordatorios />
+
+          <Opinion />
 
           <section className="tarjeta p-5 mb-4">
             <h2 className="font-semibold">Apariencia</h2>
@@ -341,6 +349,11 @@ export default function Perfil() {
             <button onClick={descargar} disabled={trabajando} className="w-full flex items-center gap-3 py-3.5 text-left">
               <Icono n="download" className="text-verde-texto" size={20} /> <span className="flex-1 font-medium">Descargar mis datos</span>
             </button>
+            <ExportarPlanilla />
+          </section>
+
+          {/* Los textos legales van aparte (1.28): así los atajos no crecen y el recorrido los sigue mostrando enteros */}
+          <section className="tarjeta px-4 mb-4 divide-y divide-linea">
             {[
               ['/terminos', 'Términos de uso'],
               ['/privacidad', 'Política de privacidad'],

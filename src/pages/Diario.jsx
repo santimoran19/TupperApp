@@ -3,6 +3,8 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import EditarRegistro from '../components/EditarRegistro'
 import Ayuno from '../components/Ayuno'
+import CopiarDia from '../components/CopiarDia'
+import RegistroIA from '../components/RegistroIA'
 import Marco from '../components/Marco'
 import { Anillo, Barra, Icono } from '../components/ui'
 import { useDatos } from '../store/Datos'
@@ -262,7 +264,7 @@ export default function Diario() {
                   disabled={f < rango.min || f > rango.max}
                   className={`flex flex-col items-center py-2 rounded-2xl disabled:opacity-40 ${activo ? 'bg-verde text-white shadow-tarjeta' : 'bg-superficie shadow-tarjeta'}`}
                 >
-                  <span className={`text-[11px] font-medium ${activo ? 'opacity-90' : 'text-gris'}`}>{diaCorto(f)}</span>
+                  <span className={`text-[11px] font-medium ${activo ? '' : 'text-gris'}`}>{diaCorto(f)}</span>
                   <span className="text-sm font-bold">{numeroDia(f)}</span>
                   <span
                     className={`w-1.5 h-1.5 rounded-full mt-0.5 ${tiene ? (activo ? 'bg-superficie' : 'bg-verde-medio') : 'bg-transparent'}`}
@@ -287,18 +289,19 @@ export default function Diario() {
           <section className="tarjeta rounded-3xl p-5 mb-4" data-tour="diario-resumen">
             {con3D ? (
               <>
-                <div className="relative -mx-2 -mt-2">
+                {/* Los números van arriba del tupper y no encima (1.28): al girar, la tapa los tapaba */}
+                <div className="flex items-baseline gap-2" data-testid="diario-kcal">
+                  <p className="text-3xl font-bold leading-none tabular-nums">{redondear(total.kcal).toLocaleString('es-AR')}</p>
+                  <p className="text-sm text-gris">kcal de {kcalObj.toLocaleString('es-AR')}</p>
+                </div>
+                <div className="-mx-2">
                   <Vista3D
                     tipo="tupper"
                     props={tupper}
                     etiqueta={`Tupper del día: ${redondear(total.kcal)} de ${kcalObj} calorías`}
-                    lienzo="w-full h-[220px]"
-                    sinTresD={<div className="h-[220px]" />}
+                    lienzo="w-full h-[200px]"
+                    sinTresD={<div className="h-[200px]" />}
                   />
-                  <div className="absolute left-2 top-1 pointer-events-none">
-                    <p className="text-3xl font-bold leading-none tabular-nums">{redondear(total.kcal).toLocaleString('es-AR')}</p>
-                    <p className="text-xs text-gris mt-1">kcal de {kcalObj.toLocaleString('es-AR')}</p>
-                  </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2 mt-2">{tarjetasDelDia}</div>
               </>
@@ -344,6 +347,37 @@ export default function Diario() {
                 </div>
               </div>
             </div>
+          </section>
+
+          {/* Carga rápida (1.28): lo que más le ahorra tiempo a la persona, a un toque desde el Diario */}
+          <section className="tarjeta p-4 mb-4" aria-labelledby="rapida-titulo" data-testid="carga-rapida">
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <h3 id="rapida-titulo" className="font-semibold flex items-center gap-2">
+                <Icono n="wand_stars" size={20} className="text-teal" /> Anotá rápido
+              </h3>
+              <Link to="/asistente" className="btn-chico h-8 bg-teal-suave text-teal-oscuro whitespace-nowrap" data-testid="ir-asistente">
+                <Icono n="forum" size={15} /> Preguntale a la IA
+              </Link>
+            </div>
+            <RegistroIA
+              sinTarjeta
+              onPlatos={(platos, mensaje) => nav(`/registrar?fecha=${fecha}`, { state: { ia: { platos, mensaje } } })}
+            />
+            {d.combos.length > 0 && (
+              <div className="chips-hilera sin-scroll mt-3" data-testid="combos-diario">
+                {d.combos.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => nav(`/registrar?fecha=${fecha}`, { state: { combo: c.id } })}
+                    className="shrink-0 max-w-[200px] rounded-full bg-verde-claro text-verde-texto px-3 h-9 flex items-center gap-1.5 text-sm font-semibold"
+                    aria-label={`Anotar el combo ${c.name}`}
+                  >
+                    <Icono n="bolt" size={16} />
+                    <span className="truncate">{c.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </section>
 
           {esHoy && <Ayuno />}
@@ -477,11 +511,9 @@ export default function Diario() {
                     <div className="mt-3 pt-1 border-t border-linea divide-y divide-linea">
                       {entradas.map((r) => (
                         <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
-                          <button
-                            onClick={() => abrirEdicion(r)}
-                            className="flex-1 min-w-0 truncate text-left"
-                            aria-label={`Cambiar la cantidad de ${r.name}`}
-                          >
+                          <button onClick={() => abrirEdicion(r)} className="flex-1 min-w-0 truncate text-left">
+                            {/* El nombre que se oye empieza con lo que hace el botón y sigue con lo que se ve (1.28, D-07) */}
+                            <span className="sr-only">Cambiar la cantidad de </span>
                             {r.name}
                             <span className="text-gris"> · {cantidadDeRegistro(r, d.alimentosPorId.get(r.food_id))}</span>
                           </button>
@@ -564,11 +596,8 @@ export default function Diario() {
                     const a = d.alimentosPorId.get(r.food_id)
                     return (
                       <div key={r.id} className="flex items-center gap-2 py-2 text-sm">
-                        <button
-                          onClick={() => abrirEdicion(r)}
-                          className="flex-1 min-w-0 truncate text-left"
-                          aria-label={`Cambiar la cantidad de ${r.name}`}
-                        >
+                        <button onClick={() => abrirEdicion(r)} className="flex-1 min-w-0 truncate text-left">
+                          <span className="sr-only">Cambiar la cantidad de </span>
                           {r.name}
                           <span className="text-gris"> · {cantidadDeRegistro(r, a)}</span>
                         </button>
@@ -597,6 +626,7 @@ export default function Diario() {
               </div>
             </section>
           </div>
+          {delDia.some((r) => !r.skipped) && <CopiarDia fecha={fecha} onCopiado={setFecha} />}
         </div>
       </div>
       {editandoId && d.registros.some((r) => r.id === editandoId) && (

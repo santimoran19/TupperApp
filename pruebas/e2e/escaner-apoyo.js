@@ -61,6 +61,7 @@ export async function cuenta(browser, camara, email, nombre, productos, estado =
   await pg.fill('#pf-nac', '1995-05-05')
   await pg.fill('#pf-altura', '170')
   await pg.fill('#pf-peso', '65')
+  await pg.check('#pf-consentimiento')
   await pg.click('button:has-text("Empezar")')
   await pg.waitForSelector(`text=¡Hola, ${nombre}!`)
   await saltarRecorrido(pg)

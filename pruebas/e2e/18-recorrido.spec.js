@@ -22,6 +22,7 @@ async function crearCuenta(pg, { email, nombre, usuario }) {
   await pg.fill('#pf-nac', '1992-03-04')
   await pg.fill('#pf-altura', '168')
   await pg.fill('#pf-peso', '65')
+  await pg.check('#pf-consentimiento')
   await pg.click('button:has-text("Empezar")')
   await pg.waitForSelector(CAPA)
 }

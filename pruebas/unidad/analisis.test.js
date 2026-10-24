@@ -10,7 +10,7 @@ import {
   lunesDe,
   sumarDias,
 } from '../../supabase/functions/analizar-semana/logica.ts'
-import { proveedor } from '../../supabase/functions/analizar-semana/proveedores.ts'
+import { proveedor, proveedores } from '../../supabase/functions/analizar-semana/proveedores.ts'
 
 // ---------- Fechas ----------
 test('fechas: validar, sumar días y encontrar el lunes', () => {
@@ -232,6 +232,29 @@ test('elige por la clave que haya (primero Groq) o por IA_PROVEEDOR', () => {
   // Se pidió un proveedor que no tiene clave: no se usa el otro por las dudas
   conSecretos({ GROQ_API_KEY: 'g', IA_PROVEEDOR: 'anthropic' })
   expect(proveedor()).toBeNull()
+})
+
+test('respaldo (1.28): si Groq falla, responde Gemini; Anthropic (pago) nunca entra de respaldo', async () => {
+  conSecretos({ GROQ_API_KEY: 'g', GEMINI_API_KEY: 'm', ANTHROPIC_API_KEY: 'a' })
+  expect(proveedores().map((p) => p.nombre)).toEqual(['groq', 'gemini'])
+  const urls = []
+  vi.stubGlobal('fetch', async (url) => {
+    urls.push(String(url))
+    if (String(url).includes('groq'))
+      return new Response(JSON.stringify({ error: { message: 'saturado', type: 'rate_limit' } }), { status: 429 })
+    return new Response(JSON.stringify({ choices: [{ message: { content: '{"resumen":"ok"}' }, finish_reason: 'stop' }] }), {
+      status: 200,
+    })
+  })
+  const ia = proveedor()
+  const r = await ia.pedir('sistema', 'datos', new AbortController().signal)
+  expect(r).toMatchObject({ ok: true, texto: '{"resumen":"ok"}' })
+  expect(urls).toHaveLength(2)
+  expect(urls[1]).toContain('generativelanguage.googleapis.com')
+  expect(ia).toMatchObject({ nombre: 'gemini', modelo: 'gemini-3.1-flash-lite' })
+  // Con Anthropic pedido, el respaldo son los gratis
+  conSecretos({ GROQ_API_KEY: 'g', ANTHROPIC_API_KEY: 'a', IA_PROVEEDOR: 'anthropic' })
+  expect(proveedores().map((p) => p.nombre)).toEqual(['anthropic', 'groq'])
 })
 
 test('Groq: arma el pedido, lee la respuesta y avisa si quedó cortada', async () => {

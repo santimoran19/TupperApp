@@ -65,7 +65,10 @@ export function parametrosCuerpo({ sexo, grasa, escala = 1 }) {
   const gordura = tabla(mujer ? GORDURA_MUJER : GORDURA_HOMBRE, (ffmi * Math.min(g, 70)) / (100 - Math.min(g, 70)))
   // Con mucha grasa el modelo "musculoso y pesado" se ve como un fisicoculturista, no como alguien que subió de peso
   musculo *= 1 - 0.9 * Math.max(0, Math.min(1, (Math.min(gordura, 1) - 0.55) / 0.45))
-  return { sexo: mujer ? 0 : 1, peso, musculo, gordura }
+  // Muy poca masa magra (pesos bajos, 1.28): el modelo base no se afina más, así que se angosta el cuerpo entero (ancho y
+  // profundidad). Recién por debajo de una escala de 0,92; hasta un 15 % más angosto.
+  const ancho = Math.max(0.85, Math.min(1, (escala || 1) / 0.92))
+  return { sexo: mujer ? 0 : 1, peso, musculo, gordura, ancho }
 }
 
 // Cuánto vale cada una de las 12 deformaciones (sexo x músculo x peso) para esos tres controles; suman 1
@@ -322,6 +325,46 @@ export function crear(THREE, { ancho, alto, props, renderer, onFalla }) {
     malla.geometry.attributes.color.needsUpdate = true
   }
 
+  // La regla de la altura (1.28): queda quieta al costado mientras el cuerpo gira, con una marca cada 10 cm
+  const materialRegla = new THREE.MeshBasicMaterial({ color: colorDe(THREE, '--c-gris', '#6b7280') })
+  let regla = null
+  let alturaRegla = 0
+  const armarRegla = (h) => {
+    if (regla) {
+      escena.remove(regla)
+      regla.traverse((o) => o.geometry?.dispose())
+    }
+    regla = new THREE.Group()
+    regla.name = 'regla-altura'
+    const barra = new THREE.Mesh(new THREE.BoxGeometry(0.008, h, 0.008), materialRegla)
+    barra.position.y = h / 2
+    regla.add(barra)
+    for (let cm = 0; cm <= h * 100 + 0.01; cm += 10) {
+      const larga = cm % 50 === 0
+      const marca = new THREE.Mesh(new THREE.BoxGeometry(larga ? 0.06 : 0.035, 0.005, 0.005), materialRegla)
+      marca.position.set(-(larga ? 0.03 : 0.0175), cm / 100, 0)
+      regla.add(marca)
+    }
+    const tope = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.008, 0.008), materialRegla)
+    tope.position.y = h
+    regla.add(tope)
+    regla.position.set(0.74, 0, 0)
+    escena.add(regla)
+    alturaRegla = h
+    // Solo en "Cómo te verías": el mapa de músculos del gimnasio queda como estaba
+    const conRegla = actual.modo !== 'musculos'
+    regla.visible = conRegla
+    if (conRegla) {
+      // La cámara se aleja y sube con la altura, para que entren el cuerpo entero y la regla
+      const lejos = 4.5 * Math.max(1, h / 1.8)
+      camara.position.set(0, h * 0.58, lejos)
+      camara.lookAt(0, h * 0.51, 0)
+    } else {
+      camara.position.set(0, 1.02, 4.5)
+      camara.lookAt(0, 0.9, 0)
+    }
+  }
+
   const deformar = () => {
     const { minY, maxY } = mezclar(modelo, pesosDeMezcla(vista), posiciones)
     inflar(modelo, posiciones, vista, minY, maxY, bufferInflar)
@@ -331,8 +374,10 @@ export function crear(THREE, { ancho, alto, props, renderer, onFalla }) {
     alturaModelo = maxY - minY
     const altura = (Number(actual.altura) || (vista.sexo > 0.5 ? 176 : 164)) / 100
     const s = altura / alturaModelo
-    malla.scale.setScalar(s)
+    const angosto = vista.ancho ?? 1
+    malla.scale.set(s * angosto, s, s * angosto)
     malla.position.y = -minY * s
+    if (Math.abs(altura - alturaRegla) > 0.001) armarRegla(altura)
     sucio = false
   }
 
@@ -367,6 +412,10 @@ export function crear(THREE, { ancho, alto, props, renderer, onFalla }) {
     actual = { ...p }
     if (!malla) return
     if (antes.altura !== p.altura) sucio = true
+    if (antes.modo !== p.modo) {
+      alturaRegla = 0
+      sucio = true
+    }
     // Repintar cuesta (suaviza el color de 13 mil puntos): solo si cambió algo de lo que se ve pintado
     if (antes.modo !== p.modo || antes.trabajo !== p.trabajo || antes.seleccion !== p.seleccion || antes.activo !== p.activo) pintar()
   }
@@ -386,7 +435,8 @@ export function crear(THREE, { ancho, alto, props, renderer, onFalla }) {
       Math.abs(meta.peso - vista.peso) +
       Math.abs(meta.musculo - vista.musculo) +
       Math.abs(meta.sexo - vista.sexo) +
-      Math.abs(meta.gordura - vista.gordura)
+      Math.abs(meta.gordura - vista.gordura) +
+      Math.abs(meta.ancho - (vista.ancho ?? 1))
     if (dif > 0.002 || sucio) {
       acumulado += dt
       vista = {
@@ -394,6 +444,7 @@ export function crear(THREE, { ancho, alto, props, renderer, onFalla }) {
         peso: acercar(vista.peso, meta.peso, dt, 7),
         musculo: acercar(vista.musculo, meta.musculo, dt, 7),
         gordura: acercar(vista.gordura, meta.gordura, dt, 7),
+        ancho: acercar(vista.ancho ?? 1, meta.ancho, dt, 7),
       }
       if (dif < 0.002) vista = meta
       if (acumulado > 1 / 30 || dif < 0.002 || sucio) {
@@ -429,7 +480,11 @@ export function crear(THREE, { ancho, alto, props, renderer, onFalla }) {
     cambiar,
     tocar,
     bajarCalidad: () => luz.bajar(),
-    liberar: () => luz.liberar(),
+    liberar: () => {
+      regla?.traverse((o) => o.geometry?.dispose())
+      materialRegla.dispose()
+      luz.liberar()
+    },
   }
   return e
 }

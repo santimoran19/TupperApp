@@ -30,6 +30,7 @@ test('nombre de usuario: elegirlo, cambiarlo, pedirlo y entrar con él', async (
     await pg.fill('#pf-nac', '1995-05-05')
     await pg.fill('#pf-altura', '165')
     await pg.fill('#pf-peso', '60')
+    await pg.check('#pf-consentimiento')
     await pg.click('button:has-text("Empezar")')
     await pg.waitForSelector('text=¡Hola, Lucía!')
     await saltarRecorrido(pg)
