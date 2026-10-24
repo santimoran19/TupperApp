@@ -64,7 +64,11 @@ export const RECORDATORIOS_INICIAL = {
   aguaDesde: '09:00',
   aguaHasta: '21:00',
   ayuno: true, // avisar cuando se cumple la meta del ayuno
+  peso: false, // recordar pesarse una vez por semana (1.30, F-23)
+  pesoDia: 1, // 0 domingo ... 6 sábado
+  pesoHora: '08:00',
 }
+export const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 
 const aMin = (hhmm) => {
   const [h, m] = String(hhmm || '')
@@ -77,7 +81,15 @@ export const horaValida = (t) => /^([01]\d|2[0-3]):[0-5]\d$/.test(String(t || ''
 // Qué recordatorios corresponde mostrar ahora. `ahora`: Date. `yaAvisados`: Set de claves 'fecha|id' ya mostradas.
 // `registradas`: Set de comidas que ya se anotaron hoy. Una comida se avisa desde su hora hasta 90 minutos después, y solo si
 // todavía no está anotada; el agua, una vez por franja. Devuelve [{ id, titulo, texto, ruta }].
-export function recordatoriosAhora({ config, ahora, fecha, registradas = new Set(), yaAvisados = new Set(), nombres = {} }) {
+export function recordatoriosAhora({
+  config,
+  ahora,
+  fecha,
+  registradas = new Set(),
+  yaAvisados = new Set(),
+  nombres = {},
+  pesadoHoy = false,
+}) {
   if (!config?.activo) return []
   const min = ahora.getHours() * 60 + ahora.getMinutes()
   const salida = []
@@ -86,7 +98,12 @@ export function recordatoriosAhora({ config, ahora, fecha, registradas = new Set
     const t = aMin(config.comidas[comida])
     const id = `comida-${comida}`
     if (t === null || min < t || min > t + 90 || registradas.has(comida) || yaAvisados.has(`${fecha}|${id}`)) continue
-    salida.push({ id, titulo: `Es hora de ${nombres[comida] || comida}`, texto: 'Anotala cuando termines.', ruta: '/' })
+    salida.push({
+      id,
+      titulo: `Es hora de ${nombres[comida] || comida}`,
+      texto: 'Anotala cuando termines.',
+      ruta: `/registrar?comida=${comida}`,
+    })
   }
   if (config.agua) {
     const d = aMin(config.aguaDesde)
@@ -98,6 +115,13 @@ export function recordatoriosAhora({ config, ahora, fecha, registradas = new Set
       if (!yaAvisados.has(`${fecha}|${id}`))
         salida.push({ id, titulo: 'Tomá un vaso de agua', texto: 'Un trago ahora te suma.', ruta: '/' })
     }
+  }
+  // Pesarse (F-23): el día y la hora elegidos, hasta 2 horas después, si todavía no se pesó
+  if (config.peso && !pesadoHoy) {
+    const t = aMin(config.pesoHora || '08:00')
+    const dia = new Date(fecha + 'T12:00:00Z').getUTCDay()
+    if (t !== null && dia === (config.pesoDia ?? 1) && min >= t && min <= t + 120 && !yaAvisados.has(`${fecha}|peso`))
+      salida.push({ id: 'peso', titulo: '¿Te pesás?', texto: 'Mejor en ayunas y a la misma hora. Anotalo en tu Perfil.', ruta: '/perfil' })
   }
   return salida
 }

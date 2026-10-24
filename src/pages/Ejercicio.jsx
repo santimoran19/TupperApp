@@ -1,6 +1,7 @@
 // Ejercicio (F-19): los entrenamientos anotados, las sesiones de gimnasio, las rutinas y el progreso de cada ejercicio.
 // Solo se usa con el cálculo de gasto prendido (se prende en /gasto).
 import { useCallback, useMemo, useState } from 'react'
+import ImportarEntrenos, { useVueltaDeStrava } from '../components/ImportarEntrenos'
 import { Link, useSearchParams } from 'react-router-dom'
 import EntrenoForm from '../components/EntrenoForm'
 import GraficoProgreso from '../components/GraficoProgreso'
@@ -50,7 +51,7 @@ function Fila({ w, esGym, onAbrir, onBorrar }) {
   )
 }
 
-function Entrenamientos({ fecha, onAnotar, onAbrir }) {
+function Entrenamientos({ fecha, onAnotar, onAbrir, onImportar }) {
   const d = useDatos()
   const [paginas, setPaginas] = useState(1)
   const conSeries = useMemo(() => new Set(d.series.map((s) => s.workout_id)), [d.series])
@@ -87,9 +88,14 @@ function Entrenamientos({ fecha, onAnotar, onAbrir }) {
       <section className="tarjeta p-5 mb-4" data-tour="ejercicio-semana">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-semibold">Esta semana</h2>
-          <button onClick={() => onAnotar(fecha)} className="btn-chico bg-verde text-white" data-tour="ejercicio-anotar">
-            <Icono n="add" size={16} /> Anotar
-          </button>
+          <div className="flex gap-2">
+            <button onClick={onImportar} className="btn-chico bg-verde-suave text-verde-texto" data-testid="abrir-importar">
+              <Icono n="watch" size={16} /> Traer
+            </button>
+            <button onClick={() => onAnotar(fecha)} className="btn-chico bg-verde text-white" data-tour="ejercicio-anotar">
+              <Icono n="add" size={16} /> Anotar
+            </button>
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
           <div className="rounded-2xl bg-campo p-3">
@@ -468,6 +474,8 @@ export default function Ejercicio() {
   // Qué hoja está abierta: el formulario de un entrenamiento, una sesión de gimnasio o el editor de una rutina
   const [abierta, setAbierta] = useState(null)
   const [borrador, setBorrador] = useState(() => leerBorrador(uid))
+  // Al volver de dar permiso en Strava (F-22) se abre la hoja para traer los entrenamientos
+  useVueltaDeStrava(useCallback((r) => setAbierta({ tipo: 'importar', inicial: r }), []))
 
   const cambiarTab = (t) => {
     const p = new URLSearchParams(params)
@@ -536,6 +544,7 @@ export default function Ejercicio() {
           fecha={fecha}
           onAnotar={(f) => setAbierta({ tipo: 'form', fecha: f })}
           onAbrir={(w, esGym) => setAbierta(esGym ? { tipo: 'sesion', editar: w } : { tipo: 'form', inicial: w })}
+          onImportar={() => setAbierta({ tipo: 'importar' })}
         />
       ) : (
         <Gimnasio
@@ -557,6 +566,7 @@ export default function Ejercicio() {
         />
       )}
       {abierta?.tipo === 'rutina' && <RutinaForm rutina={abierta.rutina} onCerrar={cerrar} />}
+      {abierta?.tipo === 'importar' && <ImportarEntrenos inicial={abierta.inicial} onCerrar={cerrar} />}
     </Marco>
   )
 }

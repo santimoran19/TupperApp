@@ -6,6 +6,7 @@ import { useDatos } from '../store/Datos'
 import { useAvisar, useAvisos } from '../store/avisos'
 import { hoy } from '../lib/fechas'
 import { useEscritorio } from '../lib/escritorio'
+import AvisoLegal from './AvisoLegal'
 import { useRecordatorios } from '../lib/useRecordatorios'
 import { redondear, sumar } from '../lib/nutricion'
 
@@ -67,7 +68,7 @@ function Confirmacion({ pregunta, onResponder }) {
     return () => document.removeEventListener('keydown', tecla)
   }, [onResponder])
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center p-6">
+    <div className="fixed inset-0 z-70 flex items-center justify-center p-6">
       <div className="absolute inset-0 bg-black/50" onClick={() => onResponder(false)} />
       <div
         role="alertdialog"
@@ -138,7 +139,7 @@ function BarraLateral({ nombre, inicial, conEjercicio }) {
             key={p.a}
             to={p.a}
             end={p.a === '/'}
-            className={({ isActive }) => `enlace-lateral ${isActive ? '!bg-verde-suave !text-verde-texto' : ''}`}
+            className={({ isActive }) => `enlace-lateral ${isActive ? 'bg-verde-suave! text-verde-texto!' : ''}`}
           >
             {({ isActive }) => (
               <>
@@ -150,7 +151,7 @@ function BarraLateral({ nombre, inicial, conEjercicio }) {
       </nav>
       <NavLink
         to="/perfil"
-        className={({ isActive }) => `enlace-lateral mt-3 h-14 border border-linea ${isActive ? '!bg-verde-suave !text-verde-texto' : ''}`}
+        className={({ isActive }) => `enlace-lateral mt-3 h-14 border border-linea ${isActive ? 'bg-verde-suave! text-verde-texto!' : ''}`}
         aria-label="Perfil"
       >
         <span className="w-9 h-9 rounded-full bg-verde text-white font-semibold flex items-center justify-center shrink-0">{inicial}</span>
@@ -164,10 +165,10 @@ function BarraLateral({ nombre, inicial, conEjercicio }) {
 }
 
 export default function Marco({ titulo, atras = false, children, sinNav = false }) {
-  const { registros, perfil, sinConexion, pendientes, trabada, usuario } = useDatos()
+  const { registros, medidas, perfil, sinConexion, pendientes, trabada, usuario } = useDatos()
   const { aviso, pregunta } = useAvisos()
   const { responder, avisar, quitarAviso } = useAvisar()
-  useRecordatorios({ uid: usuario?.id, registros, avisar })
+  useRecordatorios({ uid: usuario?.id, registros, medidas, avisar })
   const nav = useNavigate()
   const escritorio = useEscritorio()
   // Cada pantalla le pone su nombre a la pestaña del navegador
@@ -180,7 +181,7 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
   return (
     <div className={`min-h-screen bg-fondo ${escritorio ? 'pl-64' : ''}`}>
       {escritorio && <BarraLateral nombre={perfil?.name || ''} inicial={inicial} conEjercicio={!!perfil?.gasto_activo} />}
-      <header className="sticky top-0 z-30 bg-fondo/90 backdrop-blur border-b border-verde-suave/60">
+      <header className="sticky top-0 z-30 bg-fondo/90 backdrop-blur-sm border-b border-verde-suave/60">
         <div className="max-w-[440px] lg:max-w-[1240px] 2xl:max-w-[1480px] mx-auto h-16 px-4 lg:px-8 flex items-center gap-3">
           {atras ? (
             <button onClick={() => nav(-1)} className="w-10 h-10 -ml-2 rounded-full flex items-center justify-center" aria-label="Volver">
@@ -208,6 +209,7 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
         </div>
         <Conexion sinConexion={sinConexion} pendientes={pendientes} trabada={trabada} />
       </header>
+      <AvisoLegal />
 
       <main
         className={`max-w-[440px] lg:max-w-[1240px] 2xl:max-w-[1480px] mx-auto px-4 lg:px-8 pt-4 lg:pt-6 ${sinNav ? 'fin-sin-barra' : 'fin-con-barra'}`}
@@ -218,7 +220,7 @@ export default function Marco({ titulo, atras = false, children, sinNav = false 
       {pregunta && <Confirmacion pregunta={pregunta} onResponder={responder} />}
 
       {aviso && (
-        <div className="fixed left-0 right-0 lg:left-64 aviso-barra z-[60] flex justify-center px-4 pointer-events-none">
+        <div className="fixed left-0 right-0 lg:left-64 aviso-barra z-60 flex justify-center px-4 pointer-events-none">
           <div
             role="status"
             className={`rounded-full px-4 py-2.5 text-sm font-medium shadow-flotante flex items-center gap-3 ${aviso.tipo === 'error' ? 'bg-rojo text-white' : 'bg-tinta text-fondo'}`}

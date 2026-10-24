@@ -100,7 +100,7 @@ export async function transcribir(bytes: Uint8Array, tipo: string, pista: string
   if (env('GROQ_API_KEY')) {
     const extension = tipo.includes('mp4') || tipo.includes('m4a') || tipo.includes('aac') ? 'm4a' : tipo.includes('ogg') ? 'ogg' : tipo.includes('wav') ? 'wav' : tipo.includes('mpeg') ? 'mp3' : 'webm'
     const form = new FormData()
-    form.append('file', new Blob([bytes], { type: tipo }), `voz.${extension}`)
+    form.append('file', new Blob([bytes as Uint8Array<ArrayBuffer>], { type: tipo }), `voz.${extension}`)
     form.append('model', env('GROQ_WHISPER_MODEL') || 'whisper-large-v3-turbo')
     form.append('language', 'es')
     form.append('temperature', '0')

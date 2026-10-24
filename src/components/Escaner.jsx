@@ -152,7 +152,7 @@ export default function Escaner({ onCodigo, onVolver }) {
   return (
     <div className="space-y-3" data-tour="escaner">
       {(estado === 'iniciando' || estado === 'leyendo') && (
-        <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/3]">
+        <div className="relative rounded-2xl overflow-hidden bg-black aspect-4/3">
           <video ref={video} className="w-full h-full object-cover" playsInline muted aria-label="Vista de la cámara" />
           <div className="absolute inset-x-[10%] top-1/2 h-0.5 bg-red-500/80 pointer-events-none" aria-hidden="true" />
           <div className="absolute inset-[12%] rounded-xl border-2 border-white/70 pointer-events-none" aria-hidden="true" />

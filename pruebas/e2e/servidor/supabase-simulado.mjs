@@ -2,7 +2,7 @@
 // Guarda todo en memoria y arranca con los alimentos y recetas de la base. No toca internet ni el proyecto real.
 // Si Deno está instalado, además levanta las funciones `analizar-semana` y `entrar` de verdad para probarlas enteras.
 import http from 'node:http'
-import { randomBytes, randomUUID } from 'node:crypto'
+import { createECDH, randomBytes, randomUUID } from 'node:crypto'
 import { aBase32, codigoTotp } from './totp.mjs'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -13,7 +13,7 @@ import { ejercicios as ejerciciosGym } from '../../../scripts/gym-data.mjs'
 
 const PUERTO = 54321
 // Las funciones de verdad, corriendo en Deno: cada una en su puerto
-const FUNCIONES_REALES = { 'analizar-semana': 8000, entrar: 8001 }
+const FUNCIONES_REALES = { 'analizar-semana': 8000, entrar: 8001, strava: 8002, 'recordatorios-push': 8003 }
 const CLAVE_SERVICIO = 'service-role-de-prueba' // la que usa la función `entrar` para mirar usuarios, saltándose los permisos por fila
 // Las funciones solo contestan a páginas permitidas (S-02): en las pruebas, la de la app. La prueba 21 llama a las funciones directo.
 const ORIGEN_DE_LA_APP = 'http://localhost:5199'
@@ -49,6 +49,14 @@ const db = {
   workout_sets: [],
   // Combos y opiniones (supabase/actualizacion-21.sql)
   combos: [],
+  // Categorías propias (supabase/actualizacion-23.sql)
+  categorias: [],
+  categoria_alimento: [],
+  // Strava y recordatorios con la app cerrada (actualizacion-22 y 23): las usan solo las funciones, con la clave de servicio
+  strava_conexiones: [],
+  push_suscripciones: [],
+  recordatorios: [],
+  recordatorios_enviados: [],
   opiniones: [],
 }
 let numeroDeEvento = 0
@@ -65,7 +73,17 @@ const RESPUESTA_IA = {
     'Anotá el peso una vez esta semana.',
   ],
 }
-const SIN_ID = new Set(['stock', 'recipe_items', 'prepared', 'away_rules', 'measurements', 'profiles', 'recipe_prefs', 'routine_exercises'])
+const SIN_ID = new Set([
+  'stock',
+  'recipe_items',
+  'prepared',
+  'away_rules',
+  'measurements',
+  'profiles',
+  'recipe_prefs',
+  'routine_exercises',
+  'categoria_alimento',
+])
 const bySlug = new Map()
 for (const f of foods) {
   const row = {
@@ -801,6 +819,27 @@ const FUNCIONES = {
     return hogar.codigo
   },
 
+  // Categorías propias (actualizacion-23.sql)
+  renombrar_categoria(uid, a) {
+    const nuevo = String(a.p_nuevo ?? '').trim()
+    if (nuevo.length < 1 || nuevo.length > 30) throw errorPg('P0001', 'El nombre tiene que tener entre 1 y 30 letras.')
+    const c = db.categorias.find((x) => x.user_id === uid && x.nombre === a.p_viejo)
+    if (!c) throw errorPg('P0001', 'Esa categoría no existe.')
+    if (db.categorias.some((x) => x !== c && x.user_id === uid && x.nombre.toLowerCase() === nuevo.toLowerCase()))
+      throw errorPg('P0001', 'Ya tenés una categoría con ese nombre.')
+    c.nombre = nuevo
+    for (const f of db.foods) if (f.owner === uid && f.category === a.p_viejo) f.category = nuevo
+    for (const x of db.categoria_alimento) if (x.user_id === uid && x.categoria === a.p_viejo) x.categoria = nuevo
+    return null
+  },
+  borrar_categoria(uid, a) {
+    const destino = String(a.p_destino || 'Otros').trim() || 'Otros'
+    for (const f of db.foods) if (f.owner === uid && f.category === a.p_nombre) f.category = destino
+    db.categoria_alimento = db.categoria_alimento.filter((x) => !(x.user_id === uid && x.categoria === a.p_nombre))
+    db.categorias = db.categorias.filter((x) => !(x.user_id === uid && x.nombre === a.p_nombre))
+    return null
+  },
+
   renombrar_hogar(uid, a) {
     const yo = miembroDe(uid)
     if (yo?.rol !== 'creador') throw errorPg('P0001', 'Solo quien armó el hogar puede cambiarle el nombre.')
@@ -875,6 +914,9 @@ function filtros(url) {
       if (op === 'eq') return x === val
       if (op === 'gte') return x >= val
       if (op === 'lte') return x <= val
+      if (op === 'gt') return x > val
+      if (op === 'lt') return x < val
+      if (op === 'neq') return x !== val
       if (op === 'is') return val === 'null' ? x === null : x !== null
       if (op === 'in')
         return val
@@ -972,12 +1014,55 @@ const server = http.createServer(async (req, res) => {
   const bytes = Buffer.concat(pedazos)
   // Las fotos (Storage) llegan como bytes; todo lo demás, como JSON
   if (url.pathname.startsWith('/storage/v1/')) return storage(req, url, bytes, send, res, cors)
+  // ---- Un "servicio de push" de mentira: guarda lo que recibe, cifrado, para que la prueba lo descifre (1.29/1.30)
+  if (url.pathname.startsWith('/push/')) {
+    if (url.pathname === '/push/_recibidos') return send(200, pushSim)
+    pushSim.push({ endpoint: url.pathname, cabeceras: req.headers, cuerpo: bytes.toString('base64') })
+    // Un teléfono que ya no existe: el servicio de push contesta 410 y la función tiene que borrar la suscripción
+    return send(url.pathname.includes('vencida') ? 410 : 201)
+  }
   const raw = bytes.toString('utf8')
   const body = raw ? JSON.parse(raw) : null
   try {
     // Para que las pruebas (y Playwright) sepan cuándo está todo listo y si hay función de IA
     if (url.pathname === '/_pruebas/estado')
-      return listo ? send(200, { funcion: funcion.activa, entrar: funcion.entrar }) : send(503, { message: 'arrancando' })
+      return listo
+        ? send(200, {
+            funcion: funcion.activa,
+            entrar: funcion.entrar,
+            strava: funcion.strava,
+            push: funcion.push,
+            vapid: VAPID.publica,
+            cron: CRON_CLAVE,
+          })
+        : send(503, { message: 'arrancando' })
+    // ---- "Strava" de mentira para la función `strava` (1.30)
+    if (url.pathname === '/strava/oauth/token') {
+      stravaSim.pedidos.push({ ruta: 'token', ...body })
+      if (body.client_id !== 'strava-cliente' || body.client_secret !== 'strava-secreto') return send(401, { message: 'Bad client' })
+      if (body.grant_type === 'authorization_code' && body.code !== 'codigostravaok12345') return send(400, { message: 'Bad Request' })
+      const atleta = { id: 4242, firstname: 'Nico' }
+      return send(200, {
+        token_type: 'Bearer',
+        access_token: 'acceso-' + (stravaSim.vuelta = (stravaSim.vuelta || 0) + 1),
+        refresh_token: 'renovar-strava',
+        expires_at: Math.floor(Date.now() / 1000) + (body.grant_type === 'authorization_code' ? 30 : 21600),
+        ...(body.grant_type === 'authorization_code' ? { athlete: atleta } : {}),
+      })
+    }
+    if (url.pathname === '/strava/oauth/deauthorize') {
+      stravaSim.pedidos.push({ ruta: 'deauthorize', auth: req.headers.authorization })
+      return send(200, { access_token: 'x' })
+    }
+    if (url.pathname === '/strava/api/v3/athlete/activities') {
+      stravaSim.pedidos.push({ ruta: 'actividades', auth: req.headers.authorization, after: url.searchParams.get('after') })
+      return send(200, stravaSim.actividades)
+    }
+    if (url.pathname === '/strava/_pruebas') {
+      if (req.method === 'POST') stravaSim.actividades = body.actividades || []
+      return send(200, stravaSim.pedidos)
+    }
+
     // Captcha, como en Supabase con la protección prendida: crear cuenta, entrar con contraseña y pedir mails exigen
     // una comprobación, y cada una sirve una sola vez. (Renovar la sesión no la pide.)
     const pideCaptcha =
@@ -1204,7 +1289,12 @@ const server = http.createServer(async (req, res) => {
         const r = await fetch(`http://localhost:${puerto}` + url.pathname, {
           method: req.method,
           body: raw || undefined,
-          headers: { 'content-type': 'application/json', authorization: req.headers.authorization || '', apikey: req.headers.apikey || '' },
+          headers: {
+            'content-type': 'application/json',
+            authorization: req.headers.authorization || '',
+            apikey: req.headers.apikey || '',
+            ...(req.headers['x-cron-clave'] ? { 'x-cron-clave': req.headers['x-cron-clave'] } : {}),
+          },
         })
         res.writeHead(r.status, { ...cors, 'Content-Type': 'application/json' })
         return res.end(await r.text())
@@ -1229,6 +1319,9 @@ const server = http.createServer(async (req, res) => {
       if (!hacer) return send(404, { code: 'PGRST202', message: 'Could not find the function public.' + funcionPedida[1] })
       const uid = uidDe(req)
       if (!uid) return send(401, { message: 'sin sesión' })
+      // actualizacion-23b-dos-pasos.sql: con la verificación activada, tampoco las funciones sin el código
+      if (aalDe(req) !== 'aal2' && conFactorActivo([...users.values()].find((x) => x.id === uid)))
+        return send(403, { code: '42501', message: 'Falta el código de verificación.', hint: 'dos_pasos' })
       const copia = structuredClone(db)
       const claves = new Set(atendidos)
       try {
@@ -1252,7 +1345,10 @@ const server = http.createServer(async (req, res) => {
       if (req.method === 'GET' || req.method === 'HEAD') return send(200, [])
       return send(403, { code: '42501', message: `new row violates row-level security policy for table "${tabla}"` })
     }
-    if (!servicio && ['hogares', 'hogar_miembros', 'catalogo', 'catalogo_aportes'].includes(tabla))
+    if (
+      !servicio &&
+      ['hogares', 'hogar_miembros', 'catalogo', 'catalogo_aportes', 'strava_conexiones', 'recordatorios_enviados'].includes(tabla)
+    )
       return send(403, { message: 'permission denied for table ' + tabla })
     const dueno = uid ? ambito(uid) : null
     const visible = (row) => {
@@ -1287,21 +1383,33 @@ const server = http.createServer(async (req, res) => {
       const filas = Array.isArray(body) ? body : [body]
       const conflicto = url.searchParams.get('on_conflict')
       const upsert = (req.headers.prefer || '').includes('merge-duplicates')
+      // Con "ignore-duplicates" lo que ya existe no se toca ni se devuelve (como PostgREST)
+      const ignorar = (req.headers.prefer || '').includes('ignore-duplicates')
       const out = []
       for (const f of filas) {
-        if ((tabla === 'foods' || tabla === 'recipes' || tabla === 'exercise_types' || tabla === 'gym_exercises') && f.owner !== uid)
+        if (
+          !servicio &&
+          (tabla === 'foods' || tabla === 'recipes' || tabla === 'exercise_types' || tabla === 'gym_exercises') &&
+          f.owner !== uid
+        )
           return send(403, { message: 'new row violates row-level security policy' })
-        if (f.user_id && f.user_id !== (DEL_AMBITO.includes(tabla) ? dueno : uid))
+        if (!servicio && f.user_id && f.user_id !== (DEL_AMBITO.includes(tabla) ? dueno : uid))
           return send(403, { message: 'new row violates row-level security policy' })
         let existente = null
-        if (upsert && conflicto) {
+        if ((upsert || ignorar) && conflicto) {
           const cols = conflicto.split(',')
           existente = db[tabla].find((r) => cols.every((c) => String(r[c]) === String(f[c])))
+          if (existente && ignorar) continue
         }
         const rechazo = (e) => {
           if (!e.pg) throw e
           return send(e.pg === '23505' ? 409 : 400, { code: e.pg, message: e.message, details: null, hint: null })
         }
+        if (
+          tabla === 'categorias' &&
+          db.categorias.some((c) => c.user_id === uid && c.nombre.toLowerCase() === String(f.nombre || '').toLowerCase())
+        )
+          return send(409, { code: '23505', message: 'duplicate key value violates unique constraint "categorias_nombre_idx"' })
         if (tabla === 'profiles')
           try {
             cuidarUsuario(f, existente, uid)
@@ -1314,7 +1422,7 @@ const server = http.createServer(async (req, res) => {
           out.push(existente)
         } else {
           const fila = { ...(SIN_ID.has(tabla) ? {} : { id: randomUUID() }), ...f }
-          if (['log_entries', 'shopping_items', 'profiles', 'ai_analyses', 'combos', 'opiniones'].includes(tabla))
+          if (['log_entries', 'shopping_items', 'profiles', 'ai_analyses', 'combos', 'opiniones', 'categorias'].includes(tabla))
             fila.created_at = new Date().toISOString()
           if (tabla === 'log_entries' && fila.skipped === undefined) fila.skipped = false
           if (tabla === 'profiles')
@@ -1334,6 +1442,7 @@ const server = http.createServer(async (req, res) => {
               gasto_factor: null,
               gasto_factor_fecha: null,
               salud_consentida_at: null,
+              legales_vistos: null,
               ...f,
             })
           if (tabla === 'foods' && fila.alcohol === undefined) fila.alcohol = false
@@ -1423,7 +1532,16 @@ const server = http.createServer(async (req, res) => {
 })
 
 // ---------- Las funciones de verdad, corriendo en Deno (si está instalado) ----------
-const funcion = { activa: false, entrar: false }
+const funcion = { activa: false, entrar: false, strava: false, push: false }
+const stravaSim = { pedidos: [], actividades: [] }
+const pushSim = []
+// Claves VAPID y del reloj, de mentira, para la función recordatorios-push
+const CRON_CLAVE = 'reloj-de-prueba'
+const VAPID = (() => {
+  const ecdh = createECDH('prime256v1')
+  ecdh.generateKeys()
+  return { publica: ecdh.getPublicKey().toString('base64url'), privada: ecdh.getPrivateKey().toString('base64url') }
+})()
 async function levantarFunciones() {
   const base = `http://localhost:${PUERTO}`
   const hijos = []
@@ -1438,7 +1556,8 @@ async function levantarFunciones() {
     const carpeta = fileURLToPath(new URL(`../../../supabase/functions/${nombre}/`, import.meta.url))
     const hijo = spawn(process.env.DENO || 'deno', ['run', '--no-lock', '--allow-net', '--allow-env', 'index.ts'], {
       cwd: carpeta,
-      stdio: 'ignore',
+      // Con FUNCIONES_LOG=1 se ve lo que escriben las funciones (para buscar errores)
+      stdio: process.env.FUNCIONES_LOG ? 'inherit' : 'ignore',
       env: { ...process.env, SUPABASE_URL: base, DENO_SERVE_ADDRESS: `tcp:127.0.0.1:${puerto}`, ...env },
     })
     let sinDeno = false
@@ -1456,7 +1575,7 @@ async function levantarFunciones() {
     }
     return false
   }
-  ;[funcion.activa, funcion.entrar] = await Promise.all([
+  ;[funcion.activa, funcion.entrar, funcion.strava, funcion.push] = await Promise.all([
     arrancar('analizar-semana', FUNCIONES_REALES['analizar-semana'], {
       ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
       IA_PROVEEDOR: '',
@@ -1469,6 +1588,20 @@ async function levantarFunciones() {
       ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
       SUPABASE_ANON_KEY: 'anon-de-prueba',
       SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO,
+    }),
+    arrancar('strava', FUNCIONES_REALES.strava, {
+      ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
+      SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO,
+      STRAVA_CLIENT_ID: 'strava-cliente',
+      STRAVA_CLIENT_SECRET: 'strava-secreto',
+      STRAVA_URL: base + '/strava',
+    }),
+    arrancar('recordatorios-push', FUNCIONES_REALES['recordatorios-push'], {
+      SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO,
+      CRON_CLAVE,
+      VAPID_PUBLICA: VAPID.publica,
+      VAPID_PRIVADA: VAPID.privada,
+      VAPID_SUJETO: 'mailto:pruebas@tupper.test',
     }),
   ])
 }

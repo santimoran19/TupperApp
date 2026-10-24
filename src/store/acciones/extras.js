@@ -68,6 +68,27 @@ export const accionesExtras = (k) => ({
     }
   },
 
+  // Strava (1.30, F-22): { accion: 'estado' | 'conectar' | 'actividades' | 'desconectar', ... } → la respuesta de la función
+  // o { error, codigo }. Los permisos de Strava quedan en el servidor: acá solo llega el resumen de cada actividad.
+  strava: async (pedido) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('strava', { body: pedido })
+      if (error) {
+        const detalle = await error.context?.json?.().catch(() => null)
+        anotarEvento('strava', {
+          accion: pedido.accion,
+          resultado: 'error',
+          codigo: detalle?.codigo || String(error.context?.status || 'red'),
+        })
+        return { error: detalle?.mensaje || 'No se pudo. Revisá la conexión y probá de nuevo.', codigo: detalle?.codigo || 'red' }
+      }
+      if (pedido.accion !== 'estado') anotarEvento('strava', { accion: pedido.accion, resultado: 'ok' })
+      return data || {}
+    } catch {
+      return { error: 'No se pudo. Revisá la conexión y probá de nuevo.', codigo: 'red' }
+    }
+  },
+
   // Chat con IA (1.28): manda la conversación y un resumen del día a la función `asistente-ia`. No guarda nada en la base
   // (solo cuenta el mensaje para el tope diario). Devuelve { respuesta, restantes } o { error, codigo }.
   preguntarIA: async ({ mensajes, contexto }) => {

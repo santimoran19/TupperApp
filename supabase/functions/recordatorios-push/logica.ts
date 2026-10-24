@@ -10,6 +10,9 @@ export type Config = {
   aguaDesde?: string
   aguaHasta?: string
   ayuno?: boolean
+  peso?: boolean
+  pesoDia?: number
+  pesoHora?: string
 }
 export type Aviso = { id: string; titulo: string; texto: string; ruta: string }
 
@@ -72,6 +75,9 @@ export function limpiarConfig(c: unknown): Config {
     aguaDesde: HORA.test(String(x.aguaDesde || '')) ? x.aguaDesde : '09:00',
     aguaHasta: HORA.test(String(x.aguaHasta || '')) ? x.aguaHasta : '21:00',
     ayuno: x.ayuno !== false,
+    peso: !!x.peso,
+    pesoDia: Number.isInteger(Number(x.pesoDia)) && Number(x.pesoDia) >= 0 && Number(x.pesoDia) <= 6 ? Number(x.pesoDia) : 1,
+    pesoHora: HORA.test(String(x.pesoHora || '')) ? x.pesoHora : '08:00',
   }
 }
 
@@ -86,6 +92,7 @@ export function avisosPara({
   yaAvisados = new Set<string>(),
   ayuno = null,
   ahora = Date.now(),
+  pesadoHoy = false,
 }: {
   config: Config
   min: number
@@ -94,6 +101,7 @@ export function avisosPara({
   yaAvisados?: Set<string>
   ayuno?: { inicio: number; horas: number } | null
   ahora?: number
+  pesadoHoy?: boolean
 }): Aviso[] {
   if (!config?.activo) return []
   const salida: Aviso[] = []
@@ -102,7 +110,7 @@ export function avisosPara({
     const t = aMin(config.comidas![comida])
     const id = `comida-${comida}`
     if (t === null || min < t || min > t + 90 || registradas.has(comida) || yaAvisados.has(`${fecha}|${id}`)) continue
-    salida.push({ id, titulo: `Es hora de ${NOMBRES[comida] || comida}`, texto: 'Anotala cuando termines.', ruta: '/' })
+    salida.push({ id, titulo: `Es hora de ${NOMBRES[comida] || comida}`, texto: 'Anotala cuando termines.', ruta: `/registrar?comida=${comida}` })
   }
   if (config.agua) {
     const d = aMin(config.aguaDesde)
@@ -112,6 +120,13 @@ export function avisosPara({
       const id = `agua-${Math.floor((min - d) / cada)}`
       if (!yaAvisados.has(`${fecha}|${id}`)) salida.push({ id, titulo: 'Tomá un vaso de agua', texto: 'Un trago ahora te suma.', ruta: '/' })
     }
+  }
+  // Pesarse (1.30, F-23): una vez por semana, el día y la hora elegidos (hasta 2 horas después), si todavía no se pesó
+  if (config.peso && !pesadoHoy) {
+    const t = aMin(config.pesoHora || '08:00')
+    const dia = new Date(fecha + 'T12:00:00Z').getUTCDay()
+    if (t !== null && dia === (config.pesoDia ?? 1) && min >= t && min <= t + 120 && !yaAvisados.has(`${fecha}|peso`))
+      salida.push({ id: 'peso', titulo: '¿Te pesás?', texto: 'Mejor en ayunas y a la misma hora. Anotalo en tu Perfil.', ruta: '/perfil' })
   }
   if (config.ayuno !== false && ayuno && Number.isFinite(ayuno.inicio) && ayuno.horas > 0) {
     const id = `ayuno-${ayuno.inicio}`

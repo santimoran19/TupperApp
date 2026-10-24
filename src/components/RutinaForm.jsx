@@ -107,7 +107,7 @@ export default function RutinaForm({ rutina = null, onCerrar }) {
             value={nombre}
             onChange={(ev) => setNombre(ev.target.value)}
             maxLength={40}
-            className={`campo ${intento && errNombre ? '!border-rojo-texto' : ''}`}
+            className={`campo ${intento && errNombre ? 'border-rojo-texto!' : ''}`}
             placeholder="Por ejemplo, Empuje"
           />
           <Err>{intento && errNombre}</Err>
@@ -169,7 +169,7 @@ export default function RutinaForm({ rutina = null, onCerrar }) {
                         decimales={0}
                         largo={largo}
                         error={!!error}
-                        className="campo !h-9 !px-2 text-center"
+                        className="campo h-9! px-2! text-center"
                       />
                     </label>
                   ))}

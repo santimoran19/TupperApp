@@ -143,20 +143,20 @@ export default function RegistroIA({ onPlatos, sinTarjeta = false }) {
         <div className="flex items-center gap-3">
           <span className="w-3 h-3 rounded-full bg-coral animate-pulse" aria-hidden="true" />
           <p className="flex-1 text-sm">Escuchando… contá qué comiste y cuánto.</p>
-          <button onClick={cancelarVoz} className="btn-suave !h-10 !px-4" aria-label="Cancelar la grabación">
+          <button onClick={cancelarVoz} className="btn-suave h-10! px-4!" aria-label="Cancelar la grabación">
             <Icono n="close" size={18} />
           </button>
-          <button onClick={terminarVoz} className="btn-primario !h-10 !px-4">
+          <button onClick={terminarVoz} className="btn-primario h-10! px-4!">
             <Icono n="stop" size={18} /> Listo
           </button>
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-2">
-          <button onClick={() => archivo.current?.click()} disabled={ocupado} className="btn-suave flex-col !h-auto py-3 !gap-1">
+          <button onClick={() => archivo.current?.click()} disabled={ocupado} className="btn-suave flex-col h-auto! py-3 gap-1!">
             <Icono n="photo_camera" size={22} />
             <span className="text-xs">Foto</span>
           </button>
-          <button onClick={empezarVoz} disabled={ocupado || !puedeGrabar()} className="btn-suave flex-col !h-auto py-3 !gap-1">
+          <button onClick={empezarVoz} disabled={ocupado || !puedeGrabar()} className="btn-suave flex-col h-auto! py-3 gap-1!">
             <Icono n="mic" size={22} />
             <span className="text-xs">Voz</span>
           </button>
@@ -164,7 +164,7 @@ export default function RegistroIA({ onPlatos, sinTarjeta = false }) {
             onClick={() => setEscribiendo(!escribiendo)}
             disabled={ocupado}
             aria-pressed={escribiendo}
-            className="btn-suave flex-col !h-auto py-3 !gap-1"
+            className="btn-suave flex-col h-auto! py-3 gap-1!"
           >
             <Icono n="edit" size={22} />
             <span className="text-xs">Escribir</span>
@@ -192,7 +192,7 @@ export default function RegistroIA({ onPlatos, sinTarjeta = false }) {
             aria-label="Qué comiste"
             className="flex-1 min-w-0 h-11 rounded-xl bg-campo px-3 text-sm"
           />
-          <button type="submit" disabled={texto.trim().length < 2} className="btn-primario !h-11 !px-4">
+          <button type="submit" disabled={texto.trim().length < 2} className="btn-primario h-11! px-4!">
             Armar
           </button>
         </form>

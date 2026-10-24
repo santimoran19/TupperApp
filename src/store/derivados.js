@@ -5,12 +5,17 @@ import { hoy, sumarDias } from '../lib/fechas'
 import { gastoDeFecha } from '../lib/gastodia'
 import { referenciasDeCompra, vencimientoDe, vencimientosPorBase } from '../lib/despensa'
 import { macrosReceta } from '../lib/nutricion'
+import { conCategorias, listaCategorias, ordenDe } from '../lib/categorias'
 import { estadoDelPlan } from '../lib/planificador'
 import { baseDe, conFamilia, convertir, equivalentesPorBase, itemsEnBase, productoEnUso, stockParaRecetas } from '../lib/equivalencias'
 
 export function useDerivados(e) {
   // A los alimentos base que valen por otro (cualquier leche cuenta como leche) se les completa el vínculo
-  const alimentos = useMemo(() => conFamilia(e.alimentos), [e.alimentos])
+  // y a los que la persona movió de categoría (F-13) se les pone la suya
+  const elegidas = useMemo(() => new Map((e.categoriaAlimento || []).map((c) => [c.food_id, c.categoria])), [e.categoriaAlimento])
+  const alimentos = useMemo(() => conFamilia(conCategorias(e.alimentos, elegidas)), [e.alimentos, elegidas])
+  const categorias = useMemo(() => listaCategorias(e.categoriasPropias || []), [e.categoriasPropias])
+  const ordenCategoria = useMemo(() => ordenDe(categorias), [categorias])
   const alimentosPorId = useMemo(() => new Map(alimentos.map((a) => [a.id, a])), [alimentos])
   const deLaBase = useMemo(() => alimentos.filter((a) => !a.owner), [alimentos])
   const recetasPorId = useMemo(() => new Map(e.recetas.map((r) => [r.id, r])), [e.recetas])
@@ -117,6 +122,8 @@ export function useDerivados(e) {
       referencias,
       alimentos,
       alimentosPorId,
+      categorias,
+      ordenCategoria,
       deLaBase,
       recetasPorId,
       ocultas,
@@ -145,6 +152,8 @@ export function useDerivados(e) {
       referencias,
       alimentos,
       alimentosPorId,
+      categorias,
+      ordenCategoria,
       deLaBase,
       recetasPorId,
       ocultas,

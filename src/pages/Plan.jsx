@@ -243,7 +243,7 @@ export default function Plan() {
   return (
     <Marco titulo="Plan semanal">
       <div className="lg:flex lg:items-center lg:justify-between lg:gap-6 lg:mb-4">
-        <div className="flex items-center justify-between mb-3 lg:mb-0 lg:w-[22rem]">
+        <div className="flex items-center justify-between mb-3 lg:mb-0 lg:w-88">
           <button
             onClick={() => setLunes(sumarDias(lunes, -7))}
             disabled={lunes <= primerLunes}
@@ -271,7 +271,7 @@ export default function Plan() {
         </div>
 
         {dias[6] >= h && (
-          <div className="flex gap-2 mb-4 lg:mb-0 lg:w-[26rem]" data-tour="plan-armar">
+          <div className="flex gap-2 mb-4 lg:mb-0 lg:w-104" data-tour="plan-armar">
             <button onClick={armar} disabled={trabajando || !huecos} className="btn-primario flex-1">
               <Icono n="wand_stars" size={20} /> {huecos ? 'Armar con lo que tengo' : 'Semana completa'}
             </button>
@@ -316,7 +316,7 @@ export default function Plan() {
             <section
               key={f}
               data-tour="plan-dia"
-              className={`tarjeta p-4 ${pasado ? '!bg-campo !shadow-none' : ''} ${f === h ? 'ring-2 ring-verde-medio' : ''}`}
+              className={`tarjeta p-4 ${pasado ? 'bg-campo! shadow-none!' : ''} ${f === h ? 'ring-2 ring-verde-medio' : ''}`}
             >
               <div className="flex items-center justify-between mb-1">
                 <p className="font-semibold">

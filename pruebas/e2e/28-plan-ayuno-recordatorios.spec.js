@@ -22,6 +22,8 @@ test('plan con lo que vence, ayuno y recordatorios', async ({ browser }) => {
     await pg.goto(APP + '/')
     const ayuno = pg.getByTestId('ayuno')
     await expect(ayuno).toBeVisible()
+    // Plegado (1.30): el protocolo y la hora se cambian desde "Cambiar"
+    await ayuno.getByRole('button', { name: 'Cambiar' }).click()
     await ayuno.getByRole('radio', { name: '14 : 10' }).click()
     await expect(ayuno.getByText(/14 horas sin comer y 10 para comer/)).toBeVisible()
     await ayuno.getByLabel('Empecé a las').fill('07:00')

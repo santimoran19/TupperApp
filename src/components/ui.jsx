@@ -76,7 +76,7 @@ export function Hoja({ titulo, onCerrar, children }) {
         aria-modal="true"
         aria-label={titulo}
         tabIndex={-1}
-        className="relative w-full max-w-[440px] lg:max-w-[560px] max-h-[88dvh] overflow-y-auto bg-superficie rounded-t-3xl lg:rounded-3xl shadow-flotante p-5 fin-hoja outline-none"
+        className="relative w-full max-w-[440px] lg:max-w-[560px] max-h-[88dvh] overflow-y-auto bg-superficie rounded-t-3xl lg:rounded-3xl shadow-flotante p-5 fin-hoja outline-hidden"
       >
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">{titulo}</h2>
@@ -187,7 +187,7 @@ export function Numero({ valor, onChange, className = 'campo', decimales = 2, la
       type="text"
       inputMode={decimales > 0 ? 'decimal' : 'numeric'}
       value={valor ?? ''}
-      className={`${className} ${error ? '!border-rojo-texto !bg-rojo-suave/40' : ''}`}
+      className={`${className} ${error ? 'border-rojo-texto! bg-rojo-suave/40!' : ''}`}
       onChange={(ev) => onChange(limpiar(ev.target.value))}
       {...resto}
     />

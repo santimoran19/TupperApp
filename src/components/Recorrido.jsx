@@ -227,7 +227,7 @@ function Guia({ uid, inicio, nombre, alTerminar }) {
 
   // La capa en sí no recibe toques: solo las franjas, el cartel y lo que tapa lo resaltado. Así el hueco queda libre.
   return (
-    <div ref={raiz} className="fixed inset-0 z-[100] pointer-events-none" data-recorrido-capa>
+    <div ref={raiz} className="fixed inset-0 z-100 pointer-events-none" data-recorrido-capa>
       {franja ? (
         <>
           {Object.entries(franja).map(([k, e]) => (

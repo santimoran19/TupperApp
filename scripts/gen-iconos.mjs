@@ -13,7 +13,8 @@ cloud_off sync home group content_copy key share barcode_scanner photo_camera fl
 fitness_center trophy timer directions_run play_arrow keyboard_arrow_down info monitor_heart show_chart tune bolt pause calendar_month
 egg set_meal water_full nutrition grocery ramen_dining grain bakery_dining breakfast_dining soup_kitchen cookie ac_unit lunch_dining
 local_drink add_a_photo image event event_busy schedule warning lightbulb donut_large checklist 3d_rotation view_in_ar
-accessibility_new body_system monitor_weight touch_app straighten stop notifications mic forum send rate_review`.split(/\s+/)
+accessibility_new body_system monitor_weight touch_app straighten stop notifications mic forum send rate_review
+upload_file watch category link link_off sync_alt`.split(/\s+/)
 
 const carpeta = new URL('../node_modules/@material-symbols/svg-400/outlined/', import.meta.url)
 const trazo = (archivo) => readFileSync(new URL(archivo, carpeta), 'utf8').match(/ d="([^"]+)"/)[1]

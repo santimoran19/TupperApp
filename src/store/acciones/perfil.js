@@ -31,10 +31,15 @@ export const accionesDePerfil = (k) => ({
         .upsert({ id: k.uid, ...d }, { onConflict: 'id' })
         .select()
     let respuesta = await subir(datos)
-    // Con una base sin la actualización 21 no existe la columna del consentimiento: se guarda el resto igual
-    if (respuesta.error?.code === 'PGRST204' && 'salud_consentida_at' in datos) {
-      const { salud_consentida_at: _sinColumna, ...resto } = datos
-      respuesta = await subir(resto)
+    // Con una base sin la actualización 21 (o la 23) no existe la columna del consentimiento (o la de los textos legales):
+    // se guarda el resto igual
+    if (respuesta.error?.code === 'PGRST204' && ('salud_consentida_at' in datos || 'legales_vistos' in datos)) {
+      const { legales_vistos: _sinLegales, ...sinLegales } = datos
+      respuesta = await subir(sinLegales)
+      if (respuesta.error?.code === 'PGRST204' && 'salud_consentida_at' in sinLegales) {
+        const { salud_consentida_at: _sinColumna, ...resto } = sinLegales
+        respuesta = await subir(resto)
+      }
     }
     const [p] = ok(respuesta)
     k.setE((s) => ({ ...s, perfil: p }))
@@ -43,6 +48,12 @@ export const accionesDePerfil = (k) => ({
   // Quien ya tenía cuenta acepta el uso de sus datos de salud (1.28, L-04)
   aceptarSalud: k.accion('aceptarSalud', async () => {
     const [p] = ok(await supabase.from('profiles').update({ salud_consentida_at: new Date().toISOString() }).eq('id', k.uid).select())
+    k.setE((s) => ({ ...s, perfil: p }))
+  }),
+
+  // Ya vio lo que cambió en los textos legales (L-05)
+  vioLegales: k.accion('vioLegales', async (version) => {
+    const [p] = ok(await supabase.from('profiles').update({ legales_vistos: version }).eq('id', k.uid).select())
     k.setE((s) => ({ ...s, perfil: p }))
   }),
 
@@ -160,6 +171,8 @@ export const accionesDePerfil = (k) => ({
         ),
       })),
       opiniones: opiniones.map((o) => ({ fecha: o.created_at, tipo: o.tipo, texto: o.texto })),
+      categorias_propias: (e.categoriasPropias || []).map((c) => c.nombre),
+      categorias_elegidas: (e.categoriaAlimento || []).map((c) => ({ alimento: nombreAlimento(c.food_id), categoria: c.categoria })),
       registro_tecnico: eventos.map((ev) => ({
         fecha: ev.created_at,
         tipo: ev.tipo,

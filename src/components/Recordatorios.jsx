@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Icono } from './ui'
 import { useDatos } from '../store/Datos'
-import { RECORDATORIOS_INICIAL, claveRecordatorios, guardar, horaValida, leer } from '../lib/ayuno'
+import { DIAS_SEMANA, RECORDATORIOS_INICIAL, claveRecordatorios, guardar, horaValida, leer } from '../lib/ayuno'
 import { avisarCambioRecordatorios } from '../lib/useRecordatorios'
 import { apagarPush, prenderPush, pushDisponible, pushPrendido } from '../lib/push'
 
@@ -24,7 +24,7 @@ function Interruptor({ activo, onCambiar, etiqueta }) {
       onClick={() => onCambiar(!activo)}
       className={`relative h-7 w-12 shrink-0 rounded-full transition ${activo ? 'bg-verde' : 'bg-pista'}`}
     >
-      <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${activo ? 'left-[22px]' : 'left-0.5'}`} />
+      <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-all ${activo ? 'left-[22px]' : 'left-0.5'}`} />
     </button>
   )
 }
@@ -71,7 +71,7 @@ export default function Recordatorios() {
           <h2 id="recordatorios-titulo" className="font-semibold flex items-center gap-2">
             <Icono n="notifications" size={20} className="text-teal" /> Recordatorios
           </h2>
-          <p className="text-sm text-gris mt-1">Avisos de comidas, agua y ayuno.</p>
+          <p className="text-sm text-gris mt-1">Avisos de comidas, agua, ayuno y pesarte.</p>
         </div>
         <Interruptor activo={c.activo} onCambiar={prender} etiqueta="Activar recordatorios" />
       </div>
@@ -114,6 +114,33 @@ export default function Recordatorios() {
           <div className="flex items-center gap-3">
             <Interruptor activo={c.ayuno} onCambiar={(v) => cambiar({ ayuno: v })} etiqueta="Avisar cuando se cumple el ayuno" />
             <span className="flex-1 text-sm">Cuando cumplo el ayuno</span>
+          </div>
+          <div className="flex items-center gap-3 flex-wrap">
+            <Interruptor activo={!!c.peso} onCambiar={(v) => cambiar({ peso: v })} etiqueta="Recordarme pesarme una vez por semana" />
+            <span className="flex-1 text-sm min-w-[7rem]">Pesarme</span>
+            {c.peso && (
+              <span className="flex items-center gap-2">
+                <select
+                  value={c.pesoDia ?? 1}
+                  onChange={(e) => cambiar({ pesoDia: Number(e.target.value) })}
+                  aria-label="Qué día"
+                  className="h-10 rounded-xl bg-campo px-2 text-sm"
+                >
+                  {DIAS_SEMANA.map((dia, i) => (
+                    <option key={dia} value={i}>
+                      {dia}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="time"
+                  value={c.pesoHora || '08:00'}
+                  onChange={(e) => horaValida(e.target.value) && cambiar({ pesoHora: e.target.value })}
+                  aria-label="Hora de pesarme"
+                  className="h-10 rounded-xl bg-campo px-2 text-sm"
+                />
+              </span>
+            )}
           </div>
           {pushDisponible() && permiso !== 'denied' && (
             <div className="flex items-center gap-3 pt-3 border-t border-linea">

@@ -364,7 +364,7 @@ export default function Acceso() {
                   <h2 className="font-semibold text-lg leading-tight">
                     {modo === 'codigo' ? 'Confirmá tu email' : 'Recuperar contraseña'}
                   </h2>
-                  <p className="text-sm text-gris break-words">
+                  <p className="text-sm text-gris wrap-break-word">
                     {modo === 'olvide' ? (
                       'Te mandamos un código para poner una nueva.'
                     ) : (
@@ -433,7 +433,7 @@ export default function Acceso() {
             {mensaje && <p className="text-sm text-verde-texto font-medium">{mensaje}</p>}
 
             {/* Sin lugar propio: solo ocupa espacio si hace falta que la persona toque algo */}
-            <div className="!mt-0 [&_iframe]:mt-3">
+            <div className="mt-0! [&_iframe]:mt-3">
               <Captcha ref={captcha} />
             </div>
 

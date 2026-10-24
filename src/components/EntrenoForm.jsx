@@ -282,7 +282,7 @@ export default function EntrenoForm({ inicial = null, fechaInicial = null, onCer
               min={rango.min}
               max={rango.max}
               onChange={(ev) => setFecha(ev.target.value)}
-              className={`campo ${errores.fecha ? '!border-rojo-texto' : ''}`}
+              className={`campo ${errores.fecha ? 'border-rojo-texto!' : ''}`}
             />
             <Err>{errores.fecha}</Err>
           </label>

@@ -32,6 +32,8 @@ export const VACIO = {
   compras: [],
   analisis: [],
   combos: [], // "mi desayuno de siempre" (F-09, supabase/actualizacion-21.sql)
+  categoriasPropias: [], // las categorías propias (F-13, supabase/actualizacion-23.sql)
+  categoriaAlimento: [], // la categoría que eligió la persona para un alimento de la base (o de otro del hogar)
   ...EJERCICIO_VACIO,
 }
 
@@ -96,7 +98,22 @@ async function traerHogar() {
 // hogar: en esas cuatro tablas `user_id` guarda el id de uno u otro (el `ámbito`). Lo demás es siempre de la persona.
 export async function traer(uid) {
   const desde = sumarDias(hoy(), -90)
-  const [hogar, perfiles, alimentos, recetas, items, plan, reglas, registros, medidas, prefs, analisis, combos] = await Promise.all([
+  const [
+    hogar,
+    perfiles,
+    alimentos,
+    recetas,
+    items,
+    plan,
+    reglas,
+    registros,
+    medidas,
+    prefs,
+    analisis,
+    combos,
+    categoriasPropias,
+    categoriaAlimento,
+  ] = await Promise.all([
     traerHogar(),
     supabase.from('profiles').select('*').eq('id', uid).then(ok),
     traerTodo(() => supabase.from('foods').select('*').order('id')),
@@ -110,6 +127,9 @@ export async function traer(uid) {
     supabase.from('ai_analyses').select('*').eq('user_id', uid).gte('week_start', sumarDias(desde, -7)).then(ok),
     // Con una base sin la actualización 21 la tabla no existe: sin combos, como antes
     opcional(() => supabase.from('combos').select('*').eq('user_id', uid).order('created_at').then(ok)),
+    // Con una base sin la actualización 23, sin categorías propias
+    opcional(() => supabase.from('categorias').select('*').eq('user_id', uid).order('created_at').then(ok)),
+    opcional(() => traerTodo(() => supabase.from('categoria_alimento').select('*').eq('user_id', uid).order('food_id'))),
   ])
   const ambito = hogar?.id ?? uid
   const [stock, preparado, lista, compras] = await Promise.all([
@@ -141,5 +161,7 @@ export async function traer(uid) {
     compras,
     analisis,
     combos,
+    categoriasPropias,
+    categoriaAlimento,
   }
 }

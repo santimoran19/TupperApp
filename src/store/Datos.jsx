@@ -18,6 +18,7 @@ import { accionesDePlan } from './acciones/plan'
 import { accionesDeRecetas } from './acciones/recetas'
 import { accionesDeRegistros } from './acciones/registros'
 import { accionesExtras } from './acciones/extras'
+import { accionesDeCategorias } from './acciones/categorias'
 import { ProveedorAvisos, useAvisar } from './avisos'
 import { VACIO } from './carga'
 import { useDerivados } from './derivados'
@@ -98,6 +99,7 @@ function Datos({ usuario, children }) {
       ...accionesDeEjercicio(k),
       ...accionesDeFotos(k),
       ...accionesExtras(k),
+      ...accionesDeCategorias(k),
     }
   })
 

@@ -1,5 +1,5 @@
 // Lista de compras: lo que falta para el plan, lo anotado a mano y el gasto del mes.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Marco from '../components/Marco'
 import SelectorAlimento from '../components/SelectorAlimento'
 import { Chip, Err, Hoja, Icono, Numero, Vacio, pesos } from '../components/ui'
@@ -11,6 +11,7 @@ import { enlaceWhatsApp, textoDeLista } from '../lib/compartir'
 import { LIM, errCantidad, errNumero, maxEnStock } from '../lib/validar'
 import Foto from '../components/Foto'
 import { fechaAlSumar } from '../lib/despensa'
+import { aplicarQuitadas, guardarQuitadas, leerQuitadas } from '../lib/comprasQuitadas'
 
 // Redondea lo que falta a una cantidad razonable de comprar
 function redondearCompra(a, falta) {
@@ -24,14 +25,28 @@ export default function Compras() {
   const [comprando, setComprando] = useState(null) // { alimento, producto, qty, price }
   const [agregando, setAgregando] = useState(false)
 
-  const delPlan = useMemo(
+  const { ordenCategoria } = d
+  const faltaPlan = useMemo(
     () =>
       [...d.planFuturo.faltantes]
         .filter(([id]) => d.alimentosPorId.has(id) && !d.lista.some((l) => l.food_id === id))
         .map(([id, falta]) => ({ a: d.alimentosPorId.get(id), qty: redondearCompra(d.alimentosPorId.get(id), falta) }))
-        .sort((x, y) => x.a.category.localeCompare(y.a.category, 'es') || x.a.name.localeCompare(y.a.name, 'es')),
-    [d.planFuturo, d.alimentosPorId, d.lista],
+        .sort((x, y) => ordenCategoria(x.a.category) - ordenCategoria(y.a.category) || x.a.name.localeCompare(y.a.name, 'es')),
+    [d.planFuturo, d.alimentosPorId, d.lista, ordenCategoria],
   )
+  // Lo del plan que se sacó a mano (1.30): se guarda en el teléfono, por cuenta o por hogar
+  const ambito = d.hogar?.id || d.usuario.id
+  const [quitadas, setQuitadas] = useState(() => leerQuitadas(ambito))
+  const [verQuitados, setVerQuitados] = useState(false)
+  const { visibles: delPlan, quitados, vigentes } = useMemo(() => aplicarQuitadas(faltaPlan, quitadas), [faltaPlan, quitadas])
+  // Las que ya no faltan se olvidan (si el plan las vuelve a pedir, aparecen)
+  useEffect(() => {
+    if (Object.keys(vigentes).length !== Object.keys(quitadas).length) guardarQuitadas(ambito, vigentes)
+  }, [ambito, vigentes, quitadas])
+  const cambiarQuitadas = (nuevas) => {
+    setQuitadas(nuevas)
+    guardarQuitadas(ambito, nuevas)
+  }
   const manuales = d.lista
     .filter((l) => d.alimentosPorId.has(l.food_id))
     .map((l) => ({ id: l.id, a: d.alimentosPorId.get(l.food_id), qty: Number(l.qty) }))
@@ -108,7 +123,21 @@ export default function Compras() {
     })
   }
 
-  const Fila = ({ a, qty, origen, id }) => (
+  // Sacar algo que falta para el plan (ya lo tenés, o no lo vas a comprar), con Deshacer
+  function quitarDelPlan(a, qty) {
+    const antes = quitadas
+    cambiarQuitadas({ ...quitadas, [a.id]: qty })
+    d.avisar(`Sacaste ${a.name} de la lista`, 'ok', {
+      texto: 'Deshacer',
+      hacer: () => cambiarQuitadas(antes),
+    })
+  }
+  const devolver = (a) => {
+    const { [a.id]: _sale, ...resto } = quitadas
+    cambiarQuitadas(resto)
+  }
+
+  const Fila = ({ a, qty, origen, id, delPlan: esDelPlan }) => (
     <div className="flex items-center gap-2 py-3">
       <Foto ruta={a.image_path} categoria={a.category} para={a.name} className="w-10 h-10 rounded-xl" icono={20} />
       <div className="flex-1 min-w-0">
@@ -117,8 +146,12 @@ export default function Compras() {
           {cantidadTexto(a, qty)} · {origen}
         </p>
       </div>
-      {id && (
-        <button onClick={() => quitar(id, a, qty)} className="toque w-8 h-8 text-gris" aria-label={`Quitar ${a.name}`}>
+      {(id || esDelPlan) && (
+        <button
+          onClick={() => (id ? quitar(id, a, qty) : quitarDelPlan(a, qty))}
+          className="toque w-8 h-8 text-gris"
+          aria-label={`Quitar ${a.name}`}
+        >
           <Icono n="close" size={18} />
         </button>
       )}
@@ -159,15 +192,49 @@ export default function Compras() {
             </div>
           </div>
           {delPlan.length + manuales.length === 0 ? (
-            <Vacio icono="shopping_cart" titulo="No falta nada" texto="Cuando al plan le falte un ingrediente, aparece acá solo." />
+            <Vacio
+              icono="shopping_cart"
+              titulo="No falta nada"
+              texto={
+                quitados.length ? 'Sacaste todo lo que faltaba para el plan.' : 'Cuando al plan le falte un ingrediente, aparece acá solo.'
+              }
+            />
           ) : (
             <div className="tarjeta px-4 divide-y divide-linea">
               {delPlan.map((x) => (
-                <Fila key={x.a.id} a={x.a} qty={x.qty} origen="falta para el plan" />
+                <Fila key={x.a.id} a={x.a} qty={x.qty} origen="falta para el plan" delPlan />
               ))}
               {manuales.map((x) => (
                 <Fila key={x.id} a={x.a} qty={x.qty} origen={d.hogar ? 'anotado en el hogar' : 'anotado por vos'} id={x.id} />
               ))}
+            </div>
+          )}
+          {quitados.length > 0 && (
+            <div className="mt-3" data-testid="compras-quitados">
+              <button
+                onClick={() => setVerQuitados(!verQuitados)}
+                className="text-sm font-semibold text-gris flex items-center gap-1"
+                aria-expanded={verQuitados}
+              >
+                <Icono n={verQuitados ? 'keyboard_arrow_down' : 'chevron_right'} size={18} />
+                {quitados.length === 1
+                  ? 'Sacaste 1 cosa que falta para el plan'
+                  : `Sacaste ${quitados.length} cosas que faltan para el plan`}
+              </button>
+              {verQuitados && (
+                <div className="tarjeta px-4 mt-2 divide-y divide-linea">
+                  {quitados.map((x) => (
+                    <div key={x.a.id} className="flex items-center gap-2 py-2.5">
+                      <span className="flex-1 min-w-0 truncate text-sm text-gris">
+                        {x.a.name} · {cantidadTexto(x.a, x.qty)}
+                      </span>
+                      <button onClick={() => devolver(x.a)} className="btn-chico bg-campo text-tinta">
+                        <Icono n="undo" size={16} /> Volver a la lista
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

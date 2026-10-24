@@ -25,10 +25,10 @@ async function notificar(titulo, texto) {
   }
 }
 
-export function useRecordatorios({ uid, registros, avisar }) {
-  const ref = useRef({ registros, avisar })
+export function useRecordatorios({ uid, registros, medidas = [], avisar }) {
+  const ref = useRef({ registros, medidas, avisar })
   useEffect(() => {
-    ref.current = { registros, avisar }
+    ref.current = { registros, medidas, avisar }
   })
 
   useEffect(() => {
@@ -42,7 +42,8 @@ export function useRecordatorios({ uid, registros, avisar }) {
       const guardados = leer(claveAvisados, { fecha: '', ids: [] })
       const yaAvisados = new Set(guardados.fecha === fecha ? guardados.ids.map((i) => `${fecha}|${i}`) : [])
       const registradas = new Set(ref.current.registros.filter((r) => r.date === fecha).map((r) => r.meal))
-      const pendientes = recordatoriosAhora({ config, ahora: new Date(), fecha, registradas, yaAvisados, nombres: NOMBRES })
+      const pesadoHoy = (ref.current.medidas || []).some((m) => m.date === fecha && Number(m.weight_kg) > 0)
+      const pendientes = recordatoriosAhora({ config, ahora: new Date(), fecha, registradas, yaAvisados, nombres: NOMBRES, pesadoHoy })
       // El ayuno que llegó a su meta
       const ay = leer(claveAyuno(uid), { actual: null })
       if (config.ayuno && ay.actual && estadoAyuno({ ...ay.actual, ahora: Date.now() }).cumplido) {

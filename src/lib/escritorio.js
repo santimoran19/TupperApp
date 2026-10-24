@@ -1,5 +1,5 @@
 // ¿La ventana es lo bastante ancha para el diseño de computadora? Desde 1024 px: barra de navegación al costado y varias columnas.
-// Por debajo de eso se queda el diseño de celular, que no cambia. Tiene que coincidir con el `lg` de tailwind.config.js (1024 px).
+// Por debajo de eso se queda el diseño de celular, que no cambia. Tiene que coincidir con el `lg` de Tailwind (1024 px, el que trae por defecto).
 import { useSyncExternalStore } from 'react'
 
 const CONSULTA = '(min-width: 1024px)'

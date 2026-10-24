@@ -395,7 +395,7 @@ export default function Perfil() {
               <input
                 id="md-fecha"
                 type="date"
-                className={`campo ${errMedida.date ? '!border-rojo-texto !bg-rojo-suave/40' : ''}`}
+                className={`campo ${errMedida.date ? 'border-rojo-texto! bg-rojo-suave/40!' : ''}`}
                 value={nueva.date}
                 min="2000-01-01"
                 max={hoy()}

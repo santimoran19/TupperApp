@@ -6,6 +6,7 @@ import { borrarLocal } from './store/local'
 import { leerRecorrido } from './lib/recorrido'
 import { faltaCodigo } from './lib/dosPasos'
 import { Logo } from './components/Marco'
+import Esqueleto from './components/Esqueleto'
 import Acceso from './pages/Acceso'
 import Diario from './pages/Diario'
 
@@ -58,7 +59,9 @@ const dejoElUsuarioParaDespues = () => {
 function Pantallas() {
   const { cargando, errorCarga, perfil, recargar, usuario } = useDatos()
   const [despues, setDespues] = useState(dejoElUsuarioParaDespues)
-  if (cargando) return <Cargando />
+  const ruta = useLocation().pathname
+  // La primera vez (sin copia en el teléfono), la forma de la pantalla mientras llegan los datos (D-04)
+  if (cargando) return <Esqueleto tipo={ruta === '/' ? 'diario' : 'pantalla'} />
   if (errorCarga) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center bg-fondo">
@@ -102,7 +105,7 @@ function Pantallas() {
       </Suspense>
     )
   return (
-    <Suspense fallback={Hueco}>
+    <Suspense fallback={<Esqueleto />}>
       <Routes>
         <Route path="/" element={<Diario />} />
         <Route path="/registrar" element={<Registrar />} />

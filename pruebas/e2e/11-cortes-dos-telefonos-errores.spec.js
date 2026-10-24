@@ -233,7 +233,8 @@ test('cortes de conexión, dos teléfonos, pantalla de error y registro de error
     await pg.evaluate(() => {
       window.cargandoVisto = false
       new MutationObserver(() => {
-        if (document.body.innerText.includes('Cargando...')) window.cargandoVisto = true
+        if (document.body.innerText.includes('Cargando...') || document.querySelector('[data-testid=esqueleto]'))
+          window.cargandoVisto = true
       }).observe(document.body, { childList: true, subtree: true })
     })
     await pg.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))

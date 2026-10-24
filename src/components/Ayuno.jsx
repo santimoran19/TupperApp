@@ -37,6 +37,7 @@ export default function Ayuno() {
   const [est, setEst] = useState(() => leer(clave, INICIAL))
   const [ahora, setAhora] = useState(() => Date.now())
   const [aviso, setAviso] = useState(false)
+  const [opciones, setOpciones] = useState(false)
   const [horaInicio, setHoraInicio] = useState('')
 
   useEffect(() => {
@@ -98,38 +99,52 @@ export default function Ayuno() {
 
       {!e ? (
         <>
-          <div className="grid grid-cols-5 gap-1 bg-campo rounded-full p-1 mt-3" role="radiogroup" aria-label="Protocolo de ayuno">
-            {PROTOCOLOS.map((p) => (
-              <button
-                key={p.id}
-                role="radio"
-                aria-checked={est.protocolo === p.id}
-                onClick={() => cambiar({ ...est, protocolo: p.id })}
-                className={`h-9 rounded-full text-[12.5px] font-semibold transition ${est.protocolo === p.id ? 'bg-superficie text-verde-texto shadow-tarjeta' : 'text-gris'}`}
-              >
-                {p.nombre}
-              </button>
-            ))}
-          </div>
-          <p className="text-xs text-gris mt-2">
-            {proto.ayuno} horas sin comer y {24 - proto.ayuno} para comer · {proto.texto}
-          </p>
-          <div className="flex items-center gap-2 mt-3">
-            <button onClick={empezar} className="btn-primario flex-1">
-              <Icono n="play_arrow" size={20} /> Empezar ayuno
+          {/* Plegado: el protocolo elegido y "Empezar". El resto se abre con "Cambiar" (D-10: el Diario más corto) */}
+          <div className="flex items-center justify-between gap-2 mt-2">
+            <p className="text-sm text-gris">
+              <b className="text-tinta">{proto.nombre}</b> · {proto.ayuno} h sin comer · {proto.texto}
+            </p>
+            <button
+              onClick={() => setOpciones(!opciones)}
+              aria-expanded={opciones}
+              className="text-sm font-semibold text-verde-texto shrink-0"
+            >
+              {opciones ? 'Listo' : 'Cambiar'}
             </button>
-            <label className="text-xs text-gris flex items-center gap-1">
-              <span className="sr-only">Hora en que empezó</span>
-              <input
-                type="time"
-                value={horaInicio}
-                onChange={(ev) => setHoraInicio(ev.target.value)}
-                aria-label="Empecé a las"
-                className="h-12 rounded-xl bg-campo px-2 text-sm text-tinta"
-              />
-            </label>
           </div>
-          <p className="text-[11px] text-gris mt-1">¿Ya empezaste? Poné la hora a la que dejaste de comer.</p>
+          {opciones && (
+            <>
+              <div className="grid grid-cols-5 gap-1 bg-campo rounded-full p-1 mt-3" role="radiogroup" aria-label="Protocolo de ayuno">
+                {PROTOCOLOS.map((p) => (
+                  <button
+                    key={p.id}
+                    role="radio"
+                    aria-checked={est.protocolo === p.id}
+                    onClick={() => cambiar({ ...est, protocolo: p.id })}
+                    className={`h-9 rounded-full text-[12.5px] font-semibold transition ${est.protocolo === p.id ? 'bg-superficie text-verde-texto shadow-tarjeta' : 'text-gris'}`}
+                  >
+                    {p.nombre}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-gris mt-2">
+                {proto.ayuno} horas sin comer y {24 - proto.ayuno} para comer · {proto.texto}
+              </p>
+              <label className="flex items-center gap-2 mt-3 text-sm text-gris">
+                ¿Ya empezaste? Dejaste de comer a las
+                <input
+                  type="time"
+                  value={horaInicio}
+                  onChange={(ev) => setHoraInicio(ev.target.value)}
+                  aria-label="Empecé a las"
+                  className="h-10 rounded-xl bg-campo px-2 text-sm text-tinta"
+                />
+              </label>
+            </>
+          )}
+          <button onClick={empezar} className="btn-primario w-full mt-3">
+            <Icono n="play_arrow" size={20} /> Empezar ayuno
+          </button>
         </>
       ) : (
         <div className="mt-3">

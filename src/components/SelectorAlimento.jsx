@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Chip, Err, Icono, Numero } from './ui'
 import { useDatos } from '../store/Datos'
-import { CATEGORIAS, cantidadTexto, redondear, tieneAlcohol } from '../lib/nutricion'
+import { cantidadTexto, redondear, tieneAlcohol } from '../lib/nutricion'
 import { buscarPorCodigo, buscarProductos } from '../lib/openfoodfacts'
 import { buscarCodigoEnCatalogo, buscarEnCatalogo } from '../lib/catalogo'
 import { nombrePorCodigo } from '../lib/preciosclaros'
@@ -529,7 +529,7 @@ export function NuevoAlimento({
   onListo,
   onCancelar,
 }) {
-  const { crearAlimento, actualizarAlimento, ingredientes, equivalentes } = useDatos()
+  const { crearAlimento, actualizarAlimento, ingredientes, equivalentes, categorias } = useDatos()
   const [f, setF] = useState(
     inicial
       ? {
@@ -675,7 +675,7 @@ export function NuevoAlimento({
               Categoría
             </label>
             <select id="na-cat" className="campo" value={f.category} onChange={(e) => set('category')(e.target.value)}>
-              {[...new Set([...CATEGORIAS, f.category])].map((c) => (
+              {[...new Set([...categorias, f.category])].map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>

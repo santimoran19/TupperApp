@@ -121,7 +121,7 @@ describe('cuánto queda', () => {
 describe('consejos y distribución', () => {
   test('primero por el nombre y si no por la categoría', () => {
     expect(consejoDe({ name: 'Espinacas baby', category: 'Verduras' })).toMatch(/papel absorbente/)
-    expect(consejoDe({ name: 'Pechuga de pollo', category: 'Carnes y huevos' })).toMatch(/freezala/)
+    expect(consejoDe({ name: 'Pechuga de pollo', category: 'Carnes y huevos' })).toMatch(/freezer/)
     expect(consejoDe({ name: 'Brócoli', category: 'Verduras' })).toMatch(/cajón/)
     expect(consejoDe({ name: 'Algo', category: 'Inventada' })).toBeNull()
   })

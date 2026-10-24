@@ -244,7 +244,7 @@ export default function Asistente() {
           <button
             type="submit"
             disabled={trabajando || texto.trim().length < 2}
-            className="btn-primario !h-12 !w-12 !px-0 shrink-0"
+            className="btn-primario h-12! w-12! px-0! shrink-0"
             aria-label="Mandar"
           >
             <Icono n="send" size={22} />

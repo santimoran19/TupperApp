@@ -36,7 +36,13 @@ export default defineConfig({
       // Las variables del entorno le ganan al archivo .env: la app de las pruebas siempre habla con el simulador.
       // El captcha va prendido (con un Turnstile de mentira, ver apoyo.js) para probar que cada pedido de acceso lo manda.
       command: 'npx vite --port 5199 --strictPort',
-      env: { VITE_SUPABASE_URL: 'http://localhost:54321', VITE_SUPABASE_KEY: 'test', VITE_TURNSTILE_SITEKEY: 'clave-de-prueba' },
+      env: {
+        VITE_SUPABASE_URL: 'http://localhost:54321',
+        VITE_SUPABASE_KEY: 'test',
+        VITE_TURNSTILE_SITEKEY: 'clave-de-prueba',
+        // Strava (F-22): con un id de mentira aparece el botón; la función se reemplaza en las pruebas
+        VITE_STRAVA_CLIENT_ID: '12345',
+      },
       url: 'http://localhost:5199',
       reuseExistingServer: reusar,
       timeout: 60000,

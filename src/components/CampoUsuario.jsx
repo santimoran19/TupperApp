@@ -47,7 +47,7 @@ export default function CampoUsuario({ id = 'pf-usuario', valor, onChange, estad
       </label>
       <input
         id={id}
-        className={`campo ${verError ? '!border-rojo-texto !bg-rojo-suave/40' : ''}`}
+        className={`campo ${verError ? 'border-rojo-texto! bg-rojo-suave/40!' : ''}`}
         maxLength={LIM.usuario[1] + 10}
         autoCapitalize="none"
         autoCorrect="off"

@@ -70,7 +70,7 @@ export default function Opinion() {
             maxLength={2000}
             rows={4}
             placeholder={tipo === 'problema' ? 'Qué pasó y en qué pantalla' : 'Contanos'}
-            className="campo w-full !h-auto py-3 resize-y"
+            className="campo w-full h-auto! py-3 resize-y"
           />
           <p className="text-xs text-gris mt-1">No pongas datos personales que no hagan falta. Se guarda con tu cuenta.</p>
           <button type="submit" disabled={enviando || texto.trim().length < 3} className="btn-primario w-full mt-3">

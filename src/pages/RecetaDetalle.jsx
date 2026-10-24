@@ -28,7 +28,7 @@ function Portada({ receta }) {
       ruta={receta.image_path}
       categoria="receta"
       nombre={receta.name}
-      className="w-full aspect-[16/10] rounded-3xl lg:aspect-[21/9]"
+      className="w-full aspect-16/10 rounded-3xl lg:aspect-21/9"
       icono={64}
     />
   )
@@ -36,12 +36,12 @@ function Portada({ receta }) {
   return (
     <div className="mb-4">
       {vista === 'plato' && puede3D ? (
-        <div className="rounded-3xl bg-gradient-to-b from-verde-claro to-superficie">
+        <div className="rounded-3xl bg-linear-to-b from-verde-claro to-superficie">
           <Vista3D
             tipo="plato"
             props={props}
             etiqueta={`Plato de ${receta.name} en 3D`}
-            lienzo="w-full aspect-[16/10] lg:aspect-[21/9]"
+            lienzo="w-full aspect-16/10 lg:aspect-21/9"
             sinTresD={foto}
           />
           <ul className="flex flex-wrap justify-center gap-x-3 gap-y-1 px-4 pb-3 -mt-2 text-xs">
@@ -207,7 +207,7 @@ export default function RecetaDetalle() {
                 >
                   <Icono n="remove" size={20} />
                 </button>
-                <span className="min-w-[5.5rem] text-center text-sm font-semibold" aria-live="polite" data-testid="porciones-vista">
+                <span className="min-w-22 text-center text-sm font-semibold" aria-live="polite" data-testid="porciones-vista">
                   {redondear(verPor, 2)} {verPor === 1 ? 'porción' : 'porciones'}
                 </span>
                 <button

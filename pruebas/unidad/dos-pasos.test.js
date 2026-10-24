@@ -1,3 +1,4 @@
+import fs from 'node:fs'
 // Verificación en dos pasos (1.29, S-06): la base exige el código a quien la activó (actualizacion-22.sql), y la app
 // sabe cuándo pedirlo (src/lib/dosPasos.js). También las tablas de los recordatorios con la app cerrada (F-06).
 import { beforeAll, describe, expect, it, vi } from 'vitest'
@@ -42,8 +43,8 @@ describe('la base exige el código (actualizacion-22.sql)', () => {
   }, 60000)
 
   // Como `como`, pero con el nivel de la sesión en el permiso
-  async function con(usuario, aal, fn) {
-    await b.db.query(`select set_config('request.jwt.claims', $1, false)`, [JSON.stringify({ sub: usuario, aal })])
+  async function con(usuario, aal, fn, rol = 'authenticated') {
+    await b.db.query(`select set_config('request.jwt.claims', $1, false)`, [JSON.stringify({ sub: usuario, aal, role: rol })])
     try {
       return await b.como(usuario, fn)
     } finally {
@@ -70,6 +71,20 @@ describe('la base exige el código (actualizacion-22.sql)', () => {
 
   it('con el código, todo normal', async () => {
     expect((await con(ANA, 'aal2', () => b.filas('select * from public.measurements'))).length).toBe(1)
+  })
+
+  it('23b: antes de cada pedido (también las funciones rpc) se exige el código', async () => {
+    // Solo la función: el "alter role authenticator" es de Supabase (PostgREST) y acá no existe ese rol
+    const sql = fs.readFileSync('supabase/actualizacion-23b-dos-pasos.sql', 'utf8').split('\nalter role authenticator set')[0]
+    await b.db.exec(
+      "create or replace function auth.role() returns text language sql stable as $$ select coalesce(auth.jwt() ->> 'role', 'anon') $$;",
+    )
+    await b.db.exec(sql)
+    const pedir = (usuario, aal, rol = 'authenticated') =>
+      con(usuario, aal, () => fallo(b.db.query('select public.antes_de_cada_pedido()')), rol)
+    expect(await pedir(ANA, 'aal1')).toMatch(/código de verificación/)
+    expect(await pedir(ANA, 'aal2')).toBeNull()
+    expect(await pedir(BETO, 'aal1')).toBeNull()
   })
 
   it('quien no la activó no nota nada', async () => {

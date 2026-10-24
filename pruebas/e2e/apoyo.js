@@ -235,3 +235,31 @@ export async function cuantasRecetas(pg) {
   const m = t.match(/(\d+)(?: de (\d+))? recetas?/)
   return Number(m[2] || m[1])
 }
+
+// Crea una cuenta nueva con su perfil y salta el recorrido (para las pruebas que no dependen de las anteriores)
+export async function crearCuenta(pg, { email, clave = 'Secreto9q', nombre = 'Prueba', usuario, peso = '80', meta = '' }) {
+  await pg.goto(APP + '/')
+  await pg.click('button:has-text("Crear cuenta") >> nth=0')
+  await pg.fill('#email', email)
+  await pg.fill('#clave', clave)
+  await pg.fill('#clave2', clave)
+  await pg.click('form button[type=submit]')
+  await pg.waitForSelector('text=Armemos tu perfil')
+  await pg.fill('#pf-nombre', nombre)
+  await pg.fill(
+    '#pf-usuario',
+    usuario ||
+      email
+        .split('@')[0]
+        .replace(/[^a-z0-9.]/g, '')
+        .slice(0, 20),
+  )
+  await pg.fill('#pf-nac', '1990-03-03')
+  await pg.fill('#pf-altura', '170')
+  await pg.fill('#pf-peso', peso)
+  if (meta) await pg.fill('#pf-meta', meta)
+  await pg.check('#pf-consentimiento')
+  await pg.click('button:has-text("Empezar")')
+  await pg.waitForSelector(`text=¡Hola, ${nombre}!`)
+  await saltarRecorrido(pg)
+}

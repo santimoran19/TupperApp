@@ -10,11 +10,13 @@ import ElegirFoto from '../components/ElegirFoto'
 import SelectorAlimento, { ValePor } from '../components/SelectorAlimento'
 import { Chip, Err, Hoja, Icono, Numero, Vacio } from '../components/ui'
 import { useDatos } from '../store/Datos'
-import { CATEGORIAS, cantidadTexto, pasoDe, redondear, unidadDe } from '../lib/nutricion'
+import { cantidadTexto, pasoDe, redondear, unidadDe } from '../lib/nutricion'
 import { errCantidad, maxEnStock } from '../lib/validar'
 import { nombreCorto, sugerirBase } from '../lib/equivalencias'
 import { hoy, sumarDias } from '../lib/fechas'
-import { DIAS_URGENTE, compararVencimiento, consejoDe, distribucion, estadoVencimiento, nivelDeStock } from '../lib/despensa'
+import { DIAS_URGENTE, compararVencimiento, distribucion, estadoVencimiento, nivelDeStock } from '../lib/despensa'
+import { consejosPara } from '../lib/consejos'
+import CarruselConsejos from '../components/CarruselConsejos'
 
 const ORDENES = [
   ['vence', 'Vence primero'],
@@ -111,8 +113,8 @@ export default function Despensa() {
     return lista.sort((x, y) => Number(x.qty <= 0) - Number(y.qty <= 0) || compararVencimiento(x.vence, y.vence) || porNombre(x, y))
   }, [filas, orden])
 
-  // Los filtros van en el orden de la lista de categorías; las que no estén en la lista, al final
-  const ordenCat = (c) => (CATEGORIAS.indexOf(c) === -1 ? 99 : CATEGORIAS.indexOf(c))
+  // Los filtros van en el orden de la lista de categorías (con las propias, F-13); las que no estén en la lista, al final
+  const ordenCat = d.ordenCategoria
   const cuentaCat = new Map()
   for (const f of filas) cuentaCat.set(f.a.category, (cuentaCat.get(f.a.category) || 0) + 1)
   const categorias = ['Todos', ...[...cuentaCat.keys()].sort((x, y) => ordenCat(x) - ordenCat(y))]
@@ -166,16 +168,8 @@ export default function Despensa() {
     if (bien > 0) d.avisar(bien === 1 ? 'Anotado en la lista de compras' : `${bien} anotados en la lista de compras`)
   }
 
-  // Un consejo para que dure más: el de lo más urgente o, si no hay fechas, uno distinto cada día
-  const consejo = useMemo(() => {
-    const conConsejo = (f) => f.qty > 0 && consejoDe(f.a)
-    const urgente = ordenadas.find((f) => f.estado && f.estado.nivel !== 'bien' && conConsejo(f))
-    if (urgente) return { f: urgente, texto: consejoDe(urgente.a) }
-    const todos = ordenadas.filter(conConsejo)
-    if (todos.length === 0) return null
-    const f = todos[Number(hoyTexto.slice(-2)) % todos.length]
-    return { f, texto: consejoDe(f.a) }
-  }, [ordenadas, hoyTexto])
+  // Consejos para la despensa (1.30): primero lo que vence antes, después uno por alimento, rotando cada día
+  const consejos = useMemo(() => consejosPara(ordenadas, { hoy: hoyTexto, maximo: 10 }), [ordenadas, hoyTexto])
   const dist = useMemo(() => distribucion(filas), [filas])
 
   // El alimento de la hoja, al día (la hoja guarda una copia de cuando se abrió)
@@ -282,26 +276,7 @@ export default function Despensa() {
         </section>
       )}
 
-      {consejo && (
-        <section className="tarjeta p-4 mb-4">
-          <p className="text-[11px] font-bold tracking-wider text-verde-texto flex items-center gap-1.5">
-            <Icono n="lightbulb" size={16} /> PARA QUE DURE MÁS
-          </p>
-          <div className="flex items-start gap-3 mt-2">
-            <Foto
-              ruta={consejo.f.a.image_path}
-              categoria={consejo.f.a.category}
-              para={consejo.f.a.name}
-              className="w-12 h-12 rounded-xl"
-              icono={22}
-            />
-            <div className="min-w-0">
-              <h3 className="font-semibold">{consejo.f.a.name}</h3>
-              <p className="text-sm text-gris mt-0.5">{consejo.texto}</p>
-            </div>
-          </div>
-        </section>
-      )}
+      <CarruselConsejos consejos={consejos} />
 
       {dist.total > 0 && (
         <section className="tarjeta p-4 mb-4">
@@ -417,7 +392,7 @@ export default function Despensa() {
                       ruta={f.a.image_path}
                       categoria={f.a.category}
                       nombre={f.a.name}
-                      className="w-full aspect-[4/3] rounded-xl"
+                      className="w-full aspect-4/3 rounded-xl"
                       icono={36}
                     />
                     <p className="font-semibold text-sm mt-2 leading-tight line-clamp-2">{f.a.name}</p>
@@ -497,7 +472,7 @@ export default function Despensa() {
               </div>
               <div className="grilla-tarjetas [--min:19rem]">
                 {visibles.map(({ a, qty, estado, nivel }) => (
-                  <div key={a.id} className={`tarjeta p-3.5 ${qty <= 0 ? '!bg-campo !shadow-none' : ''}`}>
+                  <div key={a.id} className={`tarjeta p-3.5 ${qty <= 0 ? 'bg-campo! shadow-none!' : ''}`}>
                     <div className="flex items-start gap-3">
                       <Foto ruta={a.image_path} categoria={a.category} nombre={a.name} className="w-16 h-16 rounded-2xl" />
                       <div className="flex-1 min-w-0">
@@ -682,26 +657,35 @@ export default function Despensa() {
             </p>
           </div>
 
+          {/* La categoría: los propios cambian de verdad; los de la base, solo para vos (F-13) */}
+          <div className="mt-4">
+            <label className="etiqueta" htmlFor="dp-categoria">
+              Categoría
+            </label>
+            <select id="dp-categoria" className="campo" value={actual.category} onChange={(e) => d.elegirCategoria(actual, e.target.value)}>
+              {[...new Set([...d.categorias, actual.category])].map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+            {actual.categoria_base && (
+              <p className="text-xs text-gris mt-1.5">
+                Para todos está en {actual.categoria_base}; lo moviste solo para vos.{' '}
+                <button
+                  type="button"
+                  className="underline font-semibold text-verde-texto"
+                  onClick={() => d.elegirCategoria(actual, actual.categoria_base)}
+                >
+                  Volver a {actual.categoria_base}
+                </button>
+              </p>
+            )}
+          </div>
+
           {editar.alimento.owner === d.usuario.id && (
             <div className="mt-4 space-y-3">
               <div>
                 <p className="etiqueta">Foto</p>
                 <ElegirFoto tipo="alimento" fila={actual} categoria={actual.category} className="w-20 h-20 rounded-2xl" />
-              </div>
-              <div>
-                <label className="etiqueta" htmlFor="dp-categoria">
-                  Categoría
-                </label>
-                <select
-                  id="dp-categoria"
-                  className="campo"
-                  value={actual.category}
-                  onChange={(e) => d.actualizarAlimento(actual.id, { category: e.target.value })}
-                >
-                  {[...new Set([...CATEGORIAS, actual.category])].map((c) => (
-                    <option key={c}>{c}</option>
-                  ))}
-                </select>
               </div>
               <ValePor
                 id="dp-vale"

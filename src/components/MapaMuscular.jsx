@@ -63,7 +63,7 @@ export default function MapaMuscular({ sexo = 'm', modo = 'ver', valores = new M
                   aria-pressed={modo === 'elegir' ? seleccion.has(g) : undefined}
                   onClick={onTocar ? () => onTocar(g) : undefined}
                   onKeyDown={onTocar ? tecla(g) : undefined}
-                  className={`${onTocar ? 'cursor-pointer outline-none focus-visible:opacity-70' : ''} transition-[fill] duration-300`}
+                  className={`${onTocar ? 'cursor-pointer outline-hidden focus-visible:opacity-70' : ''} transition-[fill] duration-300`}
                   fill={color(g)}
                   stroke={activo === g ? 'rgb(var(--c-tinta))' : 'rgb(var(--c-superficie))'}
                   strokeWidth={activo === g ? 2 : 1.2}

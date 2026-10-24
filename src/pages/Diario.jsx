@@ -257,7 +257,7 @@ export default function Diario() {
           </h2>
         </div>
 
-        <div className="flex items-center gap-1 mb-4 xl:mb-0 xl:w-[30rem] xl:shrink-0" data-tour="diario-semana">
+        <div className="flex items-center gap-1 mb-4 xl:mb-0 xl:w-120 xl:shrink-0" data-tour="diario-semana">
           <button
             onClick={() => mover(-7)}
             disabled={fecha <= rango.min}

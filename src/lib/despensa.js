@@ -1,6 +1,7 @@
 // La despensa vista de cerca (F-04 y el rediseño de la 1.24): vencimientos, cuánto queda de cada cosa, consejos para que dure
 // más y de qué está hecha. Son funciones puras: reciben las filas y la fecha de hoy, no tocan la base.
 import { aFecha } from './fechas'
+import { consejosDe } from './consejos'
 
 // ---------- Vencimientos ----------
 // Cada alimento de la despensa puede tener la fecha de lo que vence primero (`stock.expires_on`). Si está agotado no cuenta:
@@ -96,72 +97,9 @@ export function nivelDeStock(qty, referencia) {
 }
 
 // ---------- Para que dure más ----------
-// Un consejo según qué es. Se busca primero por palabras del nombre y, si no, por categoría.
-const CONSEJOS_POR_NOMBRE = [
-  [
-    /lechuga|espinaca|rucula|r[uú]cula|acelga|kale|verdeo|perejil|cilantro|albahaca/,
-    'Guardala en un tupper con una hoja de papel absorbente: toma la humedad y las hojas duran hasta 4 días más.',
-  ],
-  [
-    /banana/,
-    'Separala del resto de la fruta: suelta un gas que hace madurar más rápido a lo que tiene cerca. Si se pone muy madura, pelala y freezala para licuados.',
-  ],
-  [
-    /palta|aguacate/,
-    'Si todavía está dura dejala afuera; cuando ceda un poco, a la heladera. Si usás la mitad, guardá la otra con el carozo y film.',
-  ],
-  [/tomate/, 'Fuera de la heladera conserva mejor el sabor; a la heladera solo cuando ya está muy maduro.'],
-  [
-    /papa|batata|cebolla|ajo/,
-    'En un lugar fresco, seco y oscuro, fuera de la heladera. La papa y la cebolla, separadas: juntas se echan a perder antes.',
-  ],
-  [/huevo/, 'En su maple y en un estante de la heladera, no en la puerta: los cambios de temperatura los gastan antes.'],
-  [/pan|tostada|rodaja|lactal/, 'Si no lo terminás en 2 o 3 días, freezalo en rodajas y tostalo directo del freezer.'],
-  [
-    /arroz|fideo|pasta|harina|avena|lenteja|garbanzo|poroto/,
-    'Una vez abierto, pasalo a un frasco o tupper bien cerrado: no agarra humedad ni bichos.',
-  ],
-  [/queso/, 'Envolvelo en papel manteca y después en una bolsa: respira y no se seca. El rallado, siempre bien cerrado.'],
-  [/leche|yogur|crema/, 'En un estante del medio de la heladera, no en la puerta. Una vez abierto, fijate cuántos días dura en el envase.'],
-  [
-    /pollo|carne|milanesa|pata|muslo|pechuga|cerdo|bife|picada/,
-    'Si no la vas a usar en 1 o 2 días, freezala en porciones con la fecha escrita. Se descongela en la heladera, no afuera.',
-  ],
-  [
-    /at[uú]n|caballa|sardina|lata/,
-    'Una vez abierta, pasá lo que sobra a un tupper de vidrio: en la lata se oxida. Dura 2 o 3 días en la heladera.',
-  ],
-  [/aceite/, 'Lejos de la hornalla y de la luz, bien tapado: el calor y la luz lo ponen rancio.'],
-]
-const CONSEJOS_POR_CATEGORIA = {
-  'Carnes y huevos': 'Lo que no uses en 1 o 2 días, al freezer en porciones con la fecha escrita.',
-  Pescados: 'El pescado fresco se come en 1 o 2 días; si no, al freezer bien envuelto.',
-  Lácteos: 'En el estante del medio de la heladera, no en la puerta, donde la temperatura cambia más.',
-  Verduras: 'Las de hoja, con papel absorbente en un tupper; las demás, en el cajón de la heladera.',
-  Frutas: 'Separá las que maduran rápido (banana, palta) del resto para que no aceleren a las demás.',
-  'Pastas y arroz': 'Una vez abierto, a un frasco bien cerrado.',
-  Legumbres: 'Secas, en frasco cerrado; cocidas, hasta 4 días en la heladera o meses en el freezer.',
-  Panadería: 'Lo que no termines en 2 o 3 días, al freezer en rodajas.',
-  Cereales: 'Bien cerrados, para que no pierdan lo crocante.',
-  Enlatados: 'Una vez abierta la lata, lo que sobra va a un tupper en la heladera.',
-  'Salsas y aderezos': 'Abiertos, a la heladera; mirá en el envase cuántos días duran.',
-  Despensa: 'En un lugar fresco, seco y lejos de la luz.',
-  'Snacks y dulces': 'Bien cerrados para que no se humedezcan.',
-  Congelados: 'No vuelvas a congelar lo que ya descongelaste.',
-  'Comidas hechas': 'En la heladera dura hasta 3 o 4 días; si no, porcionado al freezer.',
-  Bebidas: 'Una vez abierta, a la heladera y bien tapada.',
-}
-const sinTildes = (t) =>
-  String(t || '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-
+// El primer consejo de conservación de un alimento (el carrusel usa todos: ver lib/consejos.js)
 export function consejoDe(alimento) {
-  if (!alimento) return null
-  const nombre = sinTildes(alimento.name)
-  for (const [patron, texto] of CONSEJOS_POR_NOMBRE) if (patron.test(nombre)) return texto
-  return CONSEJOS_POR_CATEGORIA[alimento.category] || null
+  return consejosDe(alimento).guardar[0] || null
 }
 
 // ---------- De qué está hecha ----------

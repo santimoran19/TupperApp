@@ -53,7 +53,7 @@ export default function PegarReceta({ onReceta }) {
               placeholder={
                 'Tarta de zapallitos (4 porciones)\n3 zapallitos, 1 cebolla, 3 huevos, 100 g de queso rallado, 1 tapa de tarta...\n\nRehogar la cebolla...'
               }
-              className="campo w-full !h-auto py-3 resize-y"
+              className="campo w-full h-auto! py-3 resize-y"
             />
             {error && (
               <p className="text-sm mt-2 rounded-xl p-3 bg-naranja-suave text-naranja-oscuro" role="alert">

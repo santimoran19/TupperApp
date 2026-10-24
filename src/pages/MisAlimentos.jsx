@@ -1,4 +1,4 @@
-// Alimentos que creó el usuario (a mano o desde Open Food Facts): editar y borrar.
+// Alimentos que creó el usuario (a mano o desde Open Food Facts): editar y borrar. Y sus categorías (1.30, F-13).
 import { useMemo, useState } from 'react'
 import Marco from '../components/Marco'
 import { NuevoAlimento } from '../components/SelectorAlimento'
@@ -8,6 +8,7 @@ import { redondear } from '../lib/nutricion'
 import { nombreCorto } from '../lib/equivalencias'
 import Foto from '../components/Foto'
 import ElegirFoto from '../components/ElegirFoto'
+import Categorias from '../components/Categorias'
 
 export default function MisAlimentos() {
   const d = useDatos()
@@ -71,6 +72,7 @@ export default function MisAlimentos() {
             </button>
           </>
         )}
+        <Categorias />
       </div>
 
       {editando && (

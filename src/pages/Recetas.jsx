@@ -111,7 +111,7 @@ export default function Recetas() {
   return (
     <Marco titulo="Recetas">
       <div className="lg:flex lg:gap-6 lg:items-start lg:mb-2">
-        <section className="rounded-3xl bg-verde text-white p-5 mb-4 lg:w-[22rem] lg:shrink-0" data-tour="rec-resumen">
+        <section className="rounded-3xl bg-verde text-white p-5 mb-4 lg:w-88 lg:shrink-0" data-tour="rec-resumen">
           <p className="text-[11px] font-bold tracking-wider flex items-center gap-1.5">
             <Icono n="kitchen" size={16} /> CON TU DESPENSA
           </p>

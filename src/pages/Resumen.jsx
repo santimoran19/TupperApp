@@ -251,7 +251,7 @@ export default function Resumen() {
 
   return (
     <Marco titulo="Resumen semanal" atras>
-      <div className="flex items-center justify-between mb-4 lg:max-w-[26rem] lg:mx-auto">
+      <div className="flex items-center justify-between mb-4 lg:max-w-104 lg:mx-auto">
         <button
           onClick={() => {
             setLunes(sumarDias(lunes, -7))

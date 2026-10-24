@@ -57,6 +57,9 @@ async function recorrer(db: any, vapid: { publica: string; privada: string; suje
     const config = limpiarConfig(fila.config)
     const { fecha, min } = horaLocal(ahora, fila.zona)
     const { data: registros } = await db.from('log_entries').select('meal').eq('user_id', fila.user_id).eq('date', fecha)
+    const pesado = config.peso
+      ? ((await db.from('measurements').select('date').eq('user_id', fila.user_id).eq('date', fecha)).data || []).length > 0
+      : false
     const ayuno = fila.ayuno_inicio ? { inicio: Number(fila.ayuno_inicio), horas: Number(fila.ayuno_horas) } : null
     const avisos = avisosPara({
       config,
@@ -66,6 +69,7 @@ async function recorrer(db: any, vapid: { publica: string; privada: string; suje
       yaAvisados: yaDe(fila.user_id),
       ayuno,
       ahora: ahora.getTime(),
+      pesadoHoy: pesado,
     })
     for (const aviso of avisos) {
       // Primero se anota: si otra corrida ya lo anotó (choca la clave), no se manda de nuevo

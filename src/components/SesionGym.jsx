@@ -162,7 +162,7 @@ function BloqueEjercicio({ ej, ejercicio, previa, records, onCambiar, onQuitar, 
                   onChange={set(s.clave, 'weight_kg')}
                   decimales={2}
                   largo={7}
-                  className="campo !h-9 !px-2 text-center"
+                  className="campo h-9! px-2! text-center"
                   placeholder={previa ? '' : 'kg'}
                   aria-label="Peso en kilos"
                   disabled={s.hecha}
@@ -172,7 +172,7 @@ function BloqueEjercicio({ ej, ejercicio, previa, records, onCambiar, onQuitar, 
                   onChange={set(s.clave, 'reps')}
                   decimales={0}
                   largo={3}
-                  className="campo !h-9 !px-2 text-center"
+                  className="campo h-9! px-2! text-center"
                   placeholder="reps"
                   aria-label="Repeticiones"
                   disabled={s.hecha}
@@ -182,7 +182,7 @@ function BloqueEjercicio({ ej, ejercicio, previa, records, onCambiar, onQuitar, 
                   onChange={set(s.clave, 'rpe')}
                   decimales={1}
                   largo={3}
-                  className="campo !h-9 !px-1 text-center"
+                  className="campo h-9! px-1! text-center"
                   placeholder="1-10"
                   aria-label="Esfuerzo de 1 a 10"
                   disabled={s.hecha}

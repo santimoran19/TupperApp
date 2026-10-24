@@ -1,4 +1,5 @@
 // Datos personales y objetivo diario. Se usa al crear la cuenta y al editar el perfil.
+import { MARCA } from '../lib/marca'
 import { useMemo, useState } from 'react'
 import CampoUsuario, { useEstadoUsuario } from './CampoUsuario'
 import { Err, Numero } from './ui'
@@ -89,7 +90,8 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar, conse
       kcal_target: Math.round(Number(kcal)),
       protein_target: Math.round(Number(prot)),
       water_target_ml: f.liquido === '' ? null : Math.round(Number(f.liquido) * 1000),
-      ...(consentimiento ? { salud_consentida_at: new Date().toISOString() } : {}),
+      // Quien crea la cuenta ahora acepta los textos de hoy: no hace falta avisarle de cambios viejos (L-05)
+      ...(consentimiento ? { salud_consentida_at: new Date().toISOString(), legales_vistos: MARCA.versionLegal } : {}),
     })
     setGuardando(false)
   }
@@ -133,7 +135,7 @@ export default function FormularioPerfil({ inicial, textoBoton, onGuardar, conse
           <input
             id="pf-nac"
             type="date"
-            className={`campo ${ver(f.birth_date, errDatos.birth_date) ? '!border-rojo-texto !bg-rojo-suave/40' : ''}`}
+            className={`campo ${ver(f.birth_date, errDatos.birth_date) ? 'border-rojo-texto! bg-rojo-suave/40!' : ''}`}
             min={nac.min}
             max={nac.max}
             value={f.birth_date}

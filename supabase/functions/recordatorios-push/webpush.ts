@@ -9,19 +9,19 @@ export type Vapid = { publica: string; privada: string; sujeto: string }
 
 const texto = new TextEncoder()
 
-export function aB64url(bytes: Uint8Array): string {
+export function aB64url(bytes: Uint8Array<ArrayBuffer>): string {
   let s = ''
   for (const b of bytes) s += String.fromCharCode(b)
   return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
-export function deB64url(t: string): Uint8Array {
+export function deB64url(t: string): Uint8Array<ArrayBuffer> {
   const limpio = String(t || '')
     .replace(/-/g, '+')
     .replace(/_/g, '/')
   const s = atob(limpio + '='.repeat((4 - (limpio.length % 4)) % 4))
   return Uint8Array.from(s, (c) => c.charCodeAt(0))
 }
-const unir = (...partes: Uint8Array[]) => {
+const unir = (...partes: Uint8Array<ArrayBuffer>[]) => {
   const salida = new Uint8Array(partes.reduce((t, p) => t + p.length, 0))
   let i = 0
   for (const p of partes) {
@@ -32,7 +32,7 @@ const unir = (...partes: Uint8Array[]) => {
 }
 
 // HKDF (extraer + expandir) con SHA-256
-async function hkdf(sal: Uint8Array, ikm: Uint8Array, info: Uint8Array, largo: number): Promise<Uint8Array> {
+async function hkdf(sal: Uint8Array<ArrayBuffer>, ikm: Uint8Array<ArrayBuffer>, info: Uint8Array<ArrayBuffer>, largo: number): Promise<Uint8Array<ArrayBuffer>> {
   const clave = await crypto.subtle.importKey('raw', ikm, 'HKDF', false, ['deriveBits'])
   return new Uint8Array(await crypto.subtle.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt: sal, info }, clave, largo * 8))
 }
@@ -41,8 +41,8 @@ async function hkdf(sal: Uint8Array, ikm: Uint8Array, info: Uint8Array, largo: n
 export async function cifrar(
   sus: Pick<Suscripcion, 'p256dh' | 'auth'>,
   mensaje: string,
-  fijo?: { sal: Uint8Array; par: CryptoKeyPair },
-): Promise<Uint8Array> {
+  fijo?: { sal: Uint8Array<ArrayBuffer>; par: CryptoKeyPair },
+): Promise<Uint8Array<ArrayBuffer>> {
   const delTelefono = deB64url(sus.p256dh) // clave pública del navegador (65 bytes)
   const secreto = deB64url(sus.auth) // 16 bytes
   if (delTelefono.length !== 65 || secreto.length < 16) throw new Error('suscripción inválida')

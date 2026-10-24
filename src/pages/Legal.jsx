@@ -116,6 +116,8 @@ const TEXTOS = {
         'Gasto y ejercicio',
         [
           'El cálculo de gasto y el registro de ejercicio son opcionales: se activan desde Perfil, con un aviso previo y tu consentimiento, y se pueden apagar cuando quieras. Apagarlos no borra lo que anotaste; para eso hay un botón de borrar todo lo de ejercicio, y también se borra con la cuenta.',
+          'Si traés entrenamientos desde un archivo (GPX o TCX de tu reloj o app), el archivo se lee en tu teléfono y no se sube a ningún lado: solo se guarda, como entrenamiento, lo que elijas anotar (fecha, actividad, duración, distancia, desnivel y pulso promedio). No se guarda el recorrido ni la ubicación.',
+          'Si conectás Strava, Strava nos da un permiso para leer tus actividades, que se guarda en Supabase y solo usa nuestro servidor (la app no lo ve). Cuando tocás "Traer", se leen las actividades de los últimos 30 días y se te muestra un resumen (nombre, deporte, fecha, duración, distancia, desnivel y pulso promedio, sin mapa ni ubicación); se guarda solo lo que elijas anotar. Podés desconectar Strava cuando quieras desde Ejercicio (y también desde tu cuenta de Strava): el permiso se borra. Strava tiene su propia política de privacidad.',
           'Tus entrenamientos, series, rutinas y datos de gasto son solo tuyos: no se comparten con tu hogar y no se envían al análisis con IA del resumen semanal. Lo único que le llega es el objetivo de calorías de cada día, que con el modo dinámico es más alto los días que entrenás.',
         ],
       ],
@@ -170,7 +172,7 @@ export default function Legal({ tipo }) {
   const otro = tipo === 'terminos' ? ['privacidad', 'Política de privacidad'] : ['terminos', 'Términos de uso']
   return (
     <div className="min-h-screen bg-fondo">
-      <header className="sticky top-0 z-30 bg-fondo/90 backdrop-blur border-b border-verde-suave/60">
+      <header className="sticky top-0 z-30 bg-fondo/90 backdrop-blur-sm border-b border-verde-suave/60">
         <div className="max-w-[640px] mx-auto h-16 px-4 flex items-center gap-3">
           <button
             onClick={() => (window.history.length > 1 ? nav(-1) : nav('/'))}

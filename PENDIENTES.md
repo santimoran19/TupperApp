@@ -28,44 +28,40 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 **Primero (P1)**
 1. V-03 · Poner en marcha la 1.29 (actualización 22, funciones y recordatorios push)
-2. L-03 · Registro de la base de datos (preparado: falta el trámite en TAD)
-3. S-04 · Repo privado (al terminar)
+2. V-04 · Poner en marcha la 1.30 (actualización 23, Strava)
+3. L-03 · Registro de la base de datos (preparado: falta el trámite en TAD)
+4. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-4. S-07 · Que las funciones de la base también pidan el código de dos pasos
 5. S-08 · Códigos de recuperación de la verificación en dos pasos
-6. L-05 · Avisar cuando cambian los Términos o la Política
-7. IA-05 · Mejorar la carga con foto (probar Gemini primero) y probar el asistente con los proveedores reales
-8. T-03b · Hacer andar las pruebas en WebKit (Safari) y sumar más
-9. T-10 · Probar `recordatorios-push` entera (consultas y un servicio de push de verdad)
-10. F-18 · Registrarse e iniciar sesión con Google
-11. D-07b · Accesibilidad: probarla con TalkBack y VoiceOver de verdad
-12. T-04 · Base de pruebas aparte
-13. T-01 · Actualizar las herramientas
+6. IA-05 · Mejorar la carga con foto (probar Gemini primero) y probar el asistente con los proveedores reales
+7. T-03b · Hacer andar las pruebas en WebKit (Safari) y sumar más
+8. F-18 · Registrarse e iniciar sesión con Google
+9. D-07b · Accesibilidad: probarla con TalkBack y VoiceOver de verdad
+10. T-04 · Base de pruebas aparte
+11. F-25 · Lo que se saca de la lista de compras, compartido en el hogar
+12. T-01b · Lo que quedó de actualizar (ESLint 10, Playwright, plugin de React 6)
 
 **Cuando haya tiempo (P3)**
-14. F-23 · Recordatorio de pesarse
-15. F-06b · Notificaciones con botones ("Anotar", "Posponer 15 min")
-16. D-04 · Esqueletos de carga
-17. D-10 · Diario más corto en el celular
-18. F-12b · Seguir sumando a la base común
-19. F-13 · Categorías editables por el usuario
-20. D-08 · Revisión de los textos
-21. C-07 · Panel de administración mínimo (opiniones, uso de la IA)
-22. T-13 · Aviso si el reloj de los recordatorios deja de andar
-23. C-06 · Métricas de uso
-24. T-05 · Partir `sincronizacion.js`
-25. T-07b · Mandar lo cargado sin conexión con la app cerrada del todo
-26. T-09 · Revisar índices sin uso
-27. S-03 · Contraseñas filtradas también del lado de Supabase
-28. F-22 · Sincronizar con relojes y apps de salud (necesita app nativa o servidor)
-29. F-19b · Seguir con gasto y ejercicio (importar archivos, pulso en reposo, validar con mediciones reales)
+13. F-06b · Notificaciones con botones ("Tomé un vaso", "Posponer 15 min")
+14. F-12b · Seguir sumando a la base común
+15. F-22b · Más relojes: Garmin Connect directo, Health Connect y Strava automático
+16. F-24 · Más consejos (de temporada, combinando lo que vence) y uno en el Diario
+17. D-08 · Revisión de los textos
+18. C-07 · Panel de administración mínimo (opiniones, uso de la IA)
+19. T-13 · Aviso si el reloj de los recordatorios deja de andar
+20. C-06 · Métricas de uso
+21. T-05 · Partir `sincronizacion.js`
+22. T-07b · Mandar lo cargado sin conexión con la app cerrada del todo
+23. T-09 · Revisar índices sin uso
+24. S-03 · Contraseñas filtradas también del lado de Supabase
+25. F-19b · Seguir con gasto y ejercicio (pulso en reposo, validar con mediciones reales)
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-30. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-31. C-02 · Dominio propio y página de presentación (va junto con C-03)
-32. C-01 · Planes y cobro (para empezar a cobrar)
-33. C-04 · Play Store (cuesta la cuenta de desarrollador)
+26. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+27. C-02 · Dominio propio y página de presentación (va junto con C-03)
+28. C-01 · Planes y cobro (para empezar a cobrar)
+29. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
@@ -74,23 +70,23 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 - [ ] **V-03 · Poner en marcha la 1.29** · P1 · S. En este orden: (1) correr `supabase/actualizacion-22.sql` en el SQL Editor (aditiva; también arregla lo que marcaba el revisor de Supabase); (2) volver a publicar `asistente-ia` y `registrar-ia` (sin eso no aparecen "Revisar y anotar" ni "Pegá la receta"); (3) para los recordatorios con la app cerrada: generar las claves VAPID en tu compu, cargar los 4 secretos, publicar `recordatorios-push` con `--no-verify-jwt`, poner `VITE_VAPID_PUBLIC` en Vercel y armar el reloj (pasos exactos en `supabase/functions/LEEME.md`, "Novedades de la 1.29"); (4) probar desde el teléfono: la voz en "Anotá rápido" (en producción el micrófono estaba bloqueado por `vercel.json` hasta la 1.29), activar y desactivar la verificación en dos pasos, y un recordatorio con la app cerrada. Si algo de la 1.29 no se pone en marcha, la app anda igual: lo nuevo simplemente no aparece.
 
+- [ ] **V-04 · Poner en marcha la 1.30** · P1 · S. (1) Correr `supabase/actualizacion-23.sql` (aditiva: categorías propias, la tabla de Strava y la versión de los textos legales vista). (2) Opcional pero recomendado: `supabase/actualizacion-23b-dos-pasos.sql` (S-07: la verificación en dos pasos también para las funciones `rpc`); si después de correrla la app no carga para nadie, se deshace con las dos líneas que dice el archivo. (3) Strava, si lo querés: crear la aplicación en strava.com/settings/api, cargar `STRAVA_CLIENT_ID` y `STRAVA_CLIENT_SECRET`, publicar la función `strava` y poner `VITE_STRAVA_CLIENT_ID` en Vercel (pasos en `supabase/functions/LEEME.md`). Ojo: Strava arranca con 1 atleta (vos) hasta que revisa la app. (4) Publicar el sitio: es la primera versión con Vite 8, React 19 y Tailwind 4; mirar en el teléfono que todo se vea como antes. (5) Probar en el teléfono: el carrusel de consejos de la Despensa, sacar algo de la lista de compras, una categoría propia, subir un GPX o TCX de tu reloj y, en una cuenta vieja, el aviso de la Política (una vez).
+
 ## 1. Funciones
 
 - [ ] **F-18 · Registrarse e iniciar sesión con Google** · P2 · M. Un botón "Continuar con Google" en la pantalla de acceso, para crear la cuenta o entrar sin escribir mail ni contraseña. **Qué hace falta de tu lado:** crear un proyecto en Google Cloud, configurar la pantalla de consentimiento y las credenciales OAuth (cliente web), y activar el proveedor Google en Supabase (Authentication > Providers) con las direcciones de vuelta de la app y de Supabase. Gratis. **Cosas a resolver:** (1) el consentimiento de Google en modo de prueba solo deja entrar a 100 usuarios que vos agregues a mano; para abrirlo a cualquiera hay que publicarlo, y Google pide la Política de privacidad y la página de inicio en un dominio propio (esto se cruza con C-02, dominio propio); (2) si ya existe una cuenta con el mismo mail, Supabase puede unirla con la de Google; hay que dejarlo bien configurado para que nadie tome una cuenta ajena; (3) quien entra con Google no tiene contraseña: la pantalla de "Olvidé mi contraseña" y el Perfil tienen que explicarlo, y se podría ofrecer crear una; (4) igual hay que pasar por el perfil (fecha de nacimiento, para cumplir los 18 años de L-01) y, con F-17, elegir el nombre de usuario; (5) sumar a la Política de privacidad que Google es un proveedor y qué datos se reciben (mail y nombre; la foto no se guarda); (6) probarlo en el navegador del teléfono y en la app instalada (PWA), donde el regreso desde Google a veces se comporta distinto. Va con pruebas (el simulador de las pruebas tiene que fingir el regreso de Google) y los textos del botón. Borrar la cuenta y descargar los datos siguen igual.
-- [ ] **F-22 · Sincronizar con relojes y apps de salud** · P3 · L. Traer pasos, ejercicio y peso desde Apple Salud, Google Fit/Health Connect, Garmin o Strava. Una app web (PWA) no puede leer Apple Salud ni Health Connect: hace falta una app nativa (ver C-04) o conectar Strava/Garmin con un servidor propio. Hoy la alternativa es importar archivos (F-19b).
-- [ ] **F-19b · Seguir con gasto y ejercicio** · P3 · M. Quedó afuera de la 1.23: (1) importar entrenamientos desde archivos (.gpx, .tcx, .fit o la exportación de Apple Salud); conectar Strava o Garmin directo necesita algo del lado del servidor, y leer Apple Salud o Health Connect directo (los pasos incluidos) no se puede desde una PWA; sí se podría con una app instalable (Capacitor), junto con C-04; (2) usar el pulso en reposo (`profiles.resting_hr`, ya existe la columna) en el cálculo; (3) **validar el cálculo contra mediciones de referencia** (calorimetría indirecta, o al menos el seguimiento de varias personas): hoy los márgenes de error son orientativos, no validados; los coeficientes de movimiento según el trabajo y por paso son criterio propio y quedarían ajustados con esos datos; (4) un tope de proteína o cálculo sobre masa magra para obesidad alta (IMC mayor a 35), que los dos nutricionistas sugirieron; se dejó afuera a propósito la proteína configurable por ser confusa para quien no sabe de nutrición.
+- [ ] **F-22b · Más relojes** · P3 · M. La 1.30 trae GPX, TCX, FIT y Strava. Falta: (2) Garmin Connect directo (su API pide ser socio de Garmin: aplicación y aprobación); (3) Apple Salud y Health Connect (pasos, peso, entrenamientos) solo con una app instalable (Capacitor), junto con C-04; (4) Strava automático (con su aviso de actividad nueva, *webhook*) en vez de tocar "Traer".
+- [ ] **F-25 · Lo que se saca de la lista de compras, compartido en el hogar** · P2 · S. En la 1.30 se puede sacar de la lista algo que falta para el plan ("ya lo tengo"), pero se guarda en el teléfono: en un hogar, la otra persona lo sigue viendo. Pasarlo a una tabla del ámbito (como `shopping_items`) con la cantidad que faltaba, para que vuelva a aparecer si el plan pide más.
+- [ ] **F-24 · Más consejos** · P3 · S. El carrusel de la Despensa (1.30) tiene consejos por alimento y por categoría. Sumar: ideas para usar juntas varias cosas que vencen (una receta con dos de ellas), consejos de temporada (qué fruta y verdura conviene cada mes en Argentina) y uno por día en el Diario.
+- [ ] **F-19b · Seguir con gasto y ejercicio** · P3 · M. Quedó afuera de la 1.23 (la importación de archivos y Strava se hizo en la 1.30, ver F-22b): (2) usar el pulso en reposo (`profiles.resting_hr`, ya existe la columna) en el cálculo; (3) **validar el cálculo contra mediciones de referencia** (calorimetría indirecta, o al menos el seguimiento de varias personas): hoy los márgenes de error son orientativos, no validados; los coeficientes de movimiento según el trabajo y por paso son criterio propio y quedarían ajustados con esos datos; (4) un tope de proteína o cálculo sobre masa magra para obesidad alta (IMC mayor a 35), que los dos nutricionistas sugirieron; se dejó afuera a propósito la proteína configurable por ser confusa para quien no sabe de nutrición.
 - [ ] **F-12b · Seguir sumando a la base común** · P3 · S (continuo). Después de la sexta tanda (1.25: 227 alimentos y 1.471 recetas), sumar alimentos y recetas cuando aparezcan faltantes: mirar los alimentos propios que repiten varios usuarios y lo que la gente busca y no encuentra. Los alimentos se agregan en `scripts/datos/alimentos-sexta.mjs` (o en `seed-data.mjs` si es una tanda nueva) y las recetas en una familia de `scripts/datos/f-*.mjs`; se corre `npm run seed`. Ver también F-04b (lista de recetas con más de mil).
-- [ ] **F-13 · Categorías editables por el usuario** · P3 · M. Hoy cada alimento tiene una categoría fija de una lista (Lácteos, Carnes, Verduras...), la misma para todos, y de eso dependen el orden de la lista de compras, los filtros y el ícono por defecto. La idea: que cada uno pueda crear las suyas ("Cosas del bebé", "Para el mate"), renombrar o esconder las que no usa, y mover alimentos entre categorías. Necesita una tabla de categorías por cuenta (y por hogar, para la despensa compartida), cuidar que los alimentos de la base sigan con la suya y que la lista de compras no se desordene.
-- [ ] **F-23 · Recordatorio de pesarse** · P3 · S. Con el gráfico y la fecha estimada (F-10, 1.29) conviene pesarse seguido y a la misma hora: un recordatorio semanal opcional ("Lunes 8:00 · ¿Te pesás?") que abra el Perfil con el campo de peso, por la app abierta y por push.
-- [ ] **F-06b · Notificaciones con botones** · P3 · S. Que el aviso de la comida traiga "Anotar" (abre Registrar con esa comida) y "Posponer 15 min", y el del agua "Tomé un vaso" (lo anota sin abrir la app). Se hace en `src/sw.js` (`actions` de la notificación) y, para "Tomé un vaso" con la app cerrada, necesita mandar el registro desde el service worker (ver T-07b).
+- [ ] **F-06b · Notificaciones con botones** · P3 · S. Desde la 1.30, tocar el aviso de una comida abre Registrar con esa comida. Falta "Posponer 15 min" (la función tendría que volver a mandarlo) y, en el del agua, "Tomé un vaso" (anotarlo sin abrir la app: necesita mandar el registro desde el service worker, ver T-07b).
 ## 2. Inteligencia artificial
 
 - [~] **IA-05 · Mejorar la carga con foto y probar el asistente** · P2 · S. Ya activada (1.27) y probada por Santi: texto y voz andan bien; la foto flojea. Próximo paso: con `GEMINI_API_KEY` cargada, poner el secreto `VISION_ORDEN` en `gemini,cloudflare` y comparar con las mismas fotos; si sigue floja, ajustar `INSTRUCCIONES_COMIDA` (porciones argentinas, platos típicos). El asistente (`asistente-ia`, 1.28) tampoco se probó contra Gemini de verdad: hacer unas preguntas desde el teléfono y mirar los registros.
 
 ## 3. Diseño y uso
 
-- [ ] **D-04 · Esqueletos de carga** · P3 · S. Hoy, la primera vez que se entra (sin copia en el teléfono) se ve el logo y "Cargando..." hasta que llegan todos los datos, y al abrir una pantalla nueva un fondo vacío mientras se baja. La idea es mostrar la forma de la pantalla (rectángulos grises donde van las tarjetas, el anillo de calorías, la lista de comidas) para que se sienta más rápida. Es solo visual.
-- [ ] **D-10 · Diario más corto en el celular** · P3 · S. En la recorrida de la 1.29, con una cuenta nueva, entre "Anotá rápido" (con el aviso de la IA abierto), el ayuno y el resumen, las comidas del día arrancan casi a los 1.300 px: hay que bajar mucho para lo más usado. Opciones: que el aviso de la IA sea una línea con "Más info", que el ayuno se pueda plegar cuando no está en curso, o subir las comidas.
 - [ ] **D-07b · Accesibilidad con lectores de pantalla de verdad** · P2 · S. La 1.28 pasó axe (WCAG 2.1 AA) en las pantallas principales y la letra al 150 %. Falta: recorrer la app con TalkBack (Android) y VoiceOver (iPhone), las hojas y diálogos abiertos (axe revisó las pantallas como abren) y los avisos de nivel "moderado" que axe no hace fallar.
 - [ ] **D-08 · Revisión de los textos** · P3 · S. Que se digan las mismas cosas con las mismas palabras en toda la app, y que los errores digan qué hacer.
 
@@ -98,14 +94,12 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 - [ ] **S-03 · Contraseñas filtradas también del lado de Supabase** · P3 · S. Solo con el plan Pro; la app ya lo revisa por su cuenta. El revisor de Supabase lo sigue marcando (24/10/2026).
 - [ ] **S-04 · Repo privado** · P1 · S. Al terminar la app, antes de venderla.
-- [ ] **S-07 · Que las funciones de la base también pidan el código** · P2 · S. Con la 1.29, quien activó la verificación en dos pasos no puede leer ni cambiar sus tablas con solo la contraseña, pero las funciones `security definer` que llama la app (registrar, hogares, catálogo, borrar la cuenta...) saltean esas reglas. Leer los datos pasa por las tablas, así que quedan protegidos; con solo la contraseña igual se podría, por ejemplo, registrar una comida o salir del hogar. Sumar `if not public.mfa_ok() then raise ...` al principio de cada una (hay 14 según el revisor de Supabase) y una prueba en `dos-pasos.test.js` que las recorra.
-- [ ] **S-08 · Códigos de recuperación de la verificación en dos pasos** · P2 · S. Hoy, si alguien con la verificación activada pierde el teléfono, la única salida es escribir a soporte y que se la saques a mano desde el panel (Authentication → Users → el usuario → borrar el factor). Supabase ya tiene códigos de recuperación (`/factors/recovery-codes`): mostrarlos una vez al activar ("guardalos en un lugar seguro"), dejar entrar con uno y regenerarlos. También permitir sumar un segundo dispositivo.
+- [ ] **S-08 · Códigos de recuperación de la verificación en dos pasos** · P2 · S. Hoy, si alguien con la verificación activada pierde el teléfono, la única salida es escribir a soporte y que se la saques a mano desde el panel (Authentication → Users → el usuario → borrar el factor). Supabase tiene códigos de recuperación (`mfa.recoveryCodes`), pero en octubre de 2026 es experimental (hay que prenderlo en el cliente y no está claro que el servidor lo tenga habilitado): cuando salga, mostrarlos una vez al activar ("guardalos en un lugar seguro"), dejar entrar con uno y regenerarlos. También permitir sumar un segundo dispositivo.
 
 ## 5. Legal y datos personales
 
 - [ ] **L-03 · Registro de la base de datos** · P1 · S. En Argentina, las bases con datos personales se inscriben en el registro de la Agencia de Acceso a la Información Pública, y acá hay datos de salud. Confirmarlo con legales. **Preparado en la 1.23.3, falta el trámite de tu lado:** la guía paso a paso con el texto de cada campo está en el documento "Tupper: inscripción de la base en la AAIP" (gratis, no vence, unos 20 minutos por TAD con clave fiscal nivel 2). En la app: la Política de privacidad suma las dos leyendas oficiales (acceso gratuito cada seis meses, art. 14 inc. 3, y la AAIP como órgano de control), las copias de seguridad diarias cifradas en GitHub, y muestra el número de inscripción cuando se carga en `registroAAIP` de `src/lib/marca.js`. Antes del trámite: firmar el DPA de Supabase, guardar los de Vercel, Groq, Cloudflare y GitHub, y activar la verificación en dos pasos en los paneles.
 
-- [ ] **L-05 · Avisar cuando cambian los Términos o la Política** · P2 · S. La 1.29 cambió la Política (recordatorios push, verificación en dos pasos, recetas pegadas a la IA) y nadie se entera salvo que la lea. Guardar en el perfil qué versión aceptó cada uno y, cuando cambia, mostrar una vez un aviso con lo nuevo (sin obligar a aceptar si solo se agregan cosas opcionales). Actualizar `vigencia` en `src/lib/marca.js` al publicar.
 
 ## 6. Para venderla
 
@@ -121,10 +115,9 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 ## 7. Técnico y calidad
 
-- [ ] **T-01 · Actualizar las herramientas** · P2 · M. Las piezas con las que se arma la app (no lo que ve el usuario) quedaron varias versiones atrás (24/10/2026): Vite 5 → 8 (el que compila y sirve la app), React 18 → 19, Tailwind 3 → 4 (los estilos), Vitest 3 → 5, ESLint 9 → 10 y `@vitejs/plugin-react` 4 → 6; Playwright 1.56 → 1.64 y supabase-js son cambios chicos. `npm audit` de lo que llega al usuario da 0 problemas: no es urgente, pero cuanto más se espera, más grande es el salto. Tailwind 4 cambia la configuración (pasa a CSS) y conviene hacerlo en una tanda aparte, con las capturas de las pruebas para comparar que nada se movió.
+- [ ] **T-01b · Lo que quedó de actualizar** · P2 · S. La 1.30 pasó a Vite 8, React 19, Tailwind 4 y Vitest 5. Quedaron: ESLint 9 → 10 (el plugin de React, `eslint-plugin-react`, todavía no lo acepta), `@vitejs/plugin-react` 5 → 6 (choca con Babel 7, que trae `workbox-build`) y Playwright 1.56 → 1.64 (en la compu donde trabajo no se pueden bajar los navegadores nuevos; en GitHub sí). Cada tanto, `npm outdated`.
 - [ ] **T-03b · Hacer andar las pruebas en WebKit y sumar más** · P2 · S. La 1.29 dejó armado el trabajo "safari" en GitHub (solo a mano: Actions → Pruebas → Run workflow) con 6 pruebas (`EN_SAFARI` en `playwright.config.js`). No se pudo correr acá (no está WebKit instalado): la primera corrida seguramente pida ajustes. Después, sumar las que dependen de datos de pruebas anteriores y, cuando ande estable, correrlo en cada subida a `main`.
 - [ ] **T-09 · Revisar índices sin uso** · P3 · S. El revisor de Supabase marca 14 índices que nunca se usaron (por ejemplo `plan_food_idx`, `workout_sets_exercise_idx`). Con pocas cuentas es normal: no borrarlos ahora, volver a mirar con más uso (cada índice hace un poco más lentas las escrituras).
-- [ ] **T-10 · Probar `recordatorios-push` entera** · P2 · S. La lógica, el cifrado y el service worker tienen pruebas, pero `index.ts` (las consultas a la base, el anotado de enviados, borrar suscripciones vencidas) no: sumarla al simulador corriendo en Deno, como `entrar`, con un "servicio de push" de mentira. Y la primera vez en producción, mirar los registros.
 - [ ] **T-13 · Aviso si el reloj de los recordatorios deja de andar** · P3 · S. Si `pg_cron` falla o la función devuelve error, nadie se entera y los recordatorios dejan de llegar. Sumar a las tareas programadas de T-06 una revisión de `cron.job_run_details` (solo lectura) que avise si hubo errores en el día.
 - [ ] **T-04 · Base de pruebas aparte** · P2 · M. Un segundo proyecto de Supabase (el plan gratis permite dos) para probar cambios de la base antes de tocar la de producción.
 - [ ] **T-05 · Partir `sincronizacion.js`** · P3 · M. Quedó en unas 740 líneas. Separar la cola, la copia del teléfono y el envío, sin cambiar lo que hace.
@@ -134,6 +127,20 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 ## Hecho
 
+- **1.30.0 · Herramientas al día, consejos en carrusel, categorías propias, entrenamientos de relojes y Strava** (hay que correr `supabase/actualizacion-23.sql` y, opcional, `23b`; para Strava, los pasos de V-04).
+  - *T-01:* Vite 5 → 8 (Rolldown; `manualChunks` pasó a función y se prepararon de entrada las dependencias que se cargan tarde, para que el modo desarrollo no recargue la página), React 18 → 19, Tailwind 3 → 4 (configuración en `src/index.css` con `@theme` y `@utility`, plugin `@tailwindcss/vite`; se mantuvieron el color de borde y la manito en los botones de antes) y Vitest 3 → 5. Las 224 capturas de las pruebas, comparadas una por una con las de la 1.29: iguales salvo lo que cambió a propósito.
+  - *Consejos (pedido de Santi):* el consejo "Para que dure más" de la Despensa pasó a ser un carrusel con hasta 10, según lo que hay: primero lo que vence pronto (con una idea para aprovecharlo), después uno por alimento, rotando cada día y sin repetir (`lib/consejos.js`, unos 40 grupos de alimentos con consejos para guardar y para aprovechar, más uno por categoría). Se arreglaron cruces engañosos ("chocolate" no es té, "empanada" no es pan, "jugo de naranja" no se guarda como la naranja).
+  - *Lista de compras (pedido de Santi):* lo que falta para el plan se puede sacar con la ✕ (con Deshacer); vuelve si el plan pide más, y "Sacaste N cosas" deja devolverlas. Se guarda en el teléfono (ver F-25). La lista ahora va ordenada por góndola (como las categorías) y no alfabética.
+  - *F-13 Categorías propias:* en Mis alimentos se crean, renombran y borran; cualquier alimento se mueve desde la Despensa (los de la base cambian solo para vos). Tablas `categorias` y `categoria_alimento`; renombrar y borrar se llevan los alimentos.
+  - *F-22 Relojes y apps:* en Ejercicio, "Traer": archivos GPX, TCX y FIT (se leen en el teléfono: duración, distancia, desnivel, pulso y calorías del reloj; el lector de FIT, `lib/fit.js`, es propio y da lo mismo que la librería `fit-file-parser`) y Strava (función `strava`; el permiso queda en el servidor). Se elige qué anotar, la actividad se reconoce sola y lo ya anotado viene destildado.
+  - *D-04 Esqueletos:* la primera carga y las pantallas que se bajan muestran la forma de la pantalla en vez de "Cargando...".
+  - *D-10:* el ayuno del Diario va plegado (protocolo y hora con "Cambiar").
+  - *F-23:* recordatorio de pesarse una vez por semana (día y hora a elección; no avisa si ya te pesaste), en la app y con la app cerrada.
+  - *F-06b (parte):* tocar el aviso de una comida abre Registrar con esa comida.
+  - *L-05:* a quien ya tenía cuenta se le avisa una vez que cambió la Política (`profiles.legales_vistos`, `MARCA.versionLegal`); la Política suma Strava y los archivos de entrenamiento.
+  - *S-07:* `actualizacion-23b-dos-pasos.sql` (opcional) exige el código antes de cada pedido a la base, también a las funciones `rpc`.
+  - *T-10:* las funciones `strava` y `recordatorios-push` corren de verdad en las pruebas (con Deno): el simulador hace de Strava (con un permiso que vence enseguida, para probar la renovación) y de servicio de push (la prueba descifra el aviso con la clave del "teléfono"). También corren ahora `entrar` y `analizar-semana`. Con `FUNCIONES_LOG=1` se ve lo que escriben.
+  - *Pruebas:* `novedades-130.test.js` (consejos, lista, categorías en un Postgres de verdad, GPX/TCX/FIT, Strava, pesarse), `dos-pasos.test.js` suma la 23b; de navegador, la 33 (todo lo nuevo, con un viaje de ida y vuelta a Strava de mentira), la 34 (las funciones de verdad) y ajustes en la 07, 11, 28 y 30. Arreglado de paso: tipos de TypeScript que Deno marcaba en `registrar-ia` y `recordatorios-push` (no cambian lo que hacen).
 - **1.29.0 · Verificación en dos pasos, recordatorios con la app cerrada, Deshacer, gráfico de peso, anotar desde el asistente y pegar recetas** (hay que correr `supabase/actualizacion-22.sql`, volver a publicar `asistente-ia` y `registrar-ia` y, para los recordatorios push, los pasos de V-03).
   - *S-06 Dos pasos:* en Perfil se activa con una app autenticadora (QR o clave a mano, `DosPasos.jsx`, `lib/dosPasos.js`); al entrar se pide el código (`CodigoDosPasos.jsx`) antes de cargar nada. La base lo exige de verdad: `actualizacion-22.sql` suma a cada tabla una regla restrictiva `dos_pasos` (`mfa_ok()`: sesión aal2 o sin factores activos). Probado en un Postgres de verdad (`dos-pasos.test.js`, incluida una prueba que falla si una tabla nueva no tiene la regla) y en el navegador con códigos TOTP reales (prueba 32; el simulador ahora tiene `/factors`).
   - *F-06 Recordatorios con la app cerrada:* interruptor "Aunque la app esté cerrada" en Recordatorios (aparece solo con `VITE_VAPID_PUBLIC`). La app copia horarios, zona horaria y el ayuno en curso a `recordatorios` y suscribe el navegador (`guardar_suscripcion`, un navegador es de una sola cuenta; al cerrar sesión o borrar la cuenta se borra). Función `recordatorios-push` (cada 15 minutos con pg_cron): mismas reglas que la app abierta, Web Push cifrado (RFC 8291) y firmado (VAPID) solo con WebCrypto, sin librerías. Con la app en segundo plano no se repite el aviso.
