@@ -1,7 +1,7 @@
 // Traer entrenamientos de relojes y apps (1.30, F-22). Una app web no puede leer Apple Salud ni Health Connect, pero sí:
-//   - archivos GPX, TCX y FIT (lib/fit.js), que exportan Garmin Connect, Strava, Polar, Suunto, Coros, Google Fit (Takeout) y casi todas
-//     las apps de correr o de bici (y Apple Salud, dentro de su exportación, guarda las rutas como GPX);
-//   - las actividades de Strava, conectando la cuenta (función supabase/functions/strava).
+//   archivos GPX, TCX y FIT (lib/fit.js), que exportan Garmin Connect, Strava, Polar, Suunto, Coros, Google Fit (Takeout) y casi
+//   todas las apps de correr o de bici (y Apple Salud, dentro de su exportación, guarda las rutas como GPX). La conexión directa
+//   con Strava se sacó en la 1.31.2 (su API pasó a ser paga; ver PENDIENTES, F-22b).
 // Todo termina en lo mismo: una "actividad" { origen, ref, nombre, deporte, inicio (ISO), minutos, distanciaKm, desnivelM,
 // pulso, kcal } que se convierte en los datos de guardarEntrenamiento. Funciones puras (el XML se lee con expresiones
 // regulares para poder probarlo sin navegador).
@@ -148,22 +148,6 @@ export function leerArchivo(texto, nombre = '') {
   return []
 }
 
-// Una actividad de Strava (lo que devuelve la función `strava`, que ya la resume)
-export function desdeStrava(a) {
-  return {
-    origen: 'strava',
-    ref: `strava-${a.id}`,
-    nombre: a.nombre || '',
-    deporte: a.deporte || '',
-    inicio: a.inicio,
-    minutos: a.minutos,
-    distanciaKm: a.distanciaKm,
-    desnivelM: a.desnivelM,
-    pulso: a.pulso,
-    kcal: a.kcal,
-  }
-}
-
 // ---------- A qué actividad del catálogo corresponde ----------
 // Nombres de deporte de Strava, Garmin (TCX: Running, Biking, Other) y lo que suelen poner las apps en GPX
 const DEPORTES = [
@@ -227,9 +211,8 @@ export function yaEsta(act, entrenamientos, tipo) {
 }
 
 // Lo que se le pasa a guardarEntrenamiento. Las calorías del reloj, si vienen, se usan como "reloj" (activas: es lo que
-// marcan Strava y Garmin para una actividad).
+// marcan los relojes para una actividad).
 export function datosDeEntreno(act, tipo) {
-  const etiquetaOrigen = act.origen === 'strava' ? 'Strava' : 'archivo'
   return {
     fecha: fechaLocal(act.inicio),
     tipo,
@@ -240,7 +223,7 @@ export function datosDeEntreno(act, tipo) {
     pulso: act.pulso >= 30 && act.pulso <= 230 ? act.pulso : '',
     reloj: act.kcal > 0 ? Math.min(10000, Math.round(act.kcal)) : '',
     relojActivas: true,
-    notas: `${act.nombre ? `${act.nombre.slice(0, 120)} · ` : ''}Importado de ${etiquetaOrigen} (${act.ref})`.slice(0, 300),
+    notas: `${act.nombre ? `${act.nombre.slice(0, 120)} · ` : ''}Importado de archivo (${act.ref})`.slice(0, 300),
   }
 }
 

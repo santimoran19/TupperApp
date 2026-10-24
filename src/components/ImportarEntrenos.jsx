@@ -1,89 +1,27 @@
-// Traer entrenamientos de un reloj o app (1.30, F-22): archivos GPX/TCX/FIT (Garmin, Polar, Coros, Suunto, Google Fit, Apple
-// Salud...) o la cuenta de Strava. Se muestra lo encontrado, se elige qué anotar (lo que ya estaba viene destildado) y
-// se anota con la misma cuenta de calorías que un entrenamiento cargado a mano.
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+// Traer entrenamientos de un reloj o app (1.30, F-22): archivos GPX/TCX/FIT (Garmin, Polar, Coros, Suunto, Strava, Google
+// Fit, Apple Salud...). Se muestra lo encontrado, se elige qué anotar (lo que ya estaba viene destildado) y se anota con la
+// misma cuenta de calorías que un entrenamiento cargado a mano. La conexión directa con Strava se sacó en la 1.31.2: desde
+// junio de 2026 su API pide una suscripción paga y no deja usar sus datos con IA (ver PENDIENTES, F-22b).
+import { useMemo, useRef, useState } from 'react'
 import { Err, Hoja, Icono } from './ui'
 import { useDatos } from '../store/Datos'
-import { fechaCorta, hoy, sumarDias } from '../lib/fechas'
-import { datosDeEntreno, desdeStrava, fechaLocal, leerArchivo, prepararImportacion } from '../lib/importarEntrenos'
+import { fechaCorta } from '../lib/fechas'
+import { datosDeEntreno, fechaLocal, leerArchivo, prepararImportacion } from '../lib/importarEntrenos'
 import { leerFit } from '../lib/fit'
 
-const STRAVA_CLIENTE = import.meta.env.VITE_STRAVA_CLIENT_ID || ''
-const CLAVE_ESTADO = 'tupper:strava-estado'
 const MAX_ARCHIVO = 15 * 1024 * 1024
 
-// La dirección de Strava para dar permiso (vuelve a /ejercicio con ?code=...&scope=...&state=...). `estado` es un código
-// al azar que se guarda al tocar el enlace y se comprueba a la vuelta.
-function urlDeStrava(estado) {
-  const p = new URLSearchParams({
-    client_id: STRAVA_CLIENTE,
-    response_type: 'code',
-    redirect_uri: `${location.origin}/ejercicio`,
-    approval_prompt: 'auto',
-    scope: 'activity:read_all',
-    state: estado,
-  })
-  return `https://www.strava.com/oauth/authorize?${p}`
-}
-const recordarEstado = (estado) => {
-  try {
-    sessionStorage.setItem(CLAVE_ESTADO, estado)
-  } catch {
-    // sin almacenamiento igual se intenta (el estado no se va a poder comprobar)
-  }
-}
-
-// Al volver de Strava con el permiso: lo canjea y limpia la dirección. Devuelve { atleta } o { error }.
-export function useVueltaDeStrava(onListo) {
-  const d = useDatos()
-  const [params, setParams] = useSearchParams()
-  const hecho = useRef(false)
-  useEffect(() => {
-    const code = params.get('code')
-    const estado = params.get('state')
-    const error = params.get('error')
-    if ((!code && !error) || !estado || hecho.current) return
-    hecho.current = true
-    let esperado = null
-    try {
-      esperado = sessionStorage.getItem(CLAVE_ESTADO)
-      sessionStorage.removeItem(CLAVE_ESTADO)
-    } catch {
-      // sin almacenamiento
-    }
-    const limpia = new URLSearchParams(params)
-    for (const k of ['code', 'state', 'scope', 'error']) limpia.delete(k)
-    setParams(limpia, { replace: true })
-    if (error) return onListo({ error: 'No diste permiso en Strava.' })
-    if (esperado && esperado !== estado) return onListo({ error: 'La respuesta de Strava no coincide. Probá conectar de nuevo.' })
-    d.strava({ accion: 'conectar', code, scope: params.get('scope') || '' }).then(onListo)
-  }, [params, setParams, d, onListo])
-}
-
-export default function ImportarEntrenos({ onCerrar, inicial = null }) {
+export default function ImportarEntrenos({ onCerrar }) {
   const d = useDatos()
   const [encontradas, setEncontradas] = useState(null) // [{ act, tipo, repetida }]
   const [elegidas, setElegidas] = useState(new Set())
   const [tipos, setTipos] = useState({}) // ref -> id de la actividad elegida a mano
-  const [error, setError] = useState(inicial?.error || null)
+  const [error, setError] = useState(null)
   const [trabajando, setTrabajando] = useState(false)
-  const [strava, setStrava] = useState(inicial?.atleta !== undefined ? { conectado: true, atleta: inicial.atleta } : null)
   const archivo = useRef(null)
-  // La dirección para dar permiso en Strava se arma una vez (lleva un código al azar que se comprueba a la vuelta)
-  const [estadoStrava] = useState(() => Math.random().toString(36).slice(2) + Date.now().toString(36))
 
   const catalogo = useMemo(() => [...d.actividades].sort((a, b) => a.name.localeCompare(b.name, 'es')), [d.actividades])
   const porId = useMemo(() => new Map(d.actividades.map((a) => [a.id, a])), [d.actividades])
-
-  useEffect(() => {
-    if (!STRAVA_CLIENTE || strava) return
-    let vivo = true
-    d.strava({ accion: 'estado' }).then((r) => vivo && setStrava(r.error ? { conectado: false, error: r.codigo } : r))
-    return () => {
-      vivo = false
-    }
-  }, [d, strava])
 
   const mostrar = (actividades) => {
     const lista = prepararImportacion(actividades, { catalogo: d.actividades, entrenamientos: d.entrenamientos })
@@ -121,30 +59,6 @@ export default function ImportarEntrenos({ onCerrar, inicial = null }) {
       )
   }
 
-  async function traerDeStrava() {
-    setError(null)
-    setTrabajando(true)
-    const r = await d.strava({ accion: 'actividades', desde: sumarDias(hoy(), -30) })
-    setTrabajando(false)
-    if (r.error) {
-      if (r.codigo === 'sin_conectar') setStrava({ conectado: false })
-      return setError(r.error)
-    }
-    mostrar((r.actividades || []).map(desdeStrava))
-  }
-  async function desconectar() {
-    const si = await d.confirmar({
-      titulo: '¿Desconectar Strava?',
-      texto: 'Tupper deja de poder leer tus actividades. Lo que ya anotaste queda.',
-      boton: 'Desconectar',
-    })
-    if (!si) return
-    const r = await d.strava({ accion: 'desconectar' })
-    if (r.error) return setError(r.error)
-    setStrava({ conectado: false })
-    d.avisar('Strava desconectado')
-  }
-
   async function importar() {
     const lista = encontradas.filter((x) => elegidas.has(x.act.ref))
     setTrabajando(true)
@@ -178,8 +92,8 @@ export default function ImportarEntrenos({ onCerrar, inicial = null }) {
             <span className="min-w-0">
               <span className="block font-semibold">{trabajando ? 'Leyendo...' : 'Subir archivos GPX, TCX o FIT'}</span>
               <span className="block text-xs text-gris">
-                Garmin Connect, Polar, Coros, Suunto, Google Fit, Apple Salud (las rutas de la exportación) y casi todas las apps de correr
-                o de bici los exportan.
+                Garmin Connect, Strava, Polar, Coros, Suunto, Google Fit, Apple Salud (las rutas de la exportación) y casi todas las apps de
+                correr o de bici los exportan.
               </span>
             </span>
           </button>
@@ -193,42 +107,9 @@ export default function ImportarEntrenos({ onCerrar, inicial = null }) {
             data-testid="importar-archivo"
             aria-label="Archivos GPX, TCX o FIT"
           />
-          {STRAVA_CLIENTE && strava && !strava.error && (
-            <div className="tarjeta p-4" data-testid="strava">
-              <p className="font-semibold flex items-center gap-2">
-                <Icono n="sync_alt" className="text-naranja-oscuro" /> Strava
-              </p>
-              {strava.conectado ? (
-                <>
-                  <p className="text-sm text-gris mt-1">Conectado{strava.atleta ? ` como ${strava.atleta}` : ''}.</p>
-                  <div className="flex gap-2 mt-3">
-                    <button onClick={traerDeStrava} disabled={trabajando} className="btn-primario flex-1">
-                      {trabajando ? 'Trayendo...' : 'Traer los últimos 30 días'}
-                    </button>
-                    <button onClick={desconectar} className="btn bg-campo text-tinta" aria-label="Desconectar Strava">
-                      <Icono n="link_off" size={20} />
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-gris mt-1">
-                    Conectá tu cuenta y traé tus actividades sin exportar nada. Solo se leen tus actividades (no se publica nada).
-                  </p>
-                  <a
-                    href={urlDeStrava(estadoStrava)}
-                    onClick={() => recordarEstado(estadoStrava)}
-                    className="btn bg-naranja-fuerte text-white w-full mt-3"
-                  >
-                    <Icono n="link" size={20} /> Conectar con Strava
-                  </a>
-                </>
-              )}
-            </div>
-          )}
           <p className="text-xs text-gris">
             Apple Salud, Health Connect y Samsung Health no dejan que una web lea sus datos directo. Desde la app de tu reloj podés exportar
-            el entrenamiento como GPX, TCX o FIT, o sincronizarlo con Strava.
+            el entrenamiento como GPX, TCX o FIT. En Strava: abrí la actividad en la web, tocá los tres puntos y "Exportar GPX".
           </p>
           <Err>{error}</Err>
         </div>

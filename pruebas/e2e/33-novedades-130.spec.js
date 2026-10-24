@@ -1,9 +1,8 @@
 // 1.30: consejos de la despensa en carrusel, sacar de la lista de compras lo que falta para el plan, categorías propias,
-// esqueletos de carga y traer entrenamientos de archivos GPX/TCX y de Strava (la función, de mentira). Cuenta nueva.
+// esqueletos de carga y traer entrenamientos de archivos GPX/TCX (Strava se sacó en la 1.31.2). Cuenta nueva.
 import { expect, test } from '@playwright/test'
 import { API, APP, aviso, contexto, crearCuenta, escuchar, hoyEnLaPagina, pedir, rest, sinErrores } from './apoyo.js'
 
-const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': '*', 'Access-Control-Allow-Methods': 'POST, OPTIONS' }
 const sumarDias = (f, n) => {
   const d = new Date(f + 'T12:00:00')
   d.setDate(d.getDate() + n)
@@ -165,61 +164,12 @@ test('consejos, lista de compras, categorías, esqueletos y entrenamientos impor
     await pg.keyboard.press('Escape')
   })
 
-  await test.step('Strava: conectar (volviendo con el permiso) y traer actividades', async () => {
-    const pedidos = []
-    let conectado = false
-    await ctx.route('**/functions/v1/strava', async (ruta) => {
-      if (ruta.request().method() === 'OPTIONS') return ruta.fulfill({ status: 204, headers: CORS })
-      const cuerpo = ruta.request().postDataJSON()
-      pedidos.push(cuerpo)
-      const responder = (x) =>
-        ruta.fulfill({ status: 200, headers: { ...CORS, 'content-type': 'application/json' }, body: JSON.stringify(x) })
-      if (cuerpo.accion === 'estado') return responder({ conectado, atleta: conectado ? 'Nico' : null })
-      if (cuerpo.accion === 'conectar') {
-        conectado = true
-        return responder({ conectado: true, atleta: 'Nico' })
-      }
-      if (cuerpo.accion === 'actividades')
-        return responder({
-          actividades: [
-            {
-              id: '991',
-              nombre: 'Pedaleada',
-              deporte: 'Ride',
-              inicio: `${sumarDias(hoy, -1)}T13:00:00Z`,
-              minutos: 45,
-              distanciaKm: 18.2,
-              desnivelM: 120,
-              pulso: 135,
-              kcal: null,
-            },
-          ],
-        })
-      return responder({ conectado: false })
-    })
+  await test.step('sin Strava: los entrenamientos se traen solo con archivos (1.31.2)', async () => {
     await pg.goto(APP + '/ejercicio')
     await pg.getByTestId('abrir-importar').click()
-    const conectar = pg.getByRole('link', { name: 'Conectar con Strava' })
-    await expect(conectar).toBeVisible()
-    const url = new URL(await conectar.getAttribute('href'))
-    expect(url.origin).toBe('https://www.strava.com')
-    expect(url.searchParams.get('redirect_uri')).toBe(APP + '/ejercicio')
-    expect(url.searchParams.get('scope')).toBe('activity:read_all')
-    // Strava pide el permiso y vuelve a la app con el código (no se sale a internet: Strava se reemplaza por una vuelta directa)
-    const estado = url.searchParams.get('state')
-    await ctx.route('https://www.strava.com/**', (r) =>
-      r.fulfill({ status: 302, headers: { location: `${APP}/ejercicio?code=abcdef123456&scope=read,activity:read_all&state=${estado}` } }),
-    )
-    await conectar.click()
-    await expect(pg.getByText('Conectado como Nico.')).toBeVisible()
-    expect(pedidos.find((p) => p.accion === 'conectar')).toMatchObject({ code: 'abcdef123456', scope: 'read,activity:read_all' })
-    expect(pg.url()).not.toContain('code=')
-    await pg.getByRole('button', { name: 'Traer los últimos 30 días' }).click()
-    await expect(pg.getByTestId('importar-lista').getByText('Pedaleada')).toBeVisible()
-    await pg.getByRole('button', { name: 'Anotar 1' }).click()
-    await expect.poll(async () => (await rest(pg, 'workouts')).length).toBe(2)
-    const w = (await rest(pg, 'workouts')).find((x) => x.notes?.includes('strava-991'))
-    expect(w).toMatchObject({ name: 'Bicicleta en la calle', duration_min: 45 })
+    await expect(pg.getByTestId('importar-entrenos')).toContainText('Exportar GPX')
+    await expect(pg.getByRole('link', { name: 'Conectar con Strava' })).toHaveCount(0)
+    await pg.keyboard.press('Escape')
   })
 
   await test.step('aviso de cambios en la Política (una vez) y recordatorio de pesarse', async () => {

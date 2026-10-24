@@ -222,23 +222,9 @@ Prendé los recordatorios en Perfil, después "Aunque la app esté cerrada" (pid
 
 Correr `supabase/actualizacion-23.sql` (aditiva). Sin ella la app anda igual, pero "Mis categorías" da error al crear una.
 
-## Strava (`strava`, F-22)
+## Strava (sacado en la 1.31.2)
 
-Para traer las actividades de Strava sin exportar archivos. La app manda a la persona a Strava a dar permiso; Strava la devuelve a `/ejercicio` con un código, que esta función canjea por el permiso y lo guarda en `strava_conexiones` (la app no puede leer esa tabla). Después, "Traer los últimos 30 días" le pide a la función las actividades y la app elige cuáles anotar. No se guarda nada de Strava salvo lo que la persona anota como entrenamiento (sin mapa ni ubicación). Gratis: el límite de la API de Strava (200 pedidos cada 15 minutos, 2.000 por día) alcanza de sobra.
-
-Los archivos GPX, TCX y FIT no necesitan nada de esto: se leen en el teléfono.
-
-### Pasos (una sola vez)
-
-1. Entrar a https://www.strava.com/settings/api con tu cuenta de Strava y crear una aplicación: nombre "Tupper", categoría "Health & Fitness" (o "Training"), sitio `https://tupperapp.vercel.app` y **Authorization Callback Domain** `tupperapp.vercel.app`. Te da un **Client ID** (un número, público) y un **Client Secret** (secreto).
-2. Secretos de la función (Edge Functions → Secrets): `STRAVA_CLIENT_ID` y `STRAVA_CLIENT_SECRET`.
-3. Publicarla: `supabase functions deploy strava --project-ref bpxxwmcqidoxgmfyzhpc` (con verificación de JWT: la llama la app con la sesión).
-4. En Vercel: `VITE_STRAVA_CLIENT_ID` = el Client ID, y volver a publicar el sitio. Sin esta variable el botón de Strava no aparece (los archivos sí).
-5. Ojo: una aplicación nueva de Strava arranca con un límite de **1 atleta conectado** (vos) hasta que Strava la revisa. Para abrirlo a más gente hay que pedirlo desde esa misma página ("Request a higher rate limit" / revisión de la app); piden capturas y que se respeten sus [pautas de marca](https://developers.strava.com/guidelines/) (el botón dice "Conectar con Strava").
-
-### Pruebas
-
-`pruebas/unidad/novedades-130.test.js` prueba la lógica (`logica.ts`) y la lectura de GPX/TCX; la prueba de navegador 33 hace el viaje completo (ida a Strava y vuelta con el código) con la función y Strava de mentira. Nunca se probó contra Strava de verdad: la primera vez, conectá tu cuenta y mirá los registros de la función.
+La 1.30 traía una función `strava` para conectar la cuenta de Strava y traer las actividades sin exportar archivos. **Se sacó en la 1.31.2 sin haberse publicado nunca:** desde el 1 de junio de 2026 la API de Strava pide que quien hace la aplicación pague la suscripción de Strava, no deja usar sus datos en aplicaciones con IA (Tupper le pasa al asistente el resumen del día, con el gasto de los entrenamientos) y solo deja guardarlos 7 días. Las actividades de Strava se traen igual con el GPX de cada una (en la web de Strava: la actividad → los tres puntos → "Exportar GPX"). La tabla `strava_conexiones` (actualización 23) queda en la base, vacía. Si algún día se retoma, el código está en la historia del repo (ver F-22b en `PENDIENTES.md`).
 
 # Novedades de la 1.31
 

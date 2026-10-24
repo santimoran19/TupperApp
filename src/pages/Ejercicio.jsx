@@ -1,7 +1,7 @@
 // Ejercicio (F-19): los entrenamientos anotados, las sesiones de gimnasio, las rutinas y el progreso de cada ejercicio.
 // Solo se usa con el cálculo de gasto prendido (se prende en /gasto).
 import { useCallback, useMemo, useState } from 'react'
-import ImportarEntrenos, { useVueltaDeStrava } from '../components/ImportarEntrenos'
+import ImportarEntrenos from '../components/ImportarEntrenos'
 import { Link, useSearchParams } from 'react-router-dom'
 import EntrenoForm from '../components/EntrenoForm'
 import GraficoProgreso from '../components/GraficoProgreso'
@@ -474,8 +474,6 @@ export default function Ejercicio() {
   // Qué hoja está abierta: el formulario de un entrenamiento, una sesión de gimnasio o el editor de una rutina
   const [abierta, setAbierta] = useState(null)
   const [borrador, setBorrador] = useState(() => leerBorrador(uid))
-  // Al volver de dar permiso en Strava (F-22) se abre la hoja para traer los entrenamientos
-  useVueltaDeStrava(useCallback((r) => setAbierta({ tipo: 'importar', inicial: r }), []))
 
   const cambiarTab = (t) => {
     const p = new URLSearchParams(params)
@@ -566,7 +564,7 @@ export default function Ejercicio() {
         />
       )}
       {abierta?.tipo === 'rutina' && <RutinaForm rutina={abierta.rutina} onCerrar={cerrar} />}
-      {abierta?.tipo === 'importar' && <ImportarEntrenos inicial={abierta.inicial} onCerrar={cerrar} />}
+      {abierta?.tipo === 'importar' && <ImportarEntrenos onCerrar={cerrar} />}
     </Marco>
   )
 }

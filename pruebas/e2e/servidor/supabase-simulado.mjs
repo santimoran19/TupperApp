@@ -13,7 +13,7 @@ import { ejercicios as ejerciciosGym } from '../../../scripts/gym-data.mjs'
 
 const PUERTO = 54321
 // Las funciones de verdad, corriendo en Deno: cada una en su puerto
-const FUNCIONES_REALES = { 'analizar-semana': 8000, entrar: 8001, strava: 8002, 'recordatorios-push': 8003 }
+const FUNCIONES_REALES = { 'analizar-semana': 8000, entrar: 8001, 'recordatorios-push': 8003 }
 const CLAVE_SERVICIO = 'service-role-de-prueba' // la que usa la función `entrar` para mirar usuarios, saltándose los permisos por fila
 // Las funciones solo contestan a páginas permitidas (S-02): en las pruebas, la de la app. La prueba 21 llama a las funciones directo.
 const ORIGEN_DE_LA_APP = 'http://localhost:5199'
@@ -52,7 +52,8 @@ const db = {
   // Categorías propias (supabase/actualizacion-23.sql)
   categorias: [],
   categoria_alimento: [],
-  // Strava y recordatorios con la app cerrada (actualizacion-22 y 23): las usan solo las funciones, con la clave de servicio
+  // Recordatorios con la app cerrada (actualizacion-22) y la tabla de Strava (actualizacion-23, sin uso desde la 1.31.2):
+  // las usan solo las funciones, con la clave de servicio
   strava_conexiones: [],
   push_suscripciones: [],
   recordatorios: [],
@@ -1076,38 +1077,11 @@ const server = http.createServer(async (req, res) => {
         ? send(200, {
             funcion: funcion.activa,
             entrar: funcion.entrar,
-            strava: funcion.strava,
             push: funcion.push,
             vapid: VAPID.publica,
             cron: CRON_CLAVE,
           })
         : send(503, { message: 'arrancando' })
-    // ---- "Strava" de mentira para la función `strava` (1.30)
-    if (url.pathname === '/strava/oauth/token') {
-      stravaSim.pedidos.push({ ruta: 'token', ...body })
-      if (body.client_id !== 'strava-cliente' || body.client_secret !== 'strava-secreto') return send(401, { message: 'Bad client' })
-      if (body.grant_type === 'authorization_code' && body.code !== 'codigostravaok12345') return send(400, { message: 'Bad Request' })
-      const atleta = { id: 4242, firstname: 'Nico' }
-      return send(200, {
-        token_type: 'Bearer',
-        access_token: 'acceso-' + (stravaSim.vuelta = (stravaSim.vuelta || 0) + 1),
-        refresh_token: 'renovar-strava',
-        expires_at: Math.floor(Date.now() / 1000) + (body.grant_type === 'authorization_code' ? 30 : 21600),
-        ...(body.grant_type === 'authorization_code' ? { athlete: atleta } : {}),
-      })
-    }
-    if (url.pathname === '/strava/oauth/deauthorize') {
-      stravaSim.pedidos.push({ ruta: 'deauthorize', auth: req.headers.authorization })
-      return send(200, { access_token: 'x' })
-    }
-    if (url.pathname === '/strava/api/v3/athlete/activities') {
-      stravaSim.pedidos.push({ ruta: 'actividades', auth: req.headers.authorization, after: url.searchParams.get('after') })
-      return send(200, stravaSim.actividades)
-    }
-    if (url.pathname === '/strava/_pruebas') {
-      if (req.method === 'POST') stravaSim.actividades = body.actividades || []
-      return send(200, stravaSim.pedidos)
-    }
 
     // Captcha, como en Supabase con la protección prendida: crear cuenta, entrar con contraseña y pedir mails exigen
     // una comprobación, y cada una sirve una sola vez. (Renovar la sesión no la pide.)
@@ -1587,8 +1561,7 @@ const server = http.createServer(async (req, res) => {
 })
 
 // ---------- Las funciones de verdad, corriendo en Deno (si está instalado) ----------
-const funcion = { activa: false, entrar: false, strava: false, push: false }
-const stravaSim = { pedidos: [], actividades: [] }
+const funcion = { activa: false, entrar: false, push: false }
 const pushSim = []
 // Claves VAPID y del reloj, de mentira, para la función recordatorios-push
 const CRON_CLAVE = 'reloj-de-prueba'
@@ -1630,7 +1603,7 @@ async function levantarFunciones() {
     }
     return false
   }
-  ;[funcion.activa, funcion.entrar, funcion.strava, funcion.push] = await Promise.all([
+  ;[funcion.activa, funcion.entrar, funcion.push] = await Promise.all([
     arrancar('analizar-semana', FUNCIONES_REALES['analizar-semana'], {
       ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
       IA_PROVEEDOR: '',
@@ -1643,13 +1616,6 @@ async function levantarFunciones() {
       ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
       SUPABASE_ANON_KEY: 'anon-de-prueba',
       SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO,
-    }),
-    arrancar('strava', FUNCIONES_REALES.strava, {
-      ORIGENES_PERMITIDOS: ORIGEN_DE_LA_APP,
-      SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO,
-      STRAVA_CLIENT_ID: 'strava-cliente',
-      STRAVA_CLIENT_SECRET: 'strava-secreto',
-      STRAVA_URL: base + '/strava',
     }),
     arrancar('recordatorios-push', FUNCIONES_REALES['recordatorios-push'], {
       SUPABASE_SERVICE_ROLE_KEY: CLAVE_SERVICIO,

@@ -40,8 +40,6 @@ export default defineConfig({
         VITE_SUPABASE_URL: 'http://localhost:54321',
         VITE_SUPABASE_KEY: 'test',
         VITE_TURNSTILE_SITEKEY: 'clave-de-prueba',
-        // Strava (F-22): con un id de mentira aparece el botón; la función se reemplaza en las pruebas
-        VITE_STRAVA_CLIENT_ID: '12345',
       },
       url: 'http://localhost:5199',
       reuseExistingServer: reusar,

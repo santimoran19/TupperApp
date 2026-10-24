@@ -154,9 +154,8 @@ describe('categorías propias', () => {
 })
 
 // ---------- F-22: traer entrenamientos ----------
-const { leerGpx, leerTcx, leerArchivo, slugDeDeporte, desnivelPositivo, prepararImportacion, datosDeEntreno, desdeStrava, fechaLocal } =
+const { leerGpx, leerTcx, leerArchivo, slugDeDeporte, desnivelPositivo, prepararImportacion, datosDeEntreno, fechaLocal } =
   await import('../../src/lib/importarEntrenos.js')
-const strava = await import('../../supabase/functions/strava/logica.ts')
 
 // Una vuelta de ~1 km hacia el norte en 6 minutos, subiendo 20 m, con pulso
 const GPX = `<?xml version="1.0"?>
@@ -238,52 +237,6 @@ describe('F-22: archivos de relojes y apps', () => {
     // Sin actividad conocida: "Otra", con el nombre del archivo
     const otra = datosDeEntreno({ ...a, nombre: 'Algo raro' }, catalogo[1])
     expect(otra.nombre).toBe('Algo raro')
-  })
-})
-
-describe('F-22: Strava', () => {
-  it('resume las actividades sin datos de más (sin mapa ni ubicación)', () => {
-    const [a] = strava.resumirActividades([
-      {
-        id: 123,
-        name: 'Vuelta',
-        sport_type: 'Run',
-        start_date: '2026-10-20T09:00:00Z',
-        moving_time: 1800,
-        elapsed_time: 2000,
-        distance: 5230,
-        total_elevation_gain: 33.4,
-        average_heartrate: 151.6,
-        map: { summary_polyline: 'xxx' },
-        start_latlng: [-31.4, -64.1],
-      },
-      { id: 9, name: 'Sin fecha', moving_time: 60 },
-    ])
-    expect(a).toEqual({
-      id: '123',
-      nombre: 'Vuelta',
-      deporte: 'Run',
-      inicio: '2026-10-20T09:00:00.000Z',
-      minutos: 30,
-      distanciaKm: 5.23,
-      desnivelM: 33,
-      pulso: 152,
-      kcal: null,
-    })
-    expect(desdeStrava(a)).toMatchObject({ origen: 'strava', ref: 'strava-123' })
-  })
-  it('valida lo que llega y sabe cuándo renovar el permiso', () => {
-    expect(strava.esAccion('actividades')).toBe(true)
-    expect(strava.esAccion('borrar_todo')).toBe(false)
-    expect(strava.codigoValido('abc123def456')).toBe(true)
-    expect(strava.codigoValido('<script>')).toBe(false)
-    expect(strava.alcanceAlcanza('read,activity:read_all')).toBe(true)
-    expect(strava.alcanceAlcanza('read')).toBe(false)
-    const ahora = Date.parse('2026-10-24T12:00:00Z')
-    expect(strava.hayQueRenovar('2026-10-24T12:00:30Z', ahora)).toBe(true)
-    expect(strava.hayQueRenovar('2026-10-24T15:00:00Z', ahora)).toBe(false)
-    expect(strava.desdeSegundos('2020-01-01', ahora)).toBe(Math.floor((ahora - 180 * 86400000) / 1000))
-    expect(strava.desdeSegundos('basura', ahora)).toBe(Math.floor((ahora - 30 * 86400000) / 1000))
   })
 })
 

@@ -27,56 +27,50 @@ Si se agrega o cambia una tarea, se actualizan las dos.
 Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junto está indicado.
 
 **Primero (P1)**
-1. V-03 · Poner en marcha la 1.29 (actualización 22, funciones y recordatorios push)
-2. V-04 · Poner en marcha la 1.30 (actualización 23, Strava)
-3. V-05 · Poner en marcha la 1.31 (actualización 24 y cargarte como administrador)
-4. L-03 · Registro de la base de datos (preparado: falta el trámite en TAD)
-5. S-04 · Repo privado (al terminar)
+1. V-06 · Probar en el teléfono lo de la 1.29 a la 1.31 (lo del servidor ya está en marcha)
+2. L-03 · Registro de la base de datos (preparado: falta el trámite en TAD)
+3. S-04 · Repo privado (al terminar)
 
 **Después (P2)**
-6. S-08 · Códigos de recuperación de la verificación en dos pasos
-7. IA-05 · Mejorar la carga con foto (probar Gemini primero) y probar el asistente con los proveedores reales
-8. T-03b · Hacer andar las pruebas en WebKit (Safari) y sumar más
-9. F-18 · Registrarse e iniciar sesión con Google
-10. D-07b · Accesibilidad: probarla con TalkBack y VoiceOver de verdad
-11. T-04 · Base de pruebas aparte
-12. T-01b · Lo que quedó de actualizar (ESLint 10, Playwright, plugin de React 6)
+4. S-08 · Códigos de recuperación de la verificación en dos pasos
+5. IA-05 · Mejorar la carga con foto (probar Gemini primero) y probar el asistente con los proveedores reales
+6. T-03b · Hacer andar las pruebas en WebKit (Safari) y sumar más
+7. F-18 · Registrarse e iniciar sesión con Google
+8. D-07b · Accesibilidad: probarla con TalkBack y VoiceOver de verdad
+9. T-04 · Base de pruebas aparte
+10. T-01b · Lo que quedó de actualizar (ESLint 10, Playwright, plugin de React 6)
 
 **Cuando haya tiempo (P3)**
-13. F-06b · Notificaciones con botones ("Tomé un vaso", "Posponer 15 min")
-14. F-12b · Seguir sumando a la base común
-15. F-22b · Más relojes: Garmin Connect directo, Health Connect y Strava automático
-16. D-08 · Revisión de los textos
-17. T-13 · Aviso si el reloj de los recordatorios deja de andar
-18. C-06 · Métricas de uso
-19. T-05 · Partir `sincronizacion.js`
-20. T-07b · Mandar lo cargado sin conexión con la app cerrada del todo
-21. T-09 · Revisar índices sin uso
-22. S-03 · Contraseñas filtradas también del lado de Supabase
-23. F-19b · Seguir con gasto y ejercicio (pulso en reposo, validar con mediciones reales)
+11. F-06b · Notificaciones con botones ("Tomé un vaso", "Posponer 15 min")
+12. F-12b · Seguir sumando a la base común
+13. F-22b · Más relojes: Garmin Connect directo y Health Connect (Strava quedó afuera: su API es paga)
+14. D-08 · Revisión de los textos
+15. T-13 · Aviso si el reloj de los recordatorios deja de andar
+16. C-06 · Métricas de uso
+17. T-05 · Partir `sincronizacion.js`
+18. T-07b · Mandar lo cargado sin conexión con la app cerrada del todo
+19. T-09 · Revisar índices sin uso
+20. S-03 · Contraseñas filtradas también del lado de Supabase
+21. F-19b · Seguir con gasto y ejercicio (pulso en reposo, validar con mediciones reales)
 
 **Al final, cuando la app esté completa (requieren pagar algo: dominio, planes de pago)**
-24. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
-25. C-02 · Dominio propio y página de presentación (va junto con C-03)
-26. C-01 · Planes y cobro (para empezar a cobrar)
-27. C-04 · Play Store (cuesta la cuenta de desarrollador)
+22. C-03 · Mails propios (SMTP) (necesita el dominio de C-02)
+23. C-02 · Dominio propio y página de presentación (va junto con C-03)
+24. C-01 · Planes y cobro (para empezar a cobrar)
+25. C-04 · Play Store (cuesta la cuenta de desarrollador)
 
 ---
 ## Por tema
 
 ## 0. Para verificar ahora
 
-- [ ] **V-03 · Poner en marcha la 1.29** · P1 · S. En este orden: (1) correr `supabase/actualizacion-22.sql` en el SQL Editor (aditiva; también arregla lo que marcaba el revisor de Supabase); (2) volver a publicar `asistente-ia` y `registrar-ia` (sin eso no aparecen "Revisar y anotar" ni "Pegá la receta"); (3) para los recordatorios con la app cerrada: generar las claves VAPID en tu compu, cargar los 4 secretos, publicar `recordatorios-push` con `--no-verify-jwt`, poner `VITE_VAPID_PUBLIC` en Vercel y armar el reloj (pasos exactos en `supabase/functions/LEEME.md`, "Novedades de la 1.29"); (4) probar desde el teléfono: la voz en "Anotá rápido" (en producción el micrófono estaba bloqueado por `vercel.json` hasta la 1.29), activar y desactivar la verificación en dos pasos, y un recordatorio con la app cerrada. Si algo de la 1.29 no se pone en marcha, la app anda igual: lo nuevo simplemente no aparece.
-
-- [ ] **V-04 · Poner en marcha la 1.30** · P1 · S. (1) Correr `supabase/actualizacion-23.sql` (aditiva: categorías propias, la tabla de Strava y la versión de los textos legales vista). (2) Opcional pero recomendado: `supabase/actualizacion-23b-dos-pasos.sql` (S-07: la verificación en dos pasos también para las funciones `rpc`); si después de correrla la app no carga para nadie, se deshace con las dos líneas que dice el archivo. (3) Strava, si lo querés: crear la aplicación en strava.com/settings/api, cargar `STRAVA_CLIENT_ID` y `STRAVA_CLIENT_SECRET`, publicar la función `strava` y poner `VITE_STRAVA_CLIENT_ID` en Vercel (pasos en `supabase/functions/LEEME.md`). Ojo: Strava arranca con 1 atleta (vos) hasta que revisa la app. (4) Publicar el sitio: es la primera versión con Vite 8, React 19 y Tailwind 4; mirar en el teléfono que todo se vea como antes. (5) Probar en el teléfono: el carrusel de consejos de la Despensa, sacar algo de la lista de compras, una categoría propia, subir un GPX o TCX de tu reloj y, en una cuenta vieja, el aviso de la Política (una vez).
-
-- [ ] **V-05 · Poner en marcha la 1.31** · P1 · S. (1) Correr `supabase/actualizacion-24.sql` (aditiva) **antes** de publicar: sin ella, lo que se saca de la lista de compras vuelve a aparecer al recargar. (2) Para ver el panel de administración: corré en el SQL Editor `insert into public.administradores (user_id) select id from auth.users where email = 'TU-MAIL' on conflict do nothing;`. Al final del Perfil aparece "Administración" (si tenés la verificación en dos pasos, solo después de poner el código). (3) Publicar y probar: sacar algo de la lista de compras en un teléfono y verlo sacado en otro (o en el de la otra persona del hogar), el consejo de estación del carrusel y el consejo del día en el Diario.
+- [ ] **V-06 · Probar en el teléfono lo de la 1.29 a la 1.31** · P1 · S. Lo del servidor quedó en marcha el 24/10/2026 (revisado): actualizaciones 22, 23, 23b y 24 corridas; `asistente-ia`, `registrar-ia` y `recordatorios-push` publicadas; el reloj de los recordatorios corre cada 15 minutos y la función contesta bien (claves VAPID y del reloj correctas); administrador cargado; la 1.31 publicada en Vercel. Falta probar a mano: (1) un recordatorio con la app cerrada (Perfil → Recordatorios → "Aunque la app esté cerrada"; en iPhone, con la app agregada a la pantalla de inicio); (2) la voz en "Anotá rápido", "Revisar y anotar" del asistente y "Pegá la receta"; (3) activar y desactivar la verificación en dos pasos; (4) que todo se vea como antes (primera versión con Vite 8, React 19 y Tailwind 4); (5) el carrusel de consejos, sacar algo de la lista de compras y verlo sacado en otro teléfono, una categoría propia, subir un GPX, TCX o FIT de tu reloj y el panel de administración (al final del Perfil).
 
 ## 1. Funciones
 
 - [ ] **F-18 · Registrarse e iniciar sesión con Google** · P2 · M. Un botón "Continuar con Google" en la pantalla de acceso, para crear la cuenta o entrar sin escribir mail ni contraseña. **Qué hace falta de tu lado:** crear un proyecto en Google Cloud, configurar la pantalla de consentimiento y las credenciales OAuth (cliente web), y activar el proveedor Google en Supabase (Authentication > Providers) con las direcciones de vuelta de la app y de Supabase. Gratis. **Cosas a resolver:** (1) el consentimiento de Google en modo de prueba solo deja entrar a 100 usuarios que vos agregues a mano; para abrirlo a cualquiera hay que publicarlo, y Google pide la Política de privacidad y la página de inicio en un dominio propio (esto se cruza con C-02, dominio propio); (2) si ya existe una cuenta con el mismo mail, Supabase puede unirla con la de Google; hay que dejarlo bien configurado para que nadie tome una cuenta ajena; (3) quien entra con Google no tiene contraseña: la pantalla de "Olvidé mi contraseña" y el Perfil tienen que explicarlo, y se podría ofrecer crear una; (4) igual hay que pasar por el perfil (fecha de nacimiento, para cumplir los 18 años de L-01) y, con F-17, elegir el nombre de usuario; (5) sumar a la Política de privacidad que Google es un proveedor y qué datos se reciben (mail y nombre; la foto no se guarda); (6) probarlo en el navegador del teléfono y en la app instalada (PWA), donde el regreso desde Google a veces se comporta distinto. Va con pruebas (el simulador de las pruebas tiene que fingir el regreso de Google) y los textos del botón. Borrar la cuenta y descargar los datos siguen igual.
-- [ ] **F-22b · Más relojes** · P3 · M. La 1.30 trae GPX, TCX, FIT y Strava. Falta: (2) Garmin Connect directo (su API pide ser socio de Garmin: aplicación y aprobación); (3) Apple Salud y Health Connect (pasos, peso, entrenamientos) solo con una app instalable (Capacitor), junto con C-04; (4) Strava automático (con su aviso de actividad nueva, *webhook*) en vez de tocar "Traer".
-- [ ] **F-19b · Seguir con gasto y ejercicio** · P3 · M. Quedó afuera de la 1.23 (la importación de archivos y Strava se hizo en la 1.30, ver F-22b): (2) usar el pulso en reposo (`profiles.resting_hr`, ya existe la columna) en el cálculo; (3) **validar el cálculo contra mediciones de referencia** (calorimetría indirecta, o al menos el seguimiento de varias personas): hoy los márgenes de error son orientativos, no validados; los coeficientes de movimiento según el trabajo y por paso son criterio propio y quedarían ajustados con esos datos; (4) un tope de proteína o cálculo sobre masa magra para obesidad alta (IMC mayor a 35), que los dos nutricionistas sugirieron; se dejó afuera a propósito la proteína configurable por ser confusa para quien no sabe de nutrición.
+- [ ] **F-22b · Más relojes** · P3 · M. La app trae entrenamientos de archivos GPX, TCX y FIT (1.30). Falta: (1) Garmin Connect directo (su API pide ser socio de Garmin: aplicación y aprobación); (2) Apple Salud y Health Connect (pasos, peso, entrenamientos) solo con una app instalable (Capacitor), junto con C-04. **Strava quedó afuera (1.31.2):** desde el 1/6/2026 su API pide que quien hace la aplicación pague la suscripción de Strava, prohíbe usar sus datos en aplicaciones con IA (Tupper le pasa al asistente el resumen del día, con el gasto de los entrenamientos), limita guardarlos a 7 días y arranca con 1 atleta (10 sin revisión). Las actividades de Strava se pueden traer igual exportando el GPX de cada una. Si algún día se retoma, el código está en la historia del repo (1.30 y 1.31) y la tabla `strava_conexiones` sigue en la base, vacía; en junio de 2027 Strava cambia `oauth/deauthorize` por `oauth/revoke` y pasa a `api-v3.strava.com`.
+- [ ] **F-19b · Seguir con gasto y ejercicio** · P3 · M. Quedó afuera de la 1.23 (la importación de archivos se hizo en la 1.30, ver F-22b): (2) usar el pulso en reposo (`profiles.resting_hr`, ya existe la columna) en el cálculo; (3) **validar el cálculo contra mediciones de referencia** (calorimetría indirecta, o al menos el seguimiento de varias personas): hoy los márgenes de error son orientativos, no validados; los coeficientes de movimiento según el trabajo y por paso son criterio propio y quedarían ajustados con esos datos; (4) un tope de proteína o cálculo sobre masa magra para obesidad alta (IMC mayor a 35), que los dos nutricionistas sugirieron; se dejó afuera a propósito la proteína configurable por ser confusa para quien no sabe de nutrición.
 - [ ] **F-12b · Seguir sumando a la base común** · P3 · S (continuo). Después de la sexta tanda (1.25: 227 alimentos y 1.471 recetas), sumar alimentos y recetas cuando aparezcan faltantes: mirar los alimentos propios que repiten varios usuarios y lo que la gente busca y no encuentra. Los alimentos se agregan en `scripts/datos/alimentos-sexta.mjs` (o en `seed-data.mjs` si es una tanda nueva) y las recetas en una familia de `scripts/datos/f-*.mjs`; se corre `npm run seed`. Ver también F-04b (lista de recetas con más de mil).
 - [ ] **F-06b · Notificaciones con botones** · P3 · S. Desde la 1.30, tocar el aviso de una comida abre Registrar con esa comida. Falta "Posponer 15 min" (la función tendría que volver a mandarlo) y, en el del agua, "Tomé un vaso" (anotarlo sin abrir la app: necesita mandar el registro desde el service worker, ver T-07b).
 ## 2. Inteligencia artificial
@@ -124,7 +118,10 @@ Dentro de cada nivel, de arriba hacia abajo es el orden sugerido. Lo que va junt
 
 ## Hecho
 
-- **1.31.0 · Lista de compras compartida, consejos de estación, uno por día en el Diario y panel de administración** (hay que correr `supabase/actualizacion-24.sql`; ver V-05).
+- **1.31.2 · Sin Strava** (no hay que correr nada en la base).
+  - *F-22b:* se sacó la conexión con Strava (el botón, la función `strava`, la acción `strava` y su parte del simulador y de las pruebas) porque su API pasó a ser paga y choca con el asistente con IA (ver F-22b). Traer entrenamientos queda con archivos GPX, TCX y FIT, y la hoja explica cómo exportar el GPX desde Strava. La Política de privacidad ya no habla de Strava (nunca se activó, así que no hace falta volver a avisar). La función nunca se publicó en Supabase. La tabla `strava_conexiones` queda en la base, vacía y sin uso.
+- **1.31.1 · Publicación arreglada:** se borraron `tailwind.config.js` y `postcss.config.js`, que quedaron en el repo y rompían el build en Vercel (pedían `autoprefixer`, que ya no se instala con Tailwind 4). La 1.30 y la 1.31 recién se publicaron con esto.
+- **1.31.0 · Lista de compras compartida, consejos de estación, uno por día en el Diario y panel de administración** (hay que correr `supabase/actualizacion-24.sql`).
   - *F-25:* lo que se saca de la lista de compras (lo que falta para el plan) se guarda en la base, en la despensa del hogar si hay uno: la otra persona también lo ve sacado. Guarda la cantidad que faltaba, así vuelve a aparecer si el plan pide más. Anda sin conexión (va por la cola), lo sacado en la 1.30 (en el teléfono) se pasa solo a la base y lo sacado hace más de 3 semanas se olvida. Se borra con la cuenta o con el hogar.
   - *F-24:* el carrusel de la Despensa suma un consejo de estación (fruta y verdura de cada mes en Argentina, nombrando lo que ya tenés si es de estación) y, si hay dos o más cosas por vencer que entran en una misma receta, esa receta primero, con el enlace. En el Diario, un consejo por día de tu despensa (lo que vence primero o, si no, uno distinto cada día) que lleva a la Despensa.
   - *C-07:* panel de administración en `/admin`: cuentas (nuevas y activas), hogares, pedidos a la IA por día de los últimos 14 días, errores de la semana y las últimas 50 opiniones. Solo para quien esté en la tabla `administradores` (se carga a mano en Supabase; desde la app nadie se puede sumar) y con la verificación en dos pasos si la tenés activada. Los números los arma la base: nada de lo que come, pesa o registra cada persona, ni nombres de usuario. Las cuentas por proveedor de IA no están: la base no guarda qué proveedor contestó (se ven en los registros de las funciones).
